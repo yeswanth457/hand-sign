@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RT-STAMP-SLR | Real-Time ISL to English/Tamil Translator</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-icon"><i class="fa-solid fa-hands-asl-interpreting"></i></div>
+                <div>
+                    <h1>RT-STAMP-SLR Translator</h1>
+                    <p class="subtitle">Indian Sign Language → English / Tamil Real-Time Translation System</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-pill active" id="systemStatus">
+                    <span class="pulse-dot"></span> System Live
+                </div>
+                <button class="btn btn-secondary" id="btnTrainModel">
+                    <i class="fa-solid fa-brain"></i> Train Model
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Panel: Webcam Video Feed & Canvas Overlay -->
+            <section class="card video-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-camera"></i> Live Sign Capture</h2>
+                    <div class="controls-row">
+                        <button class="btn-sm" id="btnToggleWebcam"><i class="fa-solid fa-video"></i> Start Webcam</button>
+                        <button class="btn-sm btn-outline" id="btnSimulateDemo"><i class="fa-solid fa-play"></i> Run Demo</button>
+                    </div>
+                </div>
+
+                <div class="video-container">
+                    <video id="webcamVideo" autoplay playsinline muted></video>
+                    <canvas id="landmarkCanvas" width="640" height="480"></canvas>
+                    <div class="video-overlay-badge" id="motionEnergyBadge">
+                        <i class="fa-solid fa-bolt"></i> Motion Energy: <span id="valMotionEnergy">0.0000</span>
+                    </div>
+                    <div class="decision-badge" id="decisionStateBadge">IDLE</div>
+                </div>
+
+                <!-- 6D Gesture Token Visualizer -->
+                <div class="token-panel">
+                    <h3><i class="fa-solid fa-cube"></i> 6D Gesture Token <code>[Hx, Hy, Mx, My, Rx, Ry]</code></h3>
+                    <div class="token-grid">
+                        <div class="token-box">
+                            <span class="t-label">Hx (Hand X)</span>
+                            <span class="t-val" id="tkHx">0.50</span>
+                        </div>
+                        <div class="token-box">
+                            <span class="t-label">Hy (Hand Y)</span>
+                            <span class="t-val" id="tkHy">0.50</span>
+                        </div>
+                        <div class="token-box">
+                            <span class="t-label">Mx (Motion X)</span>
+                            <span class="t-val" id="tkMx">0.00</span>
+                        </div>
+                        <div class="token-box">
+                            <span class="t-label">My (Motion Y)</span>
+                            <span class="t-val" id="tkMy">0.00</span>
+                        </div>
+                        <div class="token-box">
+                            <span class="t-label">Rx (Body X)</span>
+                            <span class="t-val" id="tkRx">0.00</span>
+                        </div>
+                        <div class="token-box">
+                            <span class="t-label">Ry (Body Y)</span>
+                            <span class="t-val" id="tkRy">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Recognition & Translation Hub -->
+            <section class="card translation-card">
+                
+                <!-- Language Toggle Section -->
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-language"></i> Translation Output</h2>
+                    <div class="lang-toggle-container">
+                        <button class="lang-btn active" id="btnLangEng" onclick="setLanguage('english')">English</button>
+                        <button class="lang-btn" id="btnLangTam" onclick="setLanguage('tamil')">தமிழ் (Tamil)</button>
+                    </div>
+                </div>
+
+                <!-- Confirmed Live Sentence Display Box -->
+                <div class="translation-output-box">
+                    <div class="output-header">
+                        <span class="lang-indicator" id="currentLangLabel">ENGLISH SENTENCE</span>
+                        <div class="output-controls">
+                            <button class="icon-btn" title="Speak Text" id="btnTTS"><i class="fa-solid fa-volume-high"></i></button>
+                            <button class="icon-btn" title="Clear Buffer" id="btnClear"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="main-sentence-text" id="translatedText">
+                        <em>Waiting for sign gesture input...</em>
+                    </div>
+                    
+                    <div class="word-buffer-tags" id="wordBufferContainer">
+                        <span class="buffer-label">Word Buffer:</span>
+                        <!-- Dynamic word tags injected here -->
+                    </div>
+                </div>
+
+                <!-- Recognition Metrics & Confidence Bar -->
+                <div class="metrics-panel">
+                    <div class="metric-row">
+                        <span>Latest Detected Sign:</span>
+                        <strong class="detected-word" id="valDetectedWord">--</strong>
+                    </div>
+
+                    <div class="metric-row">
+                        <span>Model Confidence:</span>
+                        <strong id="valConfidencePct">0%</strong>
+                    </div>
+                    <div class="confidence-bar-wrapper">
+                        <div class="confidence-bar-fill" id="confidenceBarFill" style="width: 0%;"></div>
+                    </div>
+
+                    <div class="metric-row mt-2">
+                        <span>Adaptive Motion Threshold (τ):</span>
+                        <span id="valThreshold">0.0150</span>
+                    </div>
+
+                    <!-- Live Motion Energy Waveform Graph -->
+                    <div class="graph-container">
+                        <canvas id="motionGraphCanvas" width="380" height="70"></canvas>
+                    </div>
+                </div>
+
+                <!-- Interactive Sign Simulator Panel -->
+                <div class="simulator-panel">
+                    <h3><i class="fa-solid fa-hand-pointer"></i> Sign Simulator (50 ISL Words)</h3>
+                    <div class="sim-controls">
+                        <select id="selectVocab" class="vocab-select">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button class="btn btn-primary" id="btnSimulateSelected">
+                            <i class="fa-solid fa-play"></i> Simulate Sign
+                        </button>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>RT-STAMP-SLR Base Architecture • Temporal Memory Transformer • Indian Sign Language Translation Engine</p>
+        </footer>
+    </div>
+
+    <!-- MediaPipe Browser JS Libraries for Live Hand & Pose Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <!-- App Scripts -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

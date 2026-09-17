@@ -52,7 +52,64 @@
                     <div class="video-overlay-badge" id="motionEnergyBadge">
                         <i class="fa-solid fa-bolt"></i> Motion Energy: <span id="valMotionEnergy">0.0000</span>
                     </div>
-                    <div class="decision-badge" id="decisionStateBadge">IDLE</div>
+                    <div class="decision-badge state-camera-off" id="decisionStateBadge">CAMERA_OFF</div>
+                </div>
+
+                <!-- Real Webcam Debug HUD (Phase 3 Live Browser Metrics) -->
+                <div class="webcam-debug-hud" id="webcamDebugHud">
+                    <div class="debug-hud-header">
+                        <span><i class="fa-solid fa-gauge-high"></i> Camera & Pipeline Debug HUD</span>
+                        <span class="hud-fps-pill" id="dbgFpsPill">0 FPS</span>
+                    </div>
+                    <div class="debug-grid">
+                        <div class="dbg-item">
+                            <span class="dbg-label">Camera:</span>
+                            <strong class="dbg-val val-inactive" id="dbgCameraStream">STREAM INACTIVE</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Video readyState:</span>
+                            <strong class="dbg-val" id="dbgReadyState">0</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Video dimensions:</span>
+                            <strong class="dbg-val" id="dbgDimensions">0 x 0</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Canvas dimensions:</span>
+                            <strong class="dbg-val" id="dbgCanvasDimensions">0 x 0</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Video currentTime:</span>
+                            <strong class="dbg-val" id="dbgCurrentTime">0.00s</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Processing loop:</span>
+                            <strong class="dbg-val val-stopped" id="dbgLoopStatus">STOPPED</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Frame:</span>
+                            <strong class="dbg-val" id="dbgFrameId">0</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Hand detector:</span>
+                            <strong class="dbg-val" id="dbgDetectorStatus">NOT RUNNING</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Hand detected:</span>
+                            <strong class="dbg-val val-no" id="dbgHandDetected">NO</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Landmark count:</span>
+                            <strong class="dbg-val" id="dbgLandmarkCount">0</strong>
+                        </div>
+                    </div>
+                    <div class="debug-timings">
+                        <span>MP Hand: <strong id="valMpHandTime">0.0ms</strong></span>
+                        <span>MP Pose: <strong id="valMpPoseTime">0.0ms</strong></span>
+                        <span>Render: <strong id="valRenderTime">0.0ms</strong></span>
+                        <span>Token: <strong id="valTokenCalcTime">0.0ms</strong></span>
+                        <span>RTT: <strong id="valBackendRtt">0ms</strong></span>
+                    </div>
                 </div>
 
                 <!-- 6D Gesture Token Visualizer -->
@@ -143,6 +200,34 @@
                         <canvas id="motionGraphCanvas" width="380" height="70"></canvas>
                     </div>
                 </div>
+                <!-- Single Gesture Test Mode (Phase 10) -->
+                <div class="single-gesture-panel">
+                    <div class="sg-header">
+                        <h3><i class="fa-solid fa-hand"></i> Single Gesture Test Mode</h3>
+                        <span class="sg-mode-badge" id="sgModeIndicator">ISOLATED TEST ACTIVE</span>
+                    </div>
+                    <p class="sg-instructions">Select a target sign, perform the gesture once. Test mode isolates single gestures without sentence grammar.</p>
+                    <div class="sg-target-buttons">
+                        <button class="sg-target-btn active" data-target="hello">HELLO</button>
+                        <button class="sg-target-btn" data-target="thank_you">THANK YOU</button>
+                        <button class="sg-target-btn" data-target="welcome">WELCOME</button>
+                        <button class="sg-target-btn sg-btn-reset" id="btnClearSgTest"><i class="fa-solid fa-rotate-right"></i> Clear Sign</button>
+                    </div>
+                    <div class="sg-result-card">
+                        <div class="sg-stat">
+                            <span class="sg-label">Recognized Sign:</span>
+                            <strong class="sg-sign-word" id="sgValSign">--</strong>
+                        </div>
+                        <div class="sg-stat">
+                            <span class="sg-label">Confidence:</span>
+                            <strong class="sg-sign-conf" id="sgValConf">0.0%</strong>
+                        </div>
+                        <div class="sg-stat">
+                            <span class="sg-label">State:</span>
+                            <span class="sg-state-tag" id="sgValState">READY</span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Interactive Sign Simulator Panel -->
                 <div class="simulator-panel">
@@ -160,17 +245,64 @@
             </section>
         </main>
 
+        <!-- ISL Dataset Explorer (HuggingFace API Integration) -->
+        <section class="dataset-explorer-section" id="datasetExplorerSection">
+            <div class="card dataset-explorer-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-database"></i> ISL Dataset Explorer</h2>
+                    <div class="dataset-header-controls">
+                        <span class="dataset-total-badge" id="datasetTotalBadge">
+                            <i class="fa-solid fa-layer-group"></i> <span id="datasetTotalCount">--</span> Total Samples
+                        </span>
+                        <button class="btn-sm btn-outline" id="btnRefreshDataset" title="Refresh Dataset">
+                            <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <p class="dataset-source-info">
+                    <i class="fa-brands fa-hubspot"></i> Source: <a href="https://huggingface.co/datasets/vidit031/isl-isolated-40words" target="_blank" rel="noopener">vidit031/isl-isolated-40words</a> via HuggingFace Datasets Server API
+                </p>
+
+                <!-- Loading Spinner -->
+                <div class="dataset-loading" id="datasetLoading">
+                    <div class="ds-spinner"></div>
+                    <span>Fetching dataset from HuggingFace...</span>
+                </div>
+
+                <!-- Error State -->
+                <div class="dataset-error" id="datasetError" style="display:none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span id="datasetErrorMsg">Failed to load dataset.</span>
+                    <button class="btn-sm" onclick="loadDatasetBrowser()">Retry</button>
+                </div>
+
+                <!-- Dataset Cards Grid -->
+                <div class="dataset-cards-grid" id="datasetCardsGrid">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <!-- Pagination Controls -->
+                <div class="dataset-pagination" id="datasetPagination">
+                    <button class="btn-sm btn-outline" id="btnDatasetPrev" disabled>
+                        <i class="fa-solid fa-chevron-left"></i> Previous
+                    </button>
+                    <span class="pagination-info" id="paginationInfo">Showing 1–5 of --</span>
+                    <button class="btn-sm" id="btnDatasetNext">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
         <!-- Footer -->
         <footer class="app-footer">
             <p>RT-STAMP-SLR Base Architecture • Temporal Memory Transformer • Indian Sign Language Translation Engine</p>
         </footer>
     </div>
 
-    <!-- MediaPipe Browser JS Libraries for Live Hand & Pose Detection -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <!-- MediaPipe Tasks Vision Web SDK for Browser-Side Hand & Pose Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs" type="module"></script>
     <!-- App Scripts -->
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js" type="module"></script>
 </body>
 </html>

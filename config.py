@@ -47,6 +47,19 @@ VOCAB_SIZE = len(ISL_VOCABULARY)
 WORD_TO_ID = {word: i for i, word in enumerate(ISL_VOCABULARY)}
 ID_TO_WORD = {i: word for i, word in enumerate(ISL_VOCABULARY)}
 
+# ─── 43-Class ISL Sign Vocabulary ────────────────────────────────
+# Canonical 43 sign/action classes spanning Greetings, Needs, Family, Places, and Actions (indices 0-42)
+ISL_43_VOCABULARY = ISL_VOCABULARY[:43]
+VOCAB_43_SIZE = len(ISL_43_VOCABULARY)
+WORD_TO_ID_43 = {word: i for i, word in enumerate(ISL_43_VOCABULARY)}
+ID_TO_WORD_43 = {i: word for i, word in enumerate(ISL_43_VOCABULARY)}
+
+# Active vocabulary mapped to the full 43-sign vocabulary
+ACTIVE_VOCABULARY = ISL_43_VOCABULARY
+ACTIVE_VOCAB_SIZE = VOCAB_43_SIZE
+ACTIVE_WORD_TO_ID = WORD_TO_ID_43
+ACTIVE_ID_TO_WORD = ID_TO_WORD_43
+
 # Pipeline hyperparameters
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
@@ -67,8 +80,8 @@ MAX_SEQ_LEN = 30
 DROPOUT = 0.1
 
 # Early Decision & Cooldown Engine
-CONFIDENCE_THRESHOLD = 0.20
-SUSTAINED_FRAMES = 3
+CONFIDENCE_THRESHOLD = 0.80
+SUSTAINED_FRAMES = 2
 COOLDOWN_FRAMES = 10
 
 # Dynamic Sentence Grammar & Translation Setup

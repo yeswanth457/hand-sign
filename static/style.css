@@ -160,7 +160,7 @@ body {
 .video-container {
     position: relative;
     width: 100%;
-    height: 380px;
+    aspect-ratio: 4 / 3;
     background: #000;
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -170,7 +170,7 @@ body {
 #webcamVideo {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: fill;
     transform: scaleX(-1);
 }
 
@@ -180,6 +180,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    object-fit: fill;
     transform: scaleX(-1);
     pointer-events: none;
 }
@@ -200,18 +201,288 @@ body {
     position: absolute;
     top: 14px;
     right: 14px;
-    background: rgba(245, 158, 11, 0.2);
-    color: var(--accent-amber);
+    background: rgba(100, 116, 139, 0.25);
+    color: #94a3b8;
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 700;
-    border: 1px solid rgba(245, 158, 11, 0.4);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+
+/* Phase 11 Explicit States */
+.decision-badge.state-camera-off {
+    background: rgba(100, 116, 139, 0.25);
+    color: #94a3b8;
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+.decision-badge.state-camera-starting {
+    background: rgba(59, 130, 246, 0.25);
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.5);
+}
+
+.decision-badge.state-camera-error {
+    background: rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.5);
+}
+
+.decision-badge.state-no-hand {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.4);
+}
+
+.decision-badge.state-collecting {
+    background: rgba(6, 182, 212, 0.2);
+    color: #22d3ee;
+    border-color: rgba(34, 211, 238, 0.4);
+}
+
+.decision-badge.state-ready {
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+    border-color: rgba(167, 139, 250, 0.4);
+}
+
+.decision-badge.state-predicting {
+    background: rgba(168, 85, 247, 0.25);
+    color: #c084fc;
+    border-color: rgba(192, 132, 252, 0.5);
+}
+
+.decision-badge.state-accepted,
+.decision-badge.confirmed {
+    background: rgba(16, 185, 129, 0.25);
+    color: #34d399;
+    border-color: rgba(52, 211, 153, 0.6);
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
+}
+
+/* Phase 3 Webcam Debug HUD */
+.webcam-debug-hud {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-top: 14px;
+    backdrop-filter: blur(10px);
+}
+
+.debug-hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #38bdf8;
+    margin-bottom: 10px;
+}
+
+.hud-fps-pill {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-family: monospace;
+    color: #38bdf8;
+}
+
+.debug-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+@media (max-width: 640px) {
+    .debug-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dbg-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dbg-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.decision-badge.confirmed {
-    background: rgba(16, 185, 129, 0.2);
+.dbg-val {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 12px;
+    color: #f1f5f9;
+    font-weight: 600;
+}
+
+.dbg-val.val-inactive,
+.dbg-val.val-stopped,
+.dbg-val.val-no {
+    color: #f87171;
+}
+
+.dbg-val.val-active,
+.dbg-val.val-running,
+.dbg-val.val-yes {
+    color: #34d399;
+}
+
+.debug-timings {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.debug-timings strong {
+    color: #cbd5e1;
+    font-family: monospace;
+}
+
+/* Phase 10 Single Gesture Test Mode */
+.single-gesture-panel {
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-top: 18px;
+}
+
+.sg-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.sg-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sg-mode-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    letter-spacing: 0.5px;
+}
+
+.sg-instructions {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.sg-target-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.sg-target-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sg-target-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.sg-target-btn.active {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
+}
+
+.sg-target-btn.sg-btn-reset {
+    margin-left: auto;
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+}
+
+.sg-target-btn.sg-btn-reset:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.sg-result-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sg-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sg-sign-word {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    color: #38bdf8;
+    font-weight: 700;
+}
+
+.sg-sign-conf {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 16px;
+    color: #34d399;
+    font-weight: 700;
+}
+
+.sg-state-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(100, 116, 139, 0.25);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    align-self: flex-start;
+}
+
+.sg-state-tag.accepted {
+    background: rgba(16, 185, 129, 0.25);
     color: #34d399;
     border-color: rgba(52, 211, 153, 0.5);
 }
@@ -502,3 +773,376 @@ body {
     font-size: 12px;
     border-top: 1px solid var(--border-color);
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ISL Dataset Explorer — HuggingFace API Integration
+   ═══════════════════════════════════════════════════════════════════ */
+
+.dataset-explorer-section {
+    margin-top: 24px;
+}
+
+.dataset-explorer-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-glow);
+    backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle animated gradient border on top */
+.dataset-explorer-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple), var(--accent-cyan), var(--accent-green));
+    background-size: 300% 100%;
+    animation: datasetGradientShift 6s ease infinite;
+}
+
+@keyframes datasetGradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.dataset-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dataset-total-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 16px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dataset-source-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dataset-source-info a {
+    color: var(--accent-cyan);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.dataset-source-info a:hover {
+    color: #67e8f9;
+    text-decoration: underline;
+}
+
+/* Loading State */
+.dataset-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.ds-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid var(--accent-blue);
+    border-radius: 50%;
+    animation: dsSpin 0.8s linear infinite;
+}
+
+@keyframes dsSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.dataset-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 28px 20px;
+    color: #fca5a5;
+    font-size: 13px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-md);
+}
+
+/* Dataset Cards Grid */
+.dataset-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .dataset-cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Individual Dataset Entry Card */
+.ds-entry-card {
+    background: linear-gradient(160deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.ds-entry-card:hover {
+    border-color: rgba(59, 130, 246, 0.35);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.1);
+}
+
+/* Glow accent line on hover */
+.ds-entry-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.ds-entry-card:hover::after {
+    opacity: 1;
+}
+
+/* Card Row Index Badge */
+.ds-row-idx {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+/* Sign Word Title */
+.ds-word-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    text-transform: capitalize;
+}
+
+/* Dataset Source Label */
+.ds-source-label {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 14px;
+}
+
+.ds-source-label.src-cislr {
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    color: #22d3ee;
+}
+
+.ds-source-label.src-include {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+}
+
+.ds-source-label.src-default {
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #a78bfa;
+}
+
+/* Metadata rows inside each card */
+.ds-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    margin-bottom: 12px;
+}
+
+.ds-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.ds-meta-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.ds-meta-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e2e8f0;
+    font-family: 'Space Grotesk', monospace;
+}
+
+/* Quality Score Badge */
+.ds-quality-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+    margin-top: 8px;
+}
+
+.ds-quality-badge.quality-high {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #34d399;
+}
+
+.ds-quality-badge.quality-medium {
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+}
+
+.ds-quality-badge.quality-low {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #f87171;
+}
+
+/* Status badges (unique / accepted etc.) */
+.ds-status-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.ds-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+}
+
+.ds-pill.pill-unique {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #6ee7b7;
+}
+
+.ds-pill.pill-accepted {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+}
+
+/* Video link */
+.ds-video-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--accent-cyan);
+    text-decoration: none;
+    margin-top: 10px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(6, 182, 212, 0.08);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    transition: all 0.2s;
+}
+
+.ds-video-link:hover {
+    background: rgba(6, 182, 212, 0.18);
+    color: #67e8f9;
+}
+
+/* Pagination Controls */
+.dataset-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.dataset-pagination .btn-sm:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Refresh button spin animation */
+.btn-spin i {
+    animation: dsSpin 0.6s linear infinite;
+}
+
+/* Entrance animation for dataset cards */
+@keyframes dsCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.ds-entry-card {
+    animation: dsCardIn 0.35s ease forwards;
+}
+
+.ds-entry-card:nth-child(2) { animation-delay: 0.05s; }
+.ds-entry-card:nth-child(3) { animation-delay: 0.10s; }
+.ds-entry-card:nth-child(4) { animation-delay: 0.15s; }
+.ds-entry-card:nth-child(5) { animation-delay: 0.20s; }
+

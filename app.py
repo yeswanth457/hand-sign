@@ -54,6 +54,8 @@ sentence_processor = LocalSentenceProcessor(current_language="english")
 # Real-time rolling 25-frame gesture token buffer
 realtime_token_buffer = deque(maxlen=25)
 frame_counter = 0
+no_hand_consecutive_count = 0  # Missed-frame tolerance counter
+NO_HAND_CLEAR_THRESHOLD = 3   # Require 3 consecutive no-hand frames before clearing buffer
 
 
 # Pydantic Schemas
@@ -77,6 +79,17 @@ class LanguageToggleInput(BaseModel):
 
 class SimulateSignInput(BaseModel):
     word: str
+
+
+class TokenInput(BaseModel):
+    """Input for browser-side MediaPipe: pre-computed 6D token + optional pose data for motion energy."""
+    token: Optional[List[float]] = None
+    frame_id: Optional[int] = 0
+    timestamp_ms: Optional[float] = None
+    pose: Optional[Dict[str, Any]] = None
+    hand_center: Optional[List[float]] = None
+    shoulder_center: Optional[List[float]] = None
+    has_hand: Optional[bool] = True
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -211,11 +224,11 @@ async def process_frame_image(data: FrameImageInput):
     if token is not None and len(token) == 6:
         realtime_token_buffer.append(token)
 
-    # Evaluate PyTorch CNN-GRU Model on 25-Frame Rolling Sequence
-    if len(realtime_token_buffer) == 25:
+    # Evaluate PyTorch CNN-GRU Model on Rolling Sequence (min 10 frames)
+    if len(realtime_token_buffer) >= 10:
         seq_tokens = list(realtime_token_buffer)
         prediction = model_engine.predict_sequence(seq_tokens)
-        buffer_status = "25/25 (Ready)"
+        buffer_status = f"{len(realtime_token_buffer)}/25 (Ready)"
     else:
         prediction = {
             "word": "BUFFERING",
@@ -257,6 +270,143 @@ async def process_frame_image(data: FrameImageInput):
     }
 
 
+@app.post("/api/process_token")
+async def process_token(data: TokenInput):
+    """
+    Accepts a pre-computed 6D gesture token from browser-side MediaPipe.
+    Feeds into the 25-frame rolling buffer and runs CNN-GRU inference.
+    """
+    global frame_counter
+    t_start = time.perf_counter()
+    frame_counter += 1
+    fid = data.frame_id or frame_counter
+
+    # Check if hand is missing / no-hand reset with missed-frame tolerance
+    global no_hand_consecutive_count
+    if not data.has_hand:
+        no_hand_consecutive_count += 1
+        if no_hand_consecutive_count >= NO_HAND_CLEAR_THRESHOLD:
+            # Only clear buffer after 3 consecutive no-hand frames (prevents single-frame flicker)
+            realtime_token_buffer.clear()
+            early_decision_engine.reset()
+            no_hand_consecutive_count = 0
+        proc_time_ms = (time.perf_counter() - t_start) * 1000
+        return {
+            "frame_id": fid,
+            "motion_energy": 0.0,
+            "threshold": 0.015,
+            "token": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "buffer_status": f"{len(realtime_token_buffer)}/25",
+            "processing_time_ms": round(proc_time_ms, 2),
+            "prediction": {
+                "word": "--",
+                "class_id": -1,
+                "confidence": 0.0
+            },
+            "early_decision": {
+                "state": "NO_HAND",
+                "accepted": False,
+                "cooldown_remaining": 0,
+                "last_accepted": early_decision_engine.last_accepted_sign or "--",
+                "sustained_count": 0,
+                "sustained_target": 3
+            },
+            "translation": sentence_processor.get_current_translation()
+        }
+
+    token = data.token
+    if token is None or len(token) != 6:
+        return {"error": "Token must be a 6-element float array"}
+
+    token_arr = np.array(token, dtype=np.float32)
+
+    # Build minimal landmark_data for motion energy calculation
+    hand_c = tuple(data.hand_center) if data.hand_center else (token[0], token[1])
+    pose_dict = data.pose or {}
+    if not pose_dict:
+        # Fallback to hand center for motion energy when pose is bypassed
+        pose_dict = {"HAND": (hand_c[0], hand_c[1], 0.0)}
+
+    landmark_data = {
+        "pose": pose_dict,
+        "hands": [],
+        "hand_center": hand_c,
+        "shoulder_center": tuple(data.shoulder_center) if data.shoulder_center else (0.5, 0.35),
+    }
+
+    # Motion Energy & Frame Selection
+    sel_res = frame_selector.process_frame(fid, landmark_data)
+    motion_energy = sel_res["motion_energy"]
+    threshold = sel_res["threshold"]
+    is_selected = sel_res.get("is_selected", False)
+
+    # Add token to 25-frame rolling buffer only when active motion is detected (matches dataset preprocessing)
+    no_hand_consecutive_count = 0
+    if is_selected or motion_energy > 0.015:
+        realtime_token_buffer.append(token_arr)
+
+    # CNN-GRU inference when buffer has min 10 frames (padded to 25)
+    if len(realtime_token_buffer) >= 10:
+        seq_tokens = list(realtime_token_buffer)
+        prediction = model_engine.predict_sequence(seq_tokens)
+        buffer_status = f"{len(realtime_token_buffer)}/25 (Ready)"
+    else:
+        prediction = {
+            "word": "BUFFERING",
+            "class_id": -1,
+            "confidence": 0.0,
+            "probabilities": {}
+        }
+        buffer_status = f"{len(realtime_token_buffer)}/25"
+
+    # Early Decision & Sentence Processor
+    decision_res = early_decision_engine.process_prediction(prediction, motion_energy)
+
+    # Add gesture token to sentence builder ONLY when early decision engine accepts
+    if decision_res["accepted"] and decision_res["word"]:
+        translation_res = sentence_processor.add_sign_token(decision_res["word"])
+    else:
+        translation_res = sentence_processor.get_current_translation()
+
+    proc_time_ms = (time.perf_counter() - t_start) * 1000
+
+    # Detailed Stage Debug Logging (Stages 1-15)
+    if fid % 15 == 0 or decision_res["accepted"]:
+        print(
+            f"\n[PIPELINE RECOGNITION DEBUG]\n"
+            f"Stage 1-2 (Frame & Landmark): Frame ID={fid} | Hand Detected=YES (21 LMs)\n"
+            f"Stage 7 (6D Token): {np.round(token_arr, 4).tolist()}\n"
+            f"Stage 6 (Temporal Buffer): Size={len(realtime_token_buffer)}/25 | Status={buffer_status}\n"
+            f"Stage 8-9 (Tensor Shape): (1, 25, 6)\n"
+            f"Stage 10-12 (Inference & Softmax): Word='{prediction['word']}' (ID={prediction['class_id']}) | Conf={prediction['confidence']*100:.1f}%\n"
+            f"Stage 13 (Gesture Locking): State={decision_res['state']} | Accepted={decision_res['accepted']} | Accepted Word={decision_res['word']}\n"
+            f"Stage 14-15 (Sentence Translation): '{translation_res.get('display_text', '')}'"
+        )
+
+    return {
+        "frame_id": fid,
+        "motion_energy": round(motion_energy, 4),
+        "threshold": round(threshold, 4),
+        "token": [round(float(v), 4) for v in token_arr],
+        "buffer_status": buffer_status,
+        "processing_time_ms": round(proc_time_ms, 2),
+        "prediction": {
+            "word": prediction["word"],
+            "class_id": prediction["class_id"],
+            "confidence": round(prediction["confidence"], 4)
+        },
+        "early_decision": {
+            "state": decision_res["state"],
+            "accepted": decision_res["accepted"],
+            "cooldown_remaining": decision_res["cooldown_remaining"],
+            "last_accepted": decision_res["last_accepted_sign"],
+            "sustained_count": decision_res.get("sustained_count", 0),
+            "sustained_target": decision_res.get("sustained_target", 3)
+        },
+        "translation": translation_res
+    }
+
+
 @app.post("/api/toggle_language")
 async def toggle_language(data: LanguageToggleInput):
     """Toggles translation target language ('english' or 'tamil')."""
@@ -267,10 +417,12 @@ async def toggle_language(data: LanguageToggleInput):
 
 @app.post("/api/clear_sentence")
 async def clear_sentence():
-    """Resets word buffer and clear current sentence."""
+    """Resets word buffer, token buffer, and all pipeline state."""
     trans = sentence_processor.clear()
     early_decision_engine.reset()
     frame_selector.clear_buffer()
+    realtime_token_buffer.clear()
+    gesture_tokenizer.reset()
     return {"status": "success", "translation": trans}
 
 
@@ -340,6 +492,74 @@ async def train():
     return {
         "dataset_stats": stats,
         "training_result": train_res
+    }
+
+
+@app.get("/api/dataset_browser")
+async def dataset_browser(offset: int = 0, length: int = 5):
+    """
+    Proxy endpoint for the HuggingFace Datasets Server API.
+    Fetches rows from the vidit031/isl-isolated-40words dataset.
+    Acts as a CORS-safe bridge between the browser frontend and HuggingFace.
+    """
+    import httpx
+
+    if length < 1:
+        length = 1
+    if length > 100:
+        length = 100
+    if offset < 0:
+        offset = 0
+
+    hf_url = (
+        "https://datasets-server.huggingface.co/rows"
+        "?dataset=vidit031%2Fisl-isolated-40words"
+        "&config=default&split=train"
+        f"&offset={offset}&length={length}"
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(hf_url)
+            resp.raise_for_status()
+            raw = resp.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"HuggingFace API error: {e.response.text[:300]}")
+    except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException):
+        raise HTTPException(status_code=504, detail="HuggingFace API request timed out (5s limit). Please check your internet connection or try again later.")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=502, detail=f"Failed to reach HuggingFace API: {str(e)}")
+
+    # Extract and clean rows for the frontend
+    rows = []
+    for item in raw.get("rows", []):
+        r = item.get("row", {})
+        rows.append({
+            "row_idx": item.get("row_idx", 0),
+            "word": r.get("word", ""),
+            "normalized_word": r.get("normalized_word", ""),
+            "dataset": r.get("dataset", ""),
+            "original_label": r.get("original_label", ""),
+            "video_path": r.get("video_path", ""),
+            "original_filename": r.get("original_filename", ""),
+            "signer": r.get("signer", ""),
+            "fps": r.get("fps"),
+            "resolution": r.get("resolution", ""),
+            "duration": r.get("duration"),
+            "license": r.get("license", ""),
+            "quality_score": r.get("quality_score"),
+            "duplicate_status": r.get("duplicate_status", ""),
+            "review_status": r.get("review_status", ""),
+            "repository": r.get("repository", ""),
+            "download_url": r.get("download_url", ""),
+        })
+
+    return {
+        "rows": rows,
+        "total": raw.get("num_rows_total", 0),
+        "offset": offset,
+        "length": length,
+        "has_more": (offset + length) < raw.get("num_rows_total", 0),
     }
 
 

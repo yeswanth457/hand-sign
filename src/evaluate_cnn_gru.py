@@ -17,7 +17,8 @@ import numpy as np
 import torch
 
 from config import (
-    MODEL_DIR, ID_TO_WORD, WORD_TO_ID
+    MODEL_DIR, ID_TO_WORD, WORD_TO_ID,
+    ACTIVE_VOCAB_SIZE, ACTIVE_ID_TO_WORD
 )
 from src.cnn_gru_model import ISL_CNN_GRU_Model, CNN_GRU_MODEL_PATH
 
@@ -48,7 +49,7 @@ def evaluate_cnn_gru_model(
 
     # Load Model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = ISL_CNN_GRU_Model().to(device)
+    model = ISL_CNN_GRU_Model(num_classes=ACTIVE_VOCAB_SIZE).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
@@ -96,7 +97,7 @@ def evaluate_cnn_gru_model(
     per_class_report = {}
 
     for label_id in unique_labels:
-        cls_name = ID_TO_WORD.get(label_id, f"class_{label_id}")
+        cls_name = ACTIVE_ID_TO_WORD.get(label_id, ID_TO_WORD.get(label_id, f"class_{label_id}"))
         mask = (y_test == label_id)
         if np.sum(mask) > 0:
             cls_acc = float((preds[mask] == label_id).mean())

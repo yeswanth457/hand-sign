@@ -22,7 +22,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import (
     TOKEN_DIM, MAX_SEQ_LEN, VOCAB_SIZE, MODEL_DIR,
-    ISL_VOCABULARY, ID_TO_WORD, WORD_TO_ID
+    ISL_VOCABULARY, ID_TO_WORD, WORD_TO_ID,
+    ISL_43_VOCABULARY, VOCAB_43_SIZE, ID_TO_WORD_43, WORD_TO_ID_43,
+    ACTIVE_VOCABULARY, ACTIVE_VOCAB_SIZE, ACTIVE_ID_TO_WORD, ACTIVE_WORD_TO_ID
 )
 
 CNN_GRU_MODEL_PATH = os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
@@ -115,38 +117,68 @@ class CNNGRUInferenceEngine:
         self.model_path = model_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.model = ISL_CNN_GRU_Model(
-            token_dim=TOKEN_DIM,
-            cnn_channels=(32, 64),
-            gru_hidden_dim=128,
-            gru_num_layers=2,
-            num_classes=VOCAB_SIZE
-        ).to(self.device)
-
+        self.num_classes = VOCAB_43_SIZE
+        self.id_to_word = ID_TO_WORD_43
         self.model_loaded = False
+
         if os.path.exists(self.model_path):
             try:
                 state_dict = torch.load(self.model_path, map_location=self.device)
+                # Inspect checkpoint classifier shape to match trained class count (e.g. 3 classes)
+                if isinstance(state_dict, dict) and "classifier.weight" in state_dict:
+                    ckpt_classes = state_dict["classifier.weight"].shape[0]
+                    self.num_classes = ckpt_classes
+                    self.id_to_word = {i: ISL_VOCABULARY[i] for i in range(min(ckpt_classes, len(ISL_VOCABULARY)))}
+
+                self.model = ISL_CNN_GRU_Model(
+                    token_dim=TOKEN_DIM,
+                    cnn_channels=(32, 64),
+                    gru_hidden_dim=128,
+                    gru_num_layers=2,
+                    num_classes=self.num_classes
+                ).to(self.device)
+
                 self.model.load_state_dict(state_dict)
                 self.model.eval()
                 self.model_loaded = True
-                print(f"[CNNGRUInferenceEngine] Loaded CNN-GRU weights from {self.model_path}")
+                print(f"[CNNGRUInferenceEngine] Loaded CNN-GRU weights from {self.model_path} ({self.num_classes} classes)")
             except Exception as e:
                 print(f"[CNNGRUInferenceEngine] Warning: Failed to load weights: {e}")
+                self.model = ISL_CNN_GRU_Model(
+                    token_dim=TOKEN_DIM,
+                    cnn_channels=(32, 64),
+                    gru_hidden_dim=128,
+                    gru_num_layers=2,
+                    num_classes=self.num_classes
+                ).to(self.device)
                 self.model.eval()
         else:
             print(f"[CNNGRUInferenceEngine] Checkpoint not found at {self.model_path}. Using initial weights.")
+            self.model = ISL_CNN_GRU_Model(
+                token_dim=TOKEN_DIM,
+                cnn_channels=(32, 64),
+                gru_hidden_dim=128,
+                gru_num_layers=2,
+                num_classes=self.num_classes
+            ).to(self.device)
             self.model.eval()
 
-    def predict_sequence(self, token_sequence, max_seq_len=MAX_SEQ_LEN):
+    def predict_sequence(self, token_sequence, max_seq_len=25):
         """
         Predict ISL Sign from gesture token sequence [T x 6].
+        
+        NOTE: max_seq_len defaults to 25 (NOT config.MAX_SEQ_LEN=30) because the
+        training data has shape (N, 25, 6). Padding to 30 creates a distribution
+        mismatch (5 trailing zero frames) that degrades predictions.
+        
+        Uses VOCAB_43_SIZE (43 classes) for comprehensive ISL recognition.
+        
         Returns: (predicted_class_id, class_name, confidence, probabilities_dict)
         """
         if token_sequence is None or len(token_sequence) == 0:
             return {
                 "class_id": 0,
-                "word": ID_TO_WORD.get(0, "unknown"),
+                "word": self.id_to_word.get(0, "unknown"),
                 "confidence": 0.0,
                 "probabilities": {}
             }
@@ -154,7 +186,7 @@ class CNNGRUInferenceEngine:
         tokens = np.array(token_sequence, dtype=np.float32)
         seq_len = len(tokens)
 
-        # Pad or truncate to MAX_SEQ_LEN
+        # Pad or truncate to max_seq_len (25 to match training)
         if seq_len < max_seq_len:
             padded = np.zeros((max_seq_len, TOKEN_DIM), dtype=np.float32)
             padded[:seq_len] = tokens
@@ -169,11 +201,11 @@ class CNNGRUInferenceEngine:
 
         pred_id = int(np.argmax(probs))
         confidence = float(probs[pred_id])
-        class_name = ID_TO_WORD.get(pred_id, f"class_{pred_id}")
+        class_name = self.id_to_word.get(pred_id, f"class_{pred_id}")
 
         top_probs = {
-            ID_TO_WORD.get(idx, f"class_{idx}"): round(float(probs[idx]), 4)
-            for idx in np.argsort(probs)[::-1][:5]
+            self.id_to_word.get(idx, f"class_{idx}"): round(float(probs[idx]), 4)
+            for idx in np.argsort(probs)[::-1][:min(5, self.num_classes)]
         }
 
         return {

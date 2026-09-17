@@ -9,6 +9,12 @@ from config import CONFIDENCE_THRESHOLD, SUSTAINED_FRAMES, COOLDOWN_FRAMES, IDLE
 
 
 class State:
+    NO_HAND = "NO_HAND"
+    READY = "READY"
+    COLLECTING = "COLLECTING"
+    PREDICTING = "PREDICTING"
+    ACCEPTED = "ACCEPTED"
+    LOCKED = "LOCKED"
     IDLE = "IDLE"
     SIGNING = "SIGNING"
     CONFIRMED = "CONFIRMED"
@@ -26,7 +32,7 @@ class EarlyDecisionEngine:
         self.sustained_frames = sustained_frames
         self.cooldown_frames = cooldown_frames
 
-        self.current_state = State.IDLE
+        self.current_state = State.NO_HAND
         self.prediction_window = deque(maxlen=sustained_frames)
         self.cooldown_counter = 0
         self.last_accepted_sign = None
@@ -36,51 +42,50 @@ class EarlyDecisionEngine:
         Processes real-time frame model prediction dict:
         {"word": str, "confidence": float, "class_id": int}
         and motion_energy float.
-
-        Returns dict with status:
-        - accepted: bool
-        - word: str or None
-        - state: current State
-        - confidence: float
-        - cooldown_remaining: int
         """
         word = prediction_res.get("word")
         confidence = prediction_res.get("confidence", 0.0)
 
-        # Update prediction rolling window
-        self.prediction_window.append((word, confidence))
+        # Only accumulate valid predictions into window (ignore BUFFERING and empty predictions)
+        if word and word != "BUFFERING" and word != "--" and confidence > 0.0:
+            self.prediction_window.append((word, confidence))
 
         accepted_word = None
         is_accepted = False
 
-        # State Machine Transitions
-        if self.current_state == State.COOLDOWN:
+        # 1. Automatic state transition from initial/idle states when valid predictions arrive
+        if self.current_state in [State.NO_HAND, State.READY, State.COLLECTING, State.PREDICTING]:
+            if word and word != "BUFFERING" and word != "--" and confidence > 0.0:
+                self.current_state = State.SIGNING if motion_energy > IDLE_ENERGY_THRESHOLD else State.IDLE
+
+        # 2. State Machine Transitions & Lock/Cooldown Handling
+        if self.current_state == State.LOCKED:
+            # Release LOCKED state when hand rests (motion < 0.035) or hand leaves frame (confidence == 0)
+            if motion_energy < 0.035 or confidence == 0.0:
+                self.current_state = State.IDLE
+                self.prediction_window.clear()
+
+        elif self.current_state == State.COOLDOWN:
             self.cooldown_counter -= 1
-            # Reset to IDLE if cooldown completed AND motion drops to idle level
-            if self.cooldown_counter <= 0 or motion_energy < IDLE_ENERGY_THRESHOLD:
+            if self.cooldown_counter <= 0 or motion_energy < 0.035:
                 self.current_state = State.IDLE
                 self.cooldown_counter = 0
                 self.prediction_window.clear()
 
-        elif self.current_state in [State.IDLE, State.SIGNING]:
-            # Evaluate if prediction is sustained with high confidence
-            if len(self.prediction_window) >= self.sustained_frames:
+        # 3. Evaluate prediction acceptance (instant on high confidence >= threshold)
+        if self.current_state in [State.IDLE, State.SIGNING, State.READY, State.COLLECTING, State.PREDICTING]:
+            if len(self.prediction_window) >= 1:
                 words = [w for w, c in self.prediction_window]
                 confidences = [c for w, c in self.prediction_window]
 
-                # All N frames predict the exact same word with high confidence
-                if len(set(words)) == 1 and all(c >= self.confidence_threshold for c in confidences):
-                    candidate_word = words[0]
+                # High confidence prediction (>= threshold) accepts immediately
+                if all(c >= self.confidence_threshold for c in confidences):
+                    candidate_word = words[-1]
                     
-                    # Accept sign if it's new or motion has reset
                     accepted_word = candidate_word
                     is_accepted = True
                     self.last_accepted_sign = candidate_word
-                    self.current_state = State.CONFIRMED
-                    
-                    # Transition immediately into COOLDOWN to prevent duplicates
-                    self.current_state = State.COOLDOWN
-                    self.cooldown_counter = self.cooldown_frames
+                    self.current_state = State.LOCKED
                     self.prediction_window.clear()
                 elif motion_energy > IDLE_ENERGY_THRESHOLD:
                     self.current_state = State.SIGNING
@@ -93,11 +98,12 @@ class EarlyDecisionEngine:
             "state": self.current_state,
             "confidence": confidence,
             "cooldown_remaining": self.cooldown_counter,
-            "last_accepted_sign": self.last_accepted_sign
+            "last_accepted_sign": self.last_accepted_sign,
+            "sustained_count": len(self.prediction_window),
+            "sustained_target": self.sustained_frames
         }
 
     def reset(self):
-        self.current_state = State.IDLE
+        self.current_state = State.NO_HAND
         self.prediction_window.clear()
         self.cooldown_counter = 0
-        self.last_accepted_sign = None

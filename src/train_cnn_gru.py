@@ -21,7 +21,8 @@ from torch.utils.data import Dataset, DataLoader
 
 from config import (
     METADATA_CSV_PATH, TOKENS_DIR, MODEL_DIR,
-    TOKEN_DIM, MAX_SEQ_LEN, ISL_VOCABULARY, VOCAB_SIZE, WORD_TO_ID
+    TOKEN_DIM, MAX_SEQ_LEN, ISL_VOCABULARY, VOCAB_SIZE, WORD_TO_ID,
+    ACTIVE_VOCABULARY, ACTIVE_VOCAB_SIZE
 )
 from src.cnn_gru_model import ISL_CNN_GRU_Model, CNN_GRU_MODEL_PATH
 from src.train_real_model import RealISLTokenDataset, load_real_token_dataset
@@ -66,13 +67,13 @@ def train_cnn_gru_model(epochs=50, lr=0.002, model_path=CNN_GRU_MODEL_PATH):
         val_dataset = torch.utils.data.TensorDataset(torch.tensor(X_val), torch.tensor(y_val))
         val_loader = DataLoader(val_dataset, batch_size=min(4, max(1, total_val)), shuffle=False)
 
-    # Initialize ISL_CNN_GRU_Model
+    # Initialize ISL_CNN_GRU_Model with ACTIVE class count (3)
     model = ISL_CNN_GRU_Model(
         token_dim=TOKEN_DIM,
         cnn_channels=(32, 64),
         gru_hidden_dim=128,
         gru_num_layers=2,
-        num_classes=VOCAB_SIZE,
+        num_classes=ACTIVE_VOCAB_SIZE,
         dropout=0.1
     )
 
