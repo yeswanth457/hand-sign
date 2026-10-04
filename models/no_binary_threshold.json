@@ -1,0 +1,90 @@
+{
+  "selected_threshold": 0.5,
+  "sequence_length": 25,
+  "token_dimension": 6,
+  "positive_class": "NO",
+  "negative_class": "NOT_NO",
+  "validation_f1": 0.5714285714285714,
+  "threshold_evaluations": [
+    {
+      "threshold": 0.5,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.55,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.6,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.65,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.7,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.75,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.8,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.85,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.9,
+      "no_precision": 0.5,
+      "no_recall": 0.6667,
+      "false_positives": 2,
+      "false_negatives": 1,
+      "f1": 0.5714
+    },
+    {
+      "threshold": 0.95,
+      "no_precision": 0.5,
+      "no_recall": 0.3333,
+      "false_positives": 1,
+      "false_negatives": 2,
+      "f1": 0.4
+    }
+  ]
+}

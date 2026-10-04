@@ -1,0 +1,124 @@
+==================================================
+LIVE NO TOKEN DIAGNOSTIC REPORT
+==================================================
+
+1. Offline NO Feature Statistics (23 Recordings):
+--------------------------------------------------
+      mean     std     min     P05     P25  median     P75     P95     max
+Hx  0.3371  0.1072  0.1049  0.2070  0.2735  0.3254  0.3690  0.5379  0.7843
+Hy  0.9990  0.4232  0.4133  0.4953  0.5885  0.8583  1.4262  1.6267  1.7254
+Mx  0.0002  0.0199 -0.3378 -0.0157 -0.0020 -0.0000  0.0021  0.0174  0.1208
+My  0.0018  0.0563 -0.3547 -0.0359 -0.0026  0.0002  0.0050  0.0473  0.5571
+Rx -0.2044  0.0995 -0.4337 -0.3244 -0.2531 -0.2229 -0.1786 -0.0336  0.2393
+Ry  0.2742  0.4977 -0.4986 -0.4599 -0.1690  0.1836  0.7874  0.8975  0.9549
+
+2. Offline NOT_NO Feature Statistics (40 Recordings):
+--------------------------------------------------
+      mean     std     min     P05     P25  median     P75     P95     max
+Hx  0.3852  0.1412 -0.0258  0.1860  0.2646  0.3872  0.4818  0.6009  0.7517
+Hy  0.8678  0.3262  0.2016  0.3811  0.5535  0.9033  1.1507  1.3881  1.6133
+Mx -0.0003  0.0238 -0.2253 -0.0149 -0.0017  0.0000  0.0015  0.0130  0.3073
+My -0.0010  0.0578 -0.9796 -0.0455 -0.0020  0.0000  0.0033  0.0378  0.5947
+Rx -0.1179  0.1494 -0.5318 -0.3272 -0.2291 -0.1216 -0.0209  0.1213  0.3056
+Ry  0.3045  0.3133 -0.3708 -0.1766 -0.0053  0.4398  0.5515  0.6700  0.9619
+
+3. Training NO Split Statistics (16 Recordings):
+--------------------------------------------------
+      mean     std     min     P05     P25  median     P75     P95     max
+Hx  0.3096  0.0774  0.1049  0.2048  0.2614  0.3031  0.3464  0.4122  0.7063
+Hy  1.1122  0.4198  0.4133  0.4795  0.6402  1.2814  1.4568  1.6491  1.7254
+Mx -0.0000  0.0226 -0.3378 -0.0164 -0.0019 -0.0000  0.0023  0.0160  0.1208
+My  0.0015  0.0608 -0.3547 -0.0499 -0.0037  0.0004  0.0075  0.0668  0.5571
+Rx -0.2195  0.0772 -0.4337 -0.3145 -0.2578 -0.2294 -0.1912 -0.1110  0.2393
+Ry  0.4687  0.4081 -0.2259 -0.1551 -0.0095  0.7035  0.8105  0.9115  0.9549
+
+4. Validation NO Split Statistics (3 Recordings):
+--------------------------------------------------
+      mean     std     min     P05     P25  median     P75     P95     max
+Hx  0.3528  0.0220  0.2716  0.3044  0.3428  0.3578  0.3686  0.3750  0.3963
+Hy  0.8107  0.4019  0.4576  0.5064  0.5232  0.6116  1.4416  1.4858  1.5282
+Mx  0.0001  0.0032 -0.0075 -0.0039 -0.0005 -0.0001  0.0004  0.0044  0.0153
+My -0.0004  0.0149 -0.1031 -0.0043 -0.0006  0.0001  0.0006  0.0034  0.0684
+Rx -0.2083  0.0321 -0.2665 -0.2502 -0.2389 -0.1965 -0.1882 -0.1590 -0.1341
+Ry -0.0495  0.5259 -0.4810 -0.4753 -0.4602 -0.3158  0.7757  0.8169  0.8615
+
+5. Test NO Split Statistics (4 Recordings):
+--------------------------------------------------
+      mean     std     min     P05     P25  median     P75     P95     max
+Hx  0.4351  0.1699  0.1707  0.2077  0.3309  0.3986  0.5217  0.7688  0.7843
+Hy  0.6872  0.1688  0.5035  0.5162  0.5694  0.7223  0.7635  0.7980  1.6610
+Mx  0.0014  0.0152 -0.0330 -0.0158 -0.0056 -0.0004  0.0042  0.0247  0.0838
+My  0.0047  0.0569 -0.1052 -0.0238 -0.0028  0.0004  0.0032  0.0244  0.5435
+Rx -0.1410  0.1654 -0.4093 -0.3741 -0.2562 -0.1745 -0.0530  0.1677  0.1967
+Ry -0.2611  0.1852 -0.4986 -0.4848 -0.4075 -0.2277 -0.1716 -0.0356  0.6934
+
+6. Live Captured Sequences Statistics:
+--------------------------------------------------
+      mean     std     min     P05     P25  median     P75     P95     max
+Hx  0.7560  0.0173  0.7170  0.7178  0.7541  0.7599  0.7618  0.7786  0.7913
+Hy  0.8160  0.0252  0.7621  0.7771  0.7972  0.8079  0.8425  0.8525  0.8593
+Mx -0.0027  0.0054 -0.0211 -0.0149 -0.0040 -0.0008  0.0003  0.0031  0.0034
+My  0.0031  0.0054 -0.0104 -0.0063 -0.0000  0.0019  0.0068  0.0137  0.0153
+Rx  0.3518  0.0183  0.3121  0.3130  0.3477  0.3552  0.3583  0.3769  0.3908
+Ry  0.1618  0.0269  0.1072  0.1235  0.1412  0.1518  0.1881  0.2029  0.2091
+
+7. Model Probabilities on Saved Live Sequences:
+--------------------------------------------------
+LIVE #1 | NO Probability: 0.0001 | Prediction: NOT_NO | Finite: True
+LIVE #2 | NO Probability: 0.0001 | Prediction: NOT_NO | Finite: True
+LIVE #3 | NO Probability: 0.0001 | Prediction: NOT_NO | Finite: True
+LIVE #4 | NO Probability: 0.0001 | Prediction: NOT_NO | Finite: True
+LIVE #5 | NO Probability: 0.0001 | Prediction: NOT_NO | Finite: True
+
+8. Feature-by-Feature Distance (Live vs Offline NO):
+--------------------------------------------------
+Feature Hx: Offline Mean=0.3371 (std=0.1072) | Live Mean=0.7560 | Standardized Distance = 3.9094 std-devs
+Feature Hy: Offline Mean=0.9990 (std=0.4232) | Live Mean=0.8160 | Standardized Distance = 0.4323 std-devs
+Feature Mx: Offline Mean=0.0002 (std=0.0199) | Live Mean=-0.0027 | Standardized Distance = 0.1480 std-devs
+Feature My: Offline Mean=0.0018 (std=0.0563) | Live Mean=0.0031 | Standardized Distance = 0.0224 std-devs
+Feature Rx: Offline Mean=-0.2044 (std=0.0995) | Live Mean=0.3518 | Standardized Distance = 5.5914 std-devs
+Feature Ry: Offline Mean=0.2742 (std=0.4977) | Live Mean=0.1618 | Standardized Distance = 0.2259 std-devs
+
+Euclidean Distance to Offline NO Training Centroid: 6.8416
+
+9. 30-Second Live Hand Detection Audit:
+--------------------------------------------------
+Total webcam frames:    202
+Frames with hand:       112 (55.4%)
+Frames without hand:    90 (44.6%)
+Complete 25-seq count:  88
+Incomplete seq count:   24
+
+10. Exact Identified Mismatch:
+--------------------------------------------------
+
+CRITICAL BUG & MISMATCH IDENTIFICATION:
+
+1. IMAGE MIRRORING DIFFERENCE (Hx and Rx Inversion):
+   - Live Webcam Test executed `frame = cv2.flip(frame, 1)` BEFORE passing image to MediaPipe.
+   - Horizontal flipping mirrors x-coordinates: Hx_flipped = 1.0 - Hx_original.
+   - For a right-hand sign performed in center/left frame:
+     - In raw un-flipped video (training set), hand position Hx ~ 0.33.
+     - In live webcam flipped video, hand position Hx ~ 0.67 (1.0 - 0.33).
+   - This shifts Rx (Hx - Sx) from -0.20 to +0.17!
+   - Because 6D tokens [Hx, Hy, Mx, My, Rx, Ry] depend heavily on spatial position, mirroring the image flips Hx and Rx into a non-existent region of the NO feature space, resulting in NO probability = 0.0000!
+
+2. PREVIOUS HAND CENTER RESET & MOTION VECTOR DELTA (Mx, My):
+   - In GestureTokenizer, `tokenize_frame()` calculates velocity:
+     Mx = Hx - prev_hand_center[0]
+     My = Hy - prev_hand_center[1]
+   - In offline training, `tokenize_sequence()` resets `prev_hand_center = None` at the start of every sequence recording.
+   - In live streaming, if `tokenizer.reset()` is not called when hand disappears or between gestures, stale `prev_hand_center` values introduce large spurious motion spikes (Mx, My), driving model confidence down.
+
+3. SENSITIVITY TO ACTIVE HAND SELECTION & HAND CENTROID:
+   - Training NPZ files extracted landmarks from primary/active hand.
+   - If live streaming alternates between left and right hand or switches dominant hand index, Hx and Rx fluctuate violently.
+
+
+11. Recommended Next Fix:
+--------------------------------------------------
+- Align image flipping / coordinate orientation between webcam live stream and offline training dataset (or compute landmarks before cv2.flip / adjust Hx mirroring).
+- Call `tokenizer.reset()` whenever no hand is present to prevent motion vector contamination.
+- Ensure primary hand selection matches training pipeline.
+
+==================================================

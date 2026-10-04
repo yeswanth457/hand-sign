@@ -1,0 +1,84 @@
+{
+  "test_samples": 19,
+  "accuracy": 1.0,
+  "macro_precision": 1.0,
+  "macro_recall": 1.0,
+  "macro_f1": 1.0,
+  "weighted_f1": 1.0,
+  "ground_truth": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "predictions": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "per_class_report": {
+    "hello": {
+      "class_id": 0,
+      "samples": 6,
+      "accuracy": 1.0
+    },
+    "thank_you": {
+      "class_id": 1,
+      "samples": 6,
+      "accuracy": 1.0
+    },
+    "welcome": {
+      "class_id": 2,
+      "samples": 7,
+      "accuracy": 1.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      6,
+      0,
+      0
+    ],
+    [
+      0,
+      6,
+      0
+    ],
+    [
+      0,
+      0,
+      7
+    ]
+  ]
+}

@@ -1,0 +1,180 @@
+<USER_REQUEST>
+MASTER PROMPT — FIX ISL HAND-SIGN ACCURACY AND CONNECT REAL ISL DATA TO THE MODEL
+
+PROJECT:
+RT-STAMP-SLR — Real-Time Indian Sign Language Recognition
+
+IMPORTANT:
+The current hand-sign reference image/chart in the project is NOT ground truth.
+Do NOT train the model from the generated/reference image.
+Do NOT hard-code hand landmarks from the image.
+Do NOT create synthetic gestures.
+Do NOT invent sign definitions.
+
+The uploaded reference image contains these example labels:
+hello, thank you, welcome, goodbye, yes, no, please,
+sorry, help, stop, water, food, school, teacher,
+mother, father, sister, brother, friend, house, work.
+
+The project must use REAL ISL VIDEO DATA and REAL MediaPipe landmarks.
+
+==================================================
+1. EXACT TARGET CLASSES
+==================================================
+
+The final model must contain EXACTLY these 10 classes:
+
+1. hello
+2. goodbye
+3. sorry
+4. please
+5. yes
+6. no
+7. help
+8. stop
+9. water
+10. food
+
+DO NOT include:
+
+thank_you
+welcome
+school
+teacher
+mother
+father
+sister
+brother
+friend
+house
+work
+okay
+or any other class.
+
+Remove thank_you completely from:
+- config
+- class mapping
+- model output
+- UI
+- training labels
+- inference labels
+- translation mapping
+- test buttons
+- confusion matrix
+- dataset processing
+
+The model output dimension MUST be exactly 10.
+
+==================================================
+2. CRITICAL DATA RULE
+==================================================
+
+The generated/reference image is ONLY a visual reference.
+
+It must NOT be used as:
+- training data
+- landmark data
+- synthetic samples
+- validation samples
+- test samples
+- hard-coded prediction data
+
+Use actual ISL videos.
+
+For every target class, find real video samples from the selected ISL dataset/source.
+
+The preferred dataset is:
+
+vidit031/isl-isolated-40words
+
+Use only these 10 labels from that dataset:
+
+hello
+goodbye
+sorry
+please
+yes
+no
+help
+stop
+water
+
+<truncated 14663 bytes>
+ant scripts.
+
+Fix errors.
+
+Run tests.
+
+Retrain the model if required.
+
+Launch the application.
+
+Verify the webcam.
+
+Verify MediaPipe.
+
+Verify the model.
+
+Verify the UI.
+
+If something fails, diagnose the actual error and fix it.
+
+Do not replace errors with mock output.
+
+Do not create placeholder predictions.
+
+Do not create synthetic training data.
+
+Do not silently skip failed videos.
+
+==================================================
+27. FINAL ACCEPTANCE CRITERIA
+==================================================
+
+The task is complete ONLY when all of these are true:
+
+[ ] Exactly 10 classes
+[ ] No thank_you
+[ ] No welcome
+[ ] No synthetic data
+[ ] No hard-coded prediction
+[ ] No fake confidence
+[ ] Real MP4 videos
+[ ] Real MediaPipe landmarks
+[ ] Two-hand detection enabled
+[ ] Training and inference preprocessing match
+[ ] 6D tokens are real
+[ ] 25-frame temporal input works
+[ ] CNN-GRU has 10 outputs
+[ ] Dataset API works independently
+[ ] Dataset Explorer does not block webcam
+[ ] Webcam starts independently
+[ ] Camera displays real video
+[ ] MediaPipe processes real frames
+[ ] No stale prediction
+[ ] No fake 0.50/0/0/0/0/0 token
+[ ] Real validation metrics generated
+[ ] Real confusion matrix generated
+[ ] Real-time webcam test completed
+
+IMPORTANT FINAL RULE:
+
+If you cannot verify something from the actual project/data,
+DO NOT CLAIM IT WORKS.
+
+Report the exact failure and continue fixing it.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-09-25T23:40:56+05:30.
+
+The user's current state is as follows:
+Active Document: d:\isl-translator\src\download_hf_videos.py (LANGUAGE_PYTHON)
+Cursor is on line: 1
+Other open documents:
+- d:\isl-translator\src\cnn_gru_model.py (LANGUAGE_PYTHON)
+- d:\isl-translator\src\download_hf_videos.py (LANGUAGE_PYTHON)
+- d:\isl-translator\models\cnn_gru_evaluation_report.json (LANGUAGE_JSON)
+- d:\isl-translator\app.py (LANGUAGE_PYTHON)
+- d:\isl-translator\config.py (LANGUAGE_PYTHON)
+</ADDITIONAL_METADATA>

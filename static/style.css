@@ -263,6 +263,13 @@ body {
     box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
 }
 
+.decision-badge.state-cooldown {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.6);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
 /* Phase 3 Webcam Debug HUD */
 .webcam-debug-hud {
     background: rgba(15, 23, 42, 0.85);
@@ -621,6 +628,12 @@ body {
 .buffer-label {
     font-size: 12px;
     color: var(--text-muted);
+}
+
+.buffer-empty {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
 }
 
 .word-tag {

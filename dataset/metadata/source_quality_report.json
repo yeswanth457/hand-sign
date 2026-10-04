@@ -1,0 +1,100 @@
+{
+  "BridgeConn ISL Dictionary": {
+    "metrics": {
+      "mean_duration_sec": 2.87,
+      "min_duration_sec": 2.04,
+      "max_duration_sec": 4.24,
+      "total_clips": 7,
+      "classes_covered": 4
+    },
+    "resolutions": {
+      "1920x1080": 7
+    },
+    "domain_analysis": {
+      "background": "Plain studio white/gray background",
+      "camera_angle": "Fixed frontal waist-up tripod",
+      "hand_scale": "Medium studio framing",
+      "lighting": "Controlled indoor studio illumination",
+      "hand_position": "Waist to chest level",
+      "framing": "480x480 square aspect ratio",
+      "signer_appearance": "Single religious/educational dictionary presenter",
+      "motion_style": "Deliberate citation-form signs, sometimes including biblical terminology",
+      "hand_usage": "Formal sign presentation",
+      "webcam_alignment": "LOW (Square aspect ratio, dictionary pacing, small sample volume)"
+    }
+  },
+  "data.gov.in ISL Dictionary": {
+    "metrics": {
+      "mean_duration_sec": 4.31,
+      "min_duration_sec": 2.48,
+      "max_duration_sec": 14.27,
+      "total_clips": 13,
+      "classes_covered": 6
+    },
+    "resolutions": {
+      "1920x1080": 12,
+      "1280x720": 1
+    },
+    "domain_analysis": {
+      "background": "Uniform studio gray/blue backdrop (official government ISLRTC dictionary)",
+      "camera_angle": "Eye-level professional broadcast camera",
+      "hand_scale": "Medium-wide waist-up studio framing",
+      "lighting": "Uniform diffused shadow-free television studio lighting",
+      "hand_position": "Standardized central signing space",
+      "framing": "1920x1080 / 854x480 broadcast television framing",
+      "signer_appearance": "Single official ISLRTC presenter wearing high-contrast plain clothing",
+      "motion_style": "Slow, highly deliberate, textbook citation-form isolated gestures",
+      "hand_usage": "Clear formal gestures, exaggerated finger shapes",
+      "webcam_alignment": "LOW (Studio lighting and slow citation motion do not match fast home webcam signing)"
+    }
+  },
+  "HuggingFace (vidit031/isl-isolated-40words)": {
+    "metrics": {
+      "mean_duration_sec": 4.07,
+      "min_duration_sec": 1.73,
+      "max_duration_sec": 14.27,
+      "total_clips": 262,
+      "classes_covered": 17
+    },
+    "resolutions": {
+      "854x480": 226,
+      "480x480": 36
+    },
+    "domain_analysis": {
+      "background": "Varied: Studio chroma-key green/blue, university lab, classroom, YouTube video cuts",
+      "camera_angle": "Static studio tripod, wide-angle frontal, variable height",
+      "hand_scale": "Wide framing, hands fill < 10-15% of frame (smaller than laptop webcam)",
+      "lighting": "Studio 3-point lighting or uneven classroom ceiling lighting",
+      "hand_position": "Full torso visible from waist to above head (854x480 widescreen)",
+      "framing": "Wide upper-body shot, signers seated or standing far from camera",
+      "signer_appearance": "Multiple diverse native Deaf signers, instructors, and students across India",
+      "motion_style": "Formal citation-form dictionary or continuous sentence demonstrations",
+      "hand_usage": "Native bilingual ISL signers with rapid fluid wrist and finger articulation",
+      "webcam_alignment": "MEDIUM-LOW (Significant domain shift in distance, aspect ratio, and hand scale vs laptop webcam)"
+    }
+  },
+  "Local Webcam Recording": {
+    "metrics": {
+      "mean_duration_sec": 2.88,
+      "min_duration_sec": 2.3,
+      "max_duration_sec": 3.1,
+      "total_clips": 99,
+      "classes_covered": 6
+    },
+    "resolutions": {
+      "640x480": 99
+    },
+    "domain_analysis": {
+      "background": "Real indoor home/office environment with natural clutter",
+      "camera_angle": "Frontal eye-level laptop/webcam angle (~0-10 deg tilt)",
+      "hand_scale": "Medium to close-up webcam framing (hands fill ~15-25% frame)",
+      "lighting": "Ambient indoor desk lamp / room fluorescent lighting",
+      "hand_position": "Chest and head level, typical webcam field of view",
+      "framing": "Upper torso to head visible (standard 640x480 webcam)",
+      "signer_appearance": "Single student/developer signer (Signer 01)",
+      "motion_style": "Natural real-time continuous conversational signing",
+      "hand_usage": "Predominantly right-handed single-hand and symmetrical two-hand",
+      "webcam_alignment": "HIGH (Identical to live runtime setup, but lacks signer diversity)"
+    }
+  }
+}

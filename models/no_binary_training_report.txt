@@ -1,0 +1,49 @@
+==================================================
+NO BINARY CLASSIFIER TRAINING REPORT
+==================================================
+
+Dataset:
+NO samples:     23
+NOT_NO samples: 40
+
+Train:       44 (NO: 16, NOT_NO: 28)
+Validation:  9 (NO: 3, NOT_NO: 6)
+Test:        10 (NO: 4, NOT_NO: 6)
+
+Metrics (at default threshold 0.5):
+Accuracy:    0.6000 (60.0%)
+Precision:   0.5000
+Recall:      0.2500
+F1:          0.3333
+
+NO precision: 0.5000
+NO recall:    0.2500
+NO F1:        0.3333
+
+False positive rate: 0.1667 (16.7%)
+
+--------------------------------------------------
+Threshold analysis:
+--------------------------------------------------
+Threshold: 0.30 | NO Recall: 0.2500 | NO Precision: 0.5000 | F1: 0.3333 | FPR: 0.1667
+Threshold: 0.40 | NO Recall: 0.2500 | NO Precision: 0.5000 | F1: 0.3333 | FPR: 0.1667
+Threshold: 0.50 | NO Recall: 0.2500 | NO Precision: 0.5000 | F1: 0.3333 | FPR: 0.1667
+Threshold: 0.60 | NO Recall: 0.2500 | NO Precision: 0.5000 | F1: 0.3333 | FPR: 0.1667
+Threshold: 0.70 | NO Recall: 0.2500 | NO Precision: 0.5000 | F1: 0.3333 | FPR: 0.1667
+Threshold: 0.80 | NO Recall: 0.2500 | NO Precision: 0.5000 | F1: 0.3333 | FPR: 0.1667
+Threshold: 0.90 | NO Recall: 0.2500 | NO Precision: 0.5000 | F1: 0.3333 | FPR: 0.1667
+
+--------------------------------------------------
+6 New Recordings Evaluation:
+--------------------------------------------------
+File: NoSLOW.npz      | NO Prob: 1.0000 | Prediction: NO
+File: noBACK.npz      | NO Prob: 0.9995 | Prediction: NO
+File: noFAST.npz      | NO Prob: 1.0000 | Prediction: NO
+File: noFRONT.npz     | NO Prob: 0.0080 | Prediction: NOT_NO
+File: noLEFT.npz      | NO Prob: 0.9975 | Prediction: NO
+File: noRIGHT.npz     | NO Prob: 0.9994 | Prediction: NO
+
+--------------------------------------------------
+Live test status:
+READY FOR LIVE WEBCAM DEMO
+==================================================

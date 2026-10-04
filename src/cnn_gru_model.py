@@ -1,13 +1,11 @@
 """
-Phase 3, 4, 5: CNN-GRU Deep Neural Network for Sign Language Recognition.
+CNN-GRU Deep Neural Network for Sign Language Recognition.
 Combines 1D Convolutional Neural Network (Spatial Feature Extraction) with
 Bidirectional Gated Recurrent Unit (Temporal Feature Extraction) and Linear Classifier Head.
 
 Data Contract:
-- Input shape: (Batch_Size, Sequence_Length, Feature_Dim) = (B, 25, 6)
-- CNN Output shape: (B, 25, 64) spatial feature vectors
-- GRU Output shape: (B, 256) aggregated temporal feature representation
-- Classifier Output shape: (B, num_classes) logits over vocabulary
+- Input shape: (Batch_Size, 25, 6)
+- Output shape: (Batch_Size, 21) logits over 21 ISL sign classes
 """
 
 import os
@@ -21,13 +19,12 @@ import torch.nn.functional as F
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import (
-    TOKEN_DIM, MAX_SEQ_LEN, VOCAB_SIZE, MODEL_DIR,
-    ISL_VOCABULARY, ID_TO_WORD, WORD_TO_ID,
-    ISL_43_VOCABULARY, VOCAB_43_SIZE, ID_TO_WORD_43, WORD_TO_ID_43,
-    ACTIVE_VOCABULARY, ACTIVE_VOCAB_SIZE, ACTIVE_ID_TO_WORD, ACTIVE_WORD_TO_ID
+    TOKEN_DIM, MAX_SEQ_LEN, NUM_CLASSES, MODEL_DIR,
+    CLASS_NAMES, INDEX_TO_CLASS, CLASS_TO_INDEX
 )
 
-CNN_GRU_MODEL_PATH = os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
+_best_model_path = os.path.join(MODEL_DIR, "isl_cnn_gru_21class_best.pt")
+CNN_GRU_MODEL_PATH = _best_model_path if os.path.exists(_best_model_path) else os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
 
 
 class ISL_CNN_GRU_Model(nn.Module):
@@ -37,7 +34,7 @@ class ISL_CNN_GRU_Model(nn.Module):
         cnn_channels=(32, 64),
         gru_hidden_dim=128,
         gru_num_layers=2,
-        num_classes=VOCAB_SIZE,
+        num_classes=NUM_CLASSES,
         dropout=0.2
     ):
         super(ISL_CNN_GRU_Model, self).__init__()
@@ -113,85 +110,104 @@ class ISL_CNN_GRU_Model(nn.Module):
 
 
 class CNNGRUInferenceEngine:
+    """Inference engine for the 21-class ISL CNN-GRU model."""
+    
     def __init__(self, model_path=CNN_GRU_MODEL_PATH):
         self.model_path = model_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        self.num_classes = VOCAB_43_SIZE
-        self.id_to_word = ID_TO_WORD_43
+        self.num_classes = NUM_CLASSES  # Exactly 21 classes
+        self.class_names = CLASS_NAMES
+        self.id_to_word = INDEX_TO_CLASS
         self.model_loaded = False
+
+        # Feature normalization stats
+        mean_path = os.path.join(MODEL_DIR, "feature_mean.npy")
+        std_path = os.path.join(MODEL_DIR, "feature_std.npy")
+        if os.path.exists(mean_path) and os.path.exists(std_path):
+            self.feature_mean = np.load(mean_path).astype(np.float32)
+            self.feature_std = np.load(std_path).astype(np.float32)
+            # Prevent division by zero
+            self.feature_std = np.where(self.feature_std < 1e-7, 1.0, self.feature_std)
+            print(f"[CNNGRUInferenceEngine] Feature normalization active.")
+        else:
+            self.feature_mean = None
+            self.feature_std = None
 
         if os.path.exists(self.model_path):
             try:
-                state_dict = torch.load(self.model_path, map_location=self.device)
-                # Inspect checkpoint classifier shape to match trained class count (e.g. 3 classes)
+                state_dict = torch.load(self.model_path, map_location=self.device, weights_only=True)
+                
+                # Verify checkpoint has exactly 21 output classes
                 if isinstance(state_dict, dict) and "classifier.weight" in state_dict:
                     ckpt_classes = state_dict["classifier.weight"].shape[0]
-                    self.num_classes = ckpt_classes
-                    self.id_to_word = {i: ISL_VOCABULARY[i] for i in range(min(ckpt_classes, len(ISL_VOCABULARY)))}
+                    if ckpt_classes != NUM_CLASSES:
+                        print(f"[CNNGRUInferenceEngine] WARNING: Checkpoint has {ckpt_classes} classes, expected {NUM_CLASSES}.")
+                        print(f"[CNNGRUInferenceEngine] Model will be initialized with random weights until retrained.")
+                        self._init_fresh_model()
+                        return
 
                 self.model = ISL_CNN_GRU_Model(
                     token_dim=TOKEN_DIM,
                     cnn_channels=(32, 64),
                     gru_hidden_dim=128,
                     gru_num_layers=2,
-                    num_classes=self.num_classes
+                    num_classes=NUM_CLASSES
                 ).to(self.device)
 
                 self.model.load_state_dict(state_dict)
                 self.model.eval()
                 self.model_loaded = True
-                print(f"[CNNGRUInferenceEngine] Loaded CNN-GRU weights from {self.model_path} ({self.num_classes} classes)")
+                print(f"[CNNGRUInferenceEngine] Loaded CNN-GRU weights from {self.model_path} ({NUM_CLASSES} classes)")
             except Exception as e:
                 print(f"[CNNGRUInferenceEngine] Warning: Failed to load weights: {e}")
-                self.model = ISL_CNN_GRU_Model(
-                    token_dim=TOKEN_DIM,
-                    cnn_channels=(32, 64),
-                    gru_hidden_dim=128,
-                    gru_num_layers=2,
-                    num_classes=self.num_classes
-                ).to(self.device)
-                self.model.eval()
+                self._init_fresh_model()
         else:
             print(f"[CNNGRUInferenceEngine] Checkpoint not found at {self.model_path}. Using initial weights.")
-            self.model = ISL_CNN_GRU_Model(
-                token_dim=TOKEN_DIM,
-                cnn_channels=(32, 64),
-                gru_hidden_dim=128,
-                gru_num_layers=2,
-                num_classes=self.num_classes
-            ).to(self.device)
-            self.model.eval()
+            self._init_fresh_model()
+    
+    def _init_fresh_model(self):
+        """Initialize model with random weights (untrained)."""
+        self.model = ISL_CNN_GRU_Model(
+            token_dim=TOKEN_DIM,
+            cnn_channels=(32, 64),
+            gru_hidden_dim=128,
+            gru_num_layers=2,
+            num_classes=NUM_CLASSES
+        ).to(self.device)
+        self.model.eval()
+        self.model_loaded = False
 
     def predict_sequence(self, token_sequence, max_seq_len=25):
         """
         Predict ISL Sign from gesture token sequence [T x 6].
         
-        NOTE: max_seq_len defaults to 25 (NOT config.MAX_SEQ_LEN=30) because the
-        training data has shape (N, 25, 6). Padding to 30 creates a distribution
-        mismatch (5 trailing zero frames) that degrades predictions.
-        
-        Uses VOCAB_43_SIZE (43 classes) for comprehensive ISL recognition.
-        
-        Returns: (predicted_class_id, class_name, confidence, probabilities_dict)
+        Input sequence is padded/truncated to exactly 25 tokens.
+        Returns dict with predicted class, confidence, and top probabilities.
         """
         if token_sequence is None or len(token_sequence) == 0:
             return {
-                "class_id": 0,
-                "word": self.id_to_word.get(0, "unknown"),
+                "class_id": -1,
+                "word": "--",
                 "confidence": 0.0,
                 "probabilities": {}
             }
 
         tokens = np.array(token_sequence, dtype=np.float32)
+        if tokens.ndim == 1:
+            tokens = tokens.reshape(1, -1)
+        
         seq_len = len(tokens)
 
         # Pad or truncate to max_seq_len (25 to match training)
         if seq_len < max_seq_len:
             padded = np.zeros((max_seq_len, TOKEN_DIM), dtype=np.float32)
-            padded[:seq_len] = tokens
+            padded[:seq_len] = tokens[:, :TOKEN_DIM]
         else:
-            padded = tokens[:max_seq_len]
+            padded = tokens[:max_seq_len, :TOKEN_DIM]
+
+        # Apply feature normalization (same as training)
+        if self.feature_mean is not None and self.feature_std is not None:
+            padded = (padded - self.feature_mean) / self.feature_std
 
         tensor_in = torch.tensor(padded, dtype=torch.float32).unsqueeze(0).to(self.device)
 
@@ -202,6 +218,18 @@ class CNNGRUInferenceEngine:
         pred_id = int(np.argmax(probs))
         confidence = float(probs[pred_id])
         class_name = self.id_to_word.get(pred_id, f"class_{pred_id}")
+
+        # Section 25: Uncertainty & Ambiguity Gating
+        # If model is uncertain (low confidence or top two classes are tied),
+        # DO NOT force output into SORRY or STOP! Return WAITING FOR CLEAR GESTURE.
+        sorted_probs = np.sort(probs)[::-1]
+        top1 = sorted_probs[0]
+        top2 = sorted_probs[1] if len(sorted_probs) > 1 else 0.0
+        margin = top1 - top2
+
+        if confidence < 0.40 or (confidence < 0.50 and margin < 0.10):
+            class_name = "WAITING FOR CLEAR GESTURE"
+            pred_id = -1
 
         top_probs = {
             self.id_to_word.get(idx, f"class_{idx}"): round(float(probs[idx]), 4)
@@ -214,3 +242,4 @@ class CNNGRUInferenceEngine:
             "confidence": confidence,
             "probabilities": top_probs
         }
+

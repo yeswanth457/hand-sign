@@ -1,0 +1,22 @@
+class,videos,tokens,signer_count,signers,train,validation,test
+hello,30,30,1,signer_01,22,4,4
+thank_you,30,30,1,signer_01,22,4,4
+welcome,35,35,2,"1, signer_01",25,5,5
+goodbye,8,8,3,"bridgeconn, datagov, hf_real",6,1,1
+yes,17,17,1,hf_real,11,3,3
+no,17,17,1,hf_real,11,3,3
+please,18,18,1,hf_real,12,3,3
+sorry,9,9,2,"datagov, hf_real",7,1,1
+help,15,15,1,hf_real,11,2,2
+stop,7,7,3,"bridgeconn, datagov, hf_real",5,1,1
+water,19,19,2,"hf_real, signer_01",13,3,3
+food,19,19,2,"hf_real, signer_01",13,3,3
+school,38,38,2,"hf_real, signer_01",26,6,6
+teacher,17,17,1,hf_real,11,3,3
+mother,18,18,1,hf_real,12,3,3
+father,16,16,1,hf_real,12,2,2
+sister,17,17,1,hf_real,11,3,3
+brother,6,7,3,"bridgeconn, datagov, hf_real",5,1,1
+friend,38,38,1,hf_real,26,6,6
+house,3,3,3,"bridgeconn, datagov, hf_real",1,1,1
+work,3,3,1,datagov,1,1,1

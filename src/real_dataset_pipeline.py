@@ -124,6 +124,23 @@ class RealISLDatasetPipeline:
             "error": ""
         }
 
+        lm_out_dir = self.landmarks_dir / sign_class / signer_id
+        lm_file = lm_out_dir / f"{video_id}.npz"
+        tk_out_dir = self.tokens_dir / sign_class / signer_id
+        tk_file = tk_out_dir / f"{video_id}.npz"
+
+        if lm_file.exists() and tk_file.exists() and os.path.getsize(tk_file) > 100:
+            try:
+                tk_data = np.load(tk_file)
+                tokens = tk_data["tokens"]
+                result["landmark_file"] = str(lm_file)
+                result["token_file"] = str(tk_file)
+                result["token_sequence_length"] = len(tokens)
+                result["status"] = "success"
+                return result
+            except Exception:
+                pass
+
         if not os.path.exists(video_path):
             result["error"] = "Video file does not exist."
             return result

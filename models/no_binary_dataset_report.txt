@@ -1,0 +1,25 @@
+==================================================
+NO BINARY CLASSIFIER DATASET REPORT
+==================================================
+
+Total Recordings: 83
+NO Recordings:    23
+NOT_NO Recordings:60
+
+Sequence Shape:       (25, 6)
+Feature Normalization: Standardized 6D Token Space [Hx, Hy, Mx, My, Rx, Ry]
+Class Balance Ratio:  23 NO : 60 NOT_NO
+
+--------------------------------------------------
+SPLIT BREAKDOWN (Signer/Session-Aware):
+--------------------------------------------------
+TRAIN:      Total = 65 (NO: 21, NOT_NO: 44)
+VALIDATION: Total = 9 (NO: 1, NOT_NO: 8)
+TEST:       Total = 9 (NO: 1, NOT_NO: 8)
+
+Train Sessions:      ['NoSLOW.npz', 'noFRONT.npz', 'noLEFT.npz', 'noRIGHT.npz', 'no__CISLR', 'no__ISL500']
+Val Sessions:        ['noBACK.npz']
+Test Sessions:       ['noFAST.npz']
+
+Duplicate Overlap Check: PASSED (0 file duplicates across train/val/test)
+==================================================

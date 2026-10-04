@@ -1,9 +1,9 @@
 """
-Phase 9: Sign to English Translation Layer and Sentence Buffer.
-Maintains recognized word stream buffer and applies deterministic ISL grammar rules (SOV to SVO).
+Sign to English Translation Layer and Sentence Buffer.
+Uses the 21 ISL sign class translations.
 """
 
-from config import ISL_GRAMMAR_RULES
+from config import ENGLISH_TRANSLATIONS, ISL_GRAMMAR_RULES
 
 
 class EnglishSentenceBuilder:
@@ -11,9 +11,7 @@ class EnglishSentenceBuilder:
         self.word_buffer = []
 
     def add_sign(self, sign_word):
-        """
-        Adds a confirmed sign word to the sentence buffer if not an immediate duplicate.
-        """
+        """Adds a confirmed sign word to the sentence buffer if not an immediate duplicate."""
         if sign_word and (len(self.word_buffer) == 0 or self.word_buffer[-1] != sign_word):
             self.word_buffer.append(sign_word)
         return self.get_sentence()
@@ -22,9 +20,7 @@ class EnglishSentenceBuilder:
         return list(self.word_buffer)
 
     def get_sentence(self):
-        """
-        Translates raw ISL word sequence buffer into a grammatically refined English sentence.
-        """
+        """Translates raw ISL word sequence buffer into a grammatically refined English sentence."""
         if len(self.word_buffer) == 0:
             return ""
 
@@ -34,28 +30,21 @@ class EnglishSentenceBuilder:
         if raw_key in ISL_GRAMMAR_RULES:
             return ISL_GRAMMAR_RULES[raw_key]
 
-        # 2. Heuristic grammar rules for SOV -> SVO translation
-        words = list(self.word_buffer)
+        # 2. Single word translation
+        if len(self.word_buffer) == 1:
+            word = self.word_buffer[0]
+            return ENGLISH_TRANSLATIONS.get(word, word.replace("_", " ").capitalize() + ".")
+
+        # 3. Multi-word: join translations
+        parts = []
+        for w in self.word_buffer:
+            translation = ENGLISH_TRANSLATIONS.get(w, w.replace("_", " ").capitalize())
+            # Remove trailing period for joining
+            if translation.endswith("."):
+                translation = translation[:-1]
+            parts.append(translation)
         
-        # Replace token underscores with spaces (e.g. thank_you -> thank you)
-        clean_words = [w.replace("_", " ") for w in words]
-
-        # Handle basic SOV reordering if 'want' or 'need' or 'go' is at end
-        if len(clean_words) >= 3 and clean_words[-1] in ["want", "need"]:
-            subject = clean_words[0]
-            obj = " ".join(clean_words[1:-1])
-            verb = clean_words[-1]
-            return f"{subject.capitalize()} {verb} {obj}."
-
-        # Handle 'going to'
-        if len(clean_words) >= 2 and clean_words[-1] == "go":
-            subject = clean_words[0]
-            location = " ".join(clean_words[1:-1]) if len(clean_words) > 2 else "there"
-            return f"{subject.capitalize()} is going to {location}."
-
-        # Fallback default joins words and capitalizes first letter
-        sentence = " ".join(clean_words)
-        return sentence[0].upper() + sentence[1:] + "."
+        return " ".join(parts) + "."
 
     def pop_last(self):
         if len(self.word_buffer) > 0:

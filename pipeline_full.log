@@ -1,0 +1,163 @@
+============================================================
+STEP 2: MediaPipe Extraction
+============================================================
+
+Extraction time: 449.7s
+Videos discovered: 361
+Successful: 361
+Failed: 0
+Classes: ['brother', 'father', 'food', 'friend', 'goodbye', 'hello', 'help', 'house', 'mother', 'no', 'please', 'school', 'sister', 'sorry', 'stop', 'teacher', 'thank_you', 'water', 'welcome', 'yes']
+
+Per-class extractions:
+  hello          :  30
+  thank_you      :  30
+  welcome        :  35
+  goodbye        :   3
+  yes            :  17
+  no             :  17
+  please         :  18
+  sorry          :   6
+  help           :  15
+  stop           :   4
+  water          :  19
+  food           :  19
+  school         :  38
+  teacher        :  17
+  mother         :  18
+  father         :  16
+  sister         :  17
+  brother        :   3
+  friend         :  38
+  house          :   1
+  work           :   0
+  Total: 361
+
+============================================================
+STEP 3: Build Train/Val/Test Splits
+============================================================
+  train: X=(267, 25, 6), y=(267,)
+    [0] hello: 22
+    [1] thank_you: 22
+    [2] welcome: 25
+    [3] goodbye: 1
+    [4] yes: 13
+    [5] no: 13
+    [6] please: 14
+    [7] sorry: 4
+    [8] help: 11
+    [9] stop: 2
+    [10] water: 15
+    [11] food: 15
+    [12] school: 28
+    [13] teacher: 13
+    [14] mother: 14
+    [15] father: 12
+    [16] sister: 13
+    [17] brother: 1
+    [18] friend: 28
+    [19] house: 1
+  val: X=(48, 25, 6), y=(48,)
+    [0] hello: 4
+    [1] thank_you: 4
+    [2] welcome: 5
+    [3] goodbye: 1
+    [4] yes: 2
+    [5] no: 2
+    [6] please: 2
+    [7] sorry: 1
+    [8] help: 2
+    [9] stop: 1
+    [10] water: 2
+    [11] food: 2
+    [12] school: 5
+    [13] teacher: 2
+    [14] mother: 2
+    [15] father: 2
+    [16] sister: 2
+    [17] brother: 1
+    [18] friend: 5
+    [19] house: 1
+  test: X=(47, 25, 6), y=(47,)
+    [0] hello: 4
+    [1] thank_you: 4
+    [2] welcome: 5
+    [3] goodbye: 1
+    [4] yes: 2
+    [5] no: 2
+    [6] please: 2
+    [7] sorry: 1
+    [8] help: 2
+    [9] stop: 1
+    [10] water: 2
+    [11] food: 2
+    [12] school: 5
+    [13] teacher: 2
+    [14] mother: 2
+    [15] father: 2
+    [16] sister: 2
+    [17] brother: 1
+    [18] friend: 5
+
+============================================================
+STEP 4: Train CNN-GRU
+============================================================
+
+Training time: 152.1s
+Result: {
+  "status": "success",
+  "model_path": "d:\\isl-translator\\models\\isl_cnn_gru.pt",
+  "num_classes": 21,
+  "best_epoch": 29,
+  "best_accuracy": 0.4791666666666667,
+  "train_samples": 267
+}
+
+============================================================
+STEP 5: Evaluate on Test Set
+============================================================
+
+Evaluation complete.
+
+============================================================
+STEP 6: Webcam Integration Verification
+============================================================
+  Model loaded: True
+  Num classes: 21
+  Dummy prediction: welcome (98.9%)
+  Normalization: OK
+
+============================================================
+FINAL REPORT
+============================================================
+  train: 267 samples
+  val: 48 samples
+  test: 47 samples
+
+  Videos per class:
+    hello          :  30
+    thank_you      :  30
+    welcome        :  35
+    goodbye        :   3
+    yes            :  17
+    no             :  17
+    please         :  18
+    sorry          :   6
+    help           :  15
+    stop           :   4
+    water          :  19
+    food           :  19
+    school         :  38
+    teacher        :  17
+    mother         :  18
+    father         :  16
+    sister         :  17
+    brother        :   3
+    friend         :  38
+    house          :   1
+    work           :   0
+
+  Missing classes: ['work']
+  Low-count classes: ['house']
+  Classes needing more data: ['work', 'house']
+
+DONE

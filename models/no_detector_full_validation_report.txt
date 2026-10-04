@@ -1,0 +1,4059 @@
+==================================================
+NO DETECTOR FULL VALIDATION
+==================================================
+
+NO recordings:       23
+NO valid frames:      2548
+
+Non-NO recordings:   407
+Non-NO valid frames:  45839
+
+Current threshold:   0.65
+
+NO recall:                    1.0000 (100.0%)
+Non-NO false positive rate:   0.9803 (98.0%)
+Binary accuracy:              0.0721 (7.2%)
+
+--------------------------------------------------
+Threshold comparison:
+--------------------------------------------------
+0.50 -> Recall: 1.0000 | FPR: 0.9877 | Acc: 0.0651 (FP: 402, FN: 0)
+0.55 -> Recall: 1.0000 | FPR: 0.9877 | Acc: 0.0651 (FP: 402, FN: 0)
+0.60 -> Recall: 1.0000 | FPR: 0.9828 | Acc: 0.0698 (FP: 400, FN: 0)
+0.65 -> Recall: 1.0000 | FPR: 0.9803 | Acc: 0.0721 (FP: 399, FN: 0)
+0.70 -> Recall: 1.0000 | FPR: 0.9533 | Acc: 0.0977 (FP: 388, FN: 0)
+0.75 -> Recall: 0.9130 | FPR: 0.8600 | Acc: 0.1814 (FP: 350, FN: 2)
+0.80 -> Recall: 0.9130 | FPR: 0.8231 | Acc: 0.2163 (FP: 335, FN: 2)
+0.85 -> Recall: 0.7826 | FPR: 0.7297 | Acc: 0.2977 (FP: 297, FN: 5)
+0.90 -> Recall: 0.6957 | FPR: 0.5233 | Acc: 0.4884 (FP: 213, FN: 7)
+0.92 -> Recall: 0.6522 | FPR: 0.3980 | Acc: 0.6047 (FP: 162, FN: 8)
+0.94 -> Recall: 0.5652 | FPR: 0.2531 | Acc: 0.7372 (FP: 103, FN: 10)
+0.95 -> Recall: 0.5652 | FPR: 0.1843 | Acc: 0.8023 (FP: 75, FN: 10)
+0.96 -> Recall: 0.5652 | FPR: 0.1081 | Acc: 0.8744 (FP: 44, FN: 10)
+0.97 -> Recall: 0.5217 | FPR: 0.0639 | Acc: 0.9140 (FP: 26, FN: 11)
+0.98 -> Recall: 0.3043 | FPR: 0.0467 | Acc: 0.9186 (FP: 19, FN: 16)
+
+--------------------------------------------------
+Best-supported operating region:
+--------------------------------------------------
+Threshold range: 0.97 - 0.98
+(At threshold 0.98: Recall = 0.3043, FPR = 0.0467, Binary Accuracy = 0.9186)
+
+--------------------------------------------------
+False positives (Non-NO >= 0.65): Count = 399
+--------------------------------------------------
+TRUE CLASS: yes
+FILE:       yes__CISLR__00033__LAT-u9Ww5ZU.npz
+NO SCORE:   0.9974
+SPATIAL:    0.9997
+MOVEMENT:   1.0000
+AXIS:       0.9832
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00142__Help__session136__clip019.npz
+NO SCORE:   0.9948
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.9656
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00295__Yes__000001.npz
+NO SCORE:   0.9923
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.9483
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__CISLR__00065__iGDJKo1-w5k.npz
+NO SCORE:   0.9898
+SPATIAL:    0.9830
+MOVEMENT:   1.0000
+AXIS:       0.9617
+FINGER:     1.0000
+TOKEN:      0.9986
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00268__Yes__000001__c545daf6-s168-008_Yes.npz
+NO SCORE:   0.9897
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.9312
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: stop
+FILE:       stop__CISLR__00022__FHwjyQeLNuY.npz
+NO SCORE:   0.9883
+SPATIAL:    0.9932
+MOVEMENT:   1.0000
+AXIS:       0.9334
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00168__Hello__session106__clip018.npz
+NO SCORE:   0.9877
+SPATIAL:    0.9713
+MOVEMENT:   1.0000
+AXIS:       0.9836
+FINGER:     1.0000
+TOKEN:      0.9825
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00344__Thankyou__000001.npz
+NO SCORE:   0.9871
+SPATIAL:    0.9789
+MOVEMENT:   1.0000
+AXIS:       0.9494
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00120__Please__session106__clip004.npz
+NO SCORE:   0.9871
+SPATIAL:    0.9844
+MOVEMENT:   1.0000
+AXIS:       0.9868
+FINGER:     0.9532
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__CISLR__00000__-4MbWP5T-cU.npz
+NO SCORE:   0.9856
+SPATIAL:    0.9761
+MOVEMENT:   1.0000
+AXIS:       0.9441
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00463__Friend__session120__clip025.npz
+NO SCORE:   0.9845
+SPATIAL:    0.9634
+MOVEMENT:   1.0000
+AXIS:       0.9873
+FINGER:     1.0000
+TOKEN:      0.9704
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00228__Please__session105__clip001.npz
+NO SCORE:   0.9844
+SPATIAL:    0.9537
+MOVEMENT:   1.0000
+AXIS:       0.9734
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00376__Yes__session133__clip016.npz
+NO SCORE:   0.9828
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8854
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00231__Sister__session144__clip013.npz
+NO SCORE:   0.9820
+SPATIAL:    0.9962
+MOVEMENT:   1.0000
+AXIS:       0.8861
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00128__Thankyou__session128__clip004.npz
+NO SCORE:   0.9819
+SPATIAL:    0.9691
+MOVEMENT:   1.0000
+AXIS:       0.9477
+FINGER:     1.0000
+TOKEN:      0.9829
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00093__Please__session104__clip016.npz
+NO SCORE:   0.9811
+SPATIAL:    0.9356
+MOVEMENT:   1.0000
+AXIS:       0.9814
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00106__Yes__session105__clip014.npz
+NO SCORE:   0.9809
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8727
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00471__Please__session124__clip001.npz
+NO SCORE:   0.9809
+SPATIAL:    0.9628
+MOVEMENT:   1.0000
+AXIS:       0.9345
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00430__Yes__session169__clip028.npz
+NO SCORE:   0.9808
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8718
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00403__Yes__session213__clip009.npz
+NO SCORE:   0.9763
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8420
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00328__Friend__000001.npz
+NO SCORE:   0.9759
+SPATIAL:    0.9991
+MOVEMENT:   1.0000
+AXIS:       0.8408
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__CISLR__00058__ZanVx78hi-g_1.npz
+NO SCORE:   0.9758
+SPATIAL:    0.9330
+MOVEMENT:   1.0000
+AXIS:       0.9537
+FINGER:     1.0000
+TOKEN:      0.9966
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: work
+FILE:       video_datagov_Work_(Sign_2).npz
+NO SCORE:   0.9749
+SPATIAL:    0.9994
+MOVEMENT:   1.0000
+AXIS:       0.8569
+FINGER:     1.0000
+TOKEN:      0.9766
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00101__Thankyou__session122__clip016.npz
+NO SCORE:   0.9745
+SPATIAL:    0.9623
+MOVEMENT:   1.0000
+AXIS:       0.8930
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__CISLR__00027__IRmlHHtW_Q0_1.npz
+NO SCORE:   0.9731
+SPATIAL:    0.9841
+MOVEMENT:   1.0000
+AXIS:       0.9491
+FINGER:     0.8978
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00322__Yes__000001.npz
+NO SCORE:   0.9711
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8074
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00423__Teacher__session156__clip004.npz
+NO SCORE:   0.9692
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7944
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: brother
+FILE:       video_datagov_Younger_Brother.npz
+NO SCORE:   0.9684
+SPATIAL:    0.9234
+MOVEMENT:   1.0000
+AXIS:       0.9547
+FINGER:     0.9868
+TOKEN:      0.9753
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001602.npz
+NO SCORE:   0.9681
+SPATIAL:    0.9549
+MOVEMENT:   1.0000
+AXIS:       0.9672
+FINGER:     0.9931
+TOKEN:      0.9023
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00364__School__session141__clip003.npz
+NO SCORE:   0.9680
+SPATIAL:    0.9902
+MOVEMENT:   1.0000
+AXIS:       0.8766
+FINGER:     1.0000
+TOKEN:      0.9261
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00327__Food__000001.npz
+NO SCORE:   0.9672
+SPATIAL:    0.9631
+MOVEMENT:   1.0000
+AXIS:       0.9535
+FINGER:     0.8895
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000625.npz
+NO SCORE:   0.9662
+SPATIAL:    0.9596
+MOVEMENT:   1.0000
+AXIS:       0.9200
+FINGER:     0.9662
+TOKEN:      0.9556
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00317__Thankyou__000001.npz
+NO SCORE:   0.9660
+SPATIAL:    0.9716
+MOVEMENT:   1.0000
+AXIS:       0.8457
+FINGER:     1.0000
+TOKEN:      0.9750
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00187__Yes__session105__clip015.npz
+NO SCORE:   0.9656
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7704
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00349__Yes__000001.npz
+NO SCORE:   0.9655
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7698
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00258__Sister__000001__c545daf6-s154-001_Sister.npz
+NO SCORE:   0.9652
+SPATIAL:    0.9805
+MOVEMENT:   1.0000
+AXIS:       0.8005
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00418__School__session140__clip002.npz
+NO SCORE:   0.9651
+SPATIAL:    0.9902
+MOVEMENT:   1.0000
+AXIS:       0.9778
+FINGER:     0.8056
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00256__School__000001__c545daf6-s152-002_School.npz
+NO SCORE:   0.9635
+SPATIAL:    0.9116
+MOVEMENT:   1.0000
+AXIS:       0.9274
+FINGER:     1.0000
+TOKEN:      0.9768
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00094__School__session103__clip006.npz
+NO SCORE:   0.9634
+SPATIAL:    0.8925
+MOVEMENT:   1.0000
+AXIS:       0.9744
+FINGER:     1.0000
+TOKEN:      0.9609
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00164__Father__session112__clip027.npz
+NO SCORE:   0.9624
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.9280
+FINGER:     0.9041
+TOKEN:      0.9174
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00265__Water__000001__c545daf6-s166-007_Water.npz
+NO SCORE:   0.9623
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8818
+FINGER:     0.8670
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00462__Food__session152__clip032.npz
+NO SCORE:   0.9618
+SPATIAL:    0.9378
+MOVEMENT:   1.0000
+AXIS:       0.9000
+FINGER:     1.0000
+TOKEN:      0.9494
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00241__Yes__session112__clip005.npz
+NO SCORE:   0.9612
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7415
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00226__Mother__session138__clip004.npz
+NO SCORE:   0.9603
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8464
+FINGER:     0.9285
+TOKEN:      0.9601
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00469__Mother__session123__clip016.npz
+NO SCORE:   0.9598
+SPATIAL:    0.9835
+MOVEMENT:   1.0000
+AXIS:       0.9951
+FINGER:     0.8000
+TOKEN:      0.9646
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00174__Please__session107__clip001.npz
+NO SCORE:   0.9596
+SPATIAL:    0.9816
+MOVEMENT:   1.0000
+AXIS:       0.7610
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00219__Food__session137__clip014.npz
+NO SCORE:   0.9596
+SPATIAL:    0.8737
+MOVEMENT:   1.0000
+AXIS:       0.9860
+FINGER:     1.0000
+TOKEN:      0.9550
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: work
+FILE:       video_datagov_work.npz
+NO SCORE:   0.9589
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7257
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00484__Yes__session127__clip006.npz
+NO SCORE:   0.9588
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7251
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: work
+FILE:       video_datagov_Work_(Sign_3).npz
+NO SCORE:   0.9587
+SPATIAL:    0.8812
+MOVEMENT:   1.0000
+AXIS:       0.9780
+FINGER:     1.0000
+TOKEN:      0.9444
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: brother
+FILE:       video_datagov_Older_Brother_Elder_Brother.npz
+NO SCORE:   0.9586
+SPATIAL:    0.8985
+MOVEMENT:   1.0000
+AXIS:       0.9821
+FINGER:     0.9392
+TOKEN:      0.9716
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00169__Help__session105__clip013.npz
+NO SCORE:   0.9584
+SPATIAL:    0.8984
+MOVEMENT:   1.0000
+AXIS:       0.9284
+FINGER:     1.0000
+TOKEN:      0.9634
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00465__Hello__session102__clip009.npz
+NO SCORE:   0.9580
+SPATIAL:    0.9206
+MOVEMENT:   1.0000
+AXIS:       0.9259
+FINGER:     1.0000
+TOKEN:      0.9266
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00166__Friend__session10__clip007.npz
+NO SCORE:   0.9578
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7940
+FINGER:     0.9249
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00220__Friend__session104__clip020.npz
+NO SCORE:   0.9573
+SPATIAL:    0.9568
+MOVEMENT:   1.0000
+AXIS:       0.7871
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00196__Help__session144__clip002.npz
+NO SCORE:   0.9569
+SPATIAL:    0.8667
+MOVEMENT:   1.0000
+AXIS:       0.9857
+FINGER:     1.0000
+TOKEN:      0.9494
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00380__Father__session231__clip012.npz
+NO SCORE:   0.9565
+SPATIAL:    0.8997
+MOVEMENT:   1.0000
+AXIS:       0.9771
+FINGER:     0.9475
+TOKEN:      0.9524
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00192__Food__session116__clip015.npz
+NO SCORE:   0.9558
+SPATIAL:    0.9932
+MOVEMENT:   1.0000
+AXIS:       0.8368
+FINGER:     0.8798
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00110__Father__session164__clip028.npz
+NO SCORE:   0.9554
+SPATIAL:    0.9696
+MOVEMENT:   1.0000
+AXIS:       0.9581
+FINGER:     0.8000
+TOKEN:      0.9954
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00114__Hello__session159__clip015.npz
+NO SCORE:   0.9552
+SPATIAL:    0.8975
+MOVEMENT:   1.0000
+AXIS:       0.9387
+FINGER:     0.9980
+TOKEN:      0.9358
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__CISLR__00035__NROeKyImRuI_1.npz
+NO SCORE:   0.9551
+SPATIAL:    0.9943
+MOVEMENT:   1.0000
+AXIS:       0.7329
+FINGER:     0.9770
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00175__School__session104__clip020.npz
+NO SCORE:   0.9548
+SPATIAL:    0.9185
+MOVEMENT:   1.0000
+AXIS:       0.9755
+FINGER:     0.8587
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00236__Thankyou__session107__clip017.npz
+NO SCORE:   0.9538
+SPATIAL:    0.9096
+MOVEMENT:   1.0000
+AXIS:       0.8430
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00280__Mother__000001.npz
+NO SCORE:   0.9536
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.9112
+FINGER:     0.8256
+TOKEN:      0.9542
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00250__Help__000001__c545daf6-s115-004_Help.npz
+NO SCORE:   0.9535
+SPATIAL:    0.9253
+MOVEMENT:   1.0000
+AXIS:       0.8143
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00274__Friend__session102__clip013.npz
+NO SCORE:   0.9523
+SPATIAL:    0.9715
+MOVEMENT:   1.0000
+AXIS:       0.7296
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00283__School__000001.npz
+NO SCORE:   0.9523
+SPATIAL:    0.8942
+MOVEMENT:   1.0000
+AXIS:       0.8580
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00118__Mother__session154__clip008.npz
+NO SCORE:   0.9521
+SPATIAL:    0.9469
+MOVEMENT:   1.0000
+AXIS:       0.9691
+FINGER:     0.8000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: stop
+FILE:       stop__CISLR__00021__FEi50jcTxxI_1.npz
+NO SCORE:   0.9521
+SPATIAL:    0.9674
+MOVEMENT:   1.0000
+AXIS:       0.8297
+FINGER:     0.9054
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00191__Father__session121__clip018.npz
+NO SCORE:   0.9518
+SPATIAL:    0.9930
+MOVEMENT:   1.0000
+AXIS:       0.8470
+FINGER:     0.8606
+TOKEN:      0.9830
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       video_datagov_Sorry_(Sign_3).npz
+NO SCORE:   0.9517
+SPATIAL:    0.9350
+MOVEMENT:   1.0000
+AXIS:       0.8197
+FINGER:     1.0000
+TOKEN:      0.9662
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__CISLR__00001__-PGXFLhDfS0_1.npz
+NO SCORE:   0.9517
+SPATIAL:    0.9389
+MOVEMENT:   1.0000
+AXIS:       0.9782
+FINGER:     0.9549
+TOKEN:      0.8467
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00565__MVI_8648.npz
+NO SCORE:   0.9516
+SPATIAL:    0.9972
+MOVEMENT:   1.0000
+AXIS:       0.9651
+FINGER:     0.8372
+TOKEN:      0.8800
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00247__Friend__000001__c545daf6-s103-008_Friend.npz
+NO SCORE:   0.9512
+SPATIAL:    0.9758
+MOVEMENT:   1.0000
+AXIS:       0.8064
+FINGER:     1.0000
+TOKEN:      0.9087
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00363__Please__session135__clip022.npz
+NO SCORE:   0.9512
+SPATIAL:    0.9082
+MOVEMENT:   1.0000
+AXIS:       0.8494
+FINGER:     1.0000
+TOKEN:      0.9783
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00393__Sister__session173__clip001.npz
+NO SCORE:   0.9499
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.6779
+FINGER:     1.0000
+TOKEN:      0.9881
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00385__Help__session105__clip009.npz
+NO SCORE:   0.9488
+SPATIAL:    0.8538
+MOVEMENT:   1.0000
+AXIS:       0.9531
+FINGER:     1.0000
+TOKEN:      0.9490
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__CISLR__00047__SlORjr0kUM4.npz
+NO SCORE:   0.9487
+SPATIAL:    0.9204
+MOVEMENT:   1.0000
+AXIS:       0.9386
+FINGER:     1.0000
+TOKEN:      0.8520
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: stop
+FILE:       video_datagov_Stop_(Sign_2).npz
+NO SCORE:   0.9475
+SPATIAL:    0.8671
+MOVEMENT:   1.0000
+AXIS:       0.9140
+FINGER:     0.9998
+TOKEN:      0.9579
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00234__Teacher__session115__clip004.npz
+NO SCORE:   0.9467
+SPATIAL:    0.9917
+MOVEMENT:   1.0000
+AXIS:       0.8256
+FINGER:     0.8608
+TOKEN:      0.9720
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00091__Mother__session102__clip021.npz
+NO SCORE:   0.9466
+SPATIAL:    0.9589
+MOVEMENT:   1.0000
+AXIS:       0.9448
+FINGER:     0.8076
+TOKEN:      0.9598
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00310__School__000001.npz
+NO SCORE:   0.9466
+SPATIAL:    0.9037
+MOVEMENT:   1.0000
+AXIS:       0.8046
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00111__Food__session141__clip001.npz
+NO SCORE:   0.9463
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7278
+FINGER:     0.9142
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00172__Mother__session100__clip017.npz
+NO SCORE:   0.9462
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.9919
+FINGER:     0.8000
+TOKEN:      0.8496
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00546__MVI_3826.npz
+NO SCORE:   0.9457
+SPATIAL:    0.9611
+MOVEMENT:   1.0000
+AXIS:       0.8532
+FINGER:     0.9249
+TOKEN:      0.9246
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00138__Food__session171__clip019.npz
+NO SCORE:   0.9456
+SPATIAL:    0.8845
+MOVEMENT:   1.0000
+AXIS:       0.9234
+FINGER:     0.9740
+TOKEN:      0.9322
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00556__MVI_4997.npz
+NO SCORE:   0.9456
+SPATIAL:    0.9673
+MOVEMENT:   1.0000
+AXIS:       0.9250
+FINGER:     0.8259
+TOKEN:      0.9409
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00353__Father__session195__clip013.npz
+NO SCORE:   0.9452
+SPATIAL:    0.9035
+MOVEMENT:   1.0000
+AXIS:       0.9709
+FINGER:     0.8538
+TOKEN:      0.9706
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00398__Thankyou__session186__clip000.npz
+NO SCORE:   0.9438
+SPATIAL:    0.8541
+MOVEMENT:   1.0000
+AXIS:       0.9282
+FINGER:     1.0000
+TOKEN:      0.9404
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00407__Father__session188__clip013.npz
+NO SCORE:   0.9433
+SPATIAL:    0.9989
+MOVEMENT:   1.0000
+AXIS:       0.7235
+FINGER:     0.9003
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00334__Mother__000001.npz
+NO SCORE:   0.9430
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8200
+FINGER:     0.8000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00253__Mother__000001__c545daf6-s130-006_Mother.npz
+NO SCORE:   0.9426
+SPATIAL:    0.9571
+MOVEMENT:   1.0000
+AXIS:       0.8548
+FINGER:     0.8343
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00382__Friend__session319__clip006.npz
+NO SCORE:   0.9426
+SPATIAL:    0.9489
+MOVEMENT:   1.0000
+AXIS:       0.7506
+FINGER:     0.9779
+TOKEN:      0.9743
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001727.npz
+NO SCORE:   0.9425
+SPATIAL:    0.9318
+MOVEMENT:   1.0000
+AXIS:       0.9921
+FINGER:     0.8593
+TOKEN:      0.8788
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00272__Father__000001.npz
+NO SCORE:   0.9421
+SPATIAL:    0.9554
+MOVEMENT:   1.0000
+AXIS:       0.8992
+FINGER:     0.9061
+TOKEN:      0.8833
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00358__Help__session159__clip001.npz
+NO SCORE:   0.9416
+SPATIAL:    0.9060
+MOVEMENT:   1.0000
+AXIS:       0.8420
+FINGER:     1.0000
+TOKEN:      0.9253
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00472__School__session111__clip010.npz
+NO SCORE:   0.9414
+SPATIAL:    0.8558
+MOVEMENT:   1.0000
+AXIS:       0.9031
+FINGER:     0.9709
+TOKEN:      0.9758
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00263__Thankyou__000001__c545daf6-s159-003_Thankyou.npz
+NO SCORE:   0.9414
+SPATIAL:    0.8492
+MOVEMENT:   1.0000
+AXIS:       0.9061
+FINGER:     1.0000
+TOKEN:      0.9543
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00342__Teacher__000001.npz
+NO SCORE:   0.9409
+SPATIAL:    0.9001
+MOVEMENT:   1.0000
+AXIS:       0.8219
+FINGER:     1.0000
+TOKEN:      0.9506
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00249__Hello__000001__c545daf6-s115-003_Hello.npz
+NO SCORE:   0.9406
+SPATIAL:    0.8308
+MOVEMENT:   1.0000
+AXIS:       0.9773
+FINGER:     0.9761
+TOKEN:      0.9324
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: stop
+FILE:       video_datagov_Stop.npz
+NO SCORE:   0.9405
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7369
+FINGER:     1.0000
+TOKEN:      0.8665
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00282__Please__000001.npz
+NO SCORE:   0.9401
+SPATIAL:    0.9104
+MOVEMENT:   1.0000
+AXIS:       0.9642
+FINGER:     1.0000
+TOKEN:      0.7857
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00255__Please__000001__c545daf6-s141-010_Please.npz
+NO SCORE:   0.9400
+SPATIAL:    0.9230
+MOVEMENT:   1.0000
+AXIS:       0.8780
+FINGER:     0.9069
+TOKEN:      0.9432
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__CISLR__00032__Kxj8mG2kNCc.npz
+NO SCORE:   0.9396
+SPATIAL:    0.9541
+MOVEMENT:   1.0000
+AXIS:       0.7792
+FINGER:     0.8985
+TOKEN:      0.9959
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00222__Hello__session107__clip006.npz
+NO SCORE:   0.9395
+SPATIAL:    0.8794
+MOVEMENT:   1.0000
+AXIS:       0.9143
+FINGER:     0.9521
+TOKEN:      0.9313
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00312__Sister__000001.npz
+NO SCORE:   0.9392
+SPATIAL:    0.8862
+MOVEMENT:   1.0000
+AXIS:       0.9023
+FINGER:     1.0000
+TOKEN:      0.8820
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00445__School__session108__clip021.npz
+NO SCORE:   0.9391
+SPATIAL:    0.9497
+MOVEMENT:   1.0000
+AXIS:       0.7603
+FINGER:     1.0000
+TOKEN:      0.9174
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       video_datagov_Sorry.npz
+NO SCORE:   0.9388
+SPATIAL:    0.9501
+MOVEMENT:   1.0000
+AXIS:       0.8782
+FINGER:     0.9412
+TOKEN:      0.8556
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00246__Food__000001__c545daf6-s103-003_Food.npz
+NO SCORE:   0.9388
+SPATIAL:    0.8745
+MOVEMENT:   1.0000
+AXIS:       0.8676
+FINGER:     1.0000
+TOKEN:      0.9333
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00155__Thankyou__session106__clip006.npz
+NO SCORE:   0.9385
+SPATIAL:    0.9653
+MOVEMENT:   1.0000
+AXIS:       0.9587
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   0.5338
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00354__Food__session134__clip000.npz
+NO SCORE:   0.9379
+SPATIAL:    0.8491
+MOVEMENT:   1.0000
+AXIS:       0.8827
+FINGER:     0.9875
+TOKEN:      0.9673
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00276__Hello__session112__clip010.npz
+NO SCORE:   0.9378
+SPATIAL:    0.8689
+MOVEMENT:   1.0000
+AXIS:       0.9468
+FINGER:     1.0000
+TOKEN:      0.8574
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00411__Hello__session238__clip005.npz
+NO SCORE:   0.9375
+SPATIAL:    0.8651
+MOVEMENT:   1.0000
+AXIS:       0.8765
+FINGER:     1.0000
+TOKEN:      0.9318
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__CISLR__00073__vAW9QDnXLrE.npz
+NO SCORE:   0.9372
+SPATIAL:    0.9970
+MOVEMENT:   1.0000
+AXIS:       0.6166
+FINGER:     0.9697
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00408__Food__session175__clip002.npz
+NO SCORE:   0.9372
+SPATIAL:    0.9158
+MOVEMENT:   1.0000
+AXIS:       0.7392
+FINGER:     1.0000
+TOKEN:      0.9824
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00165__Food__session10__clip004.npz
+NO SCORE:   0.9366
+SPATIAL:    0.9374
+MOVEMENT:   1.0000
+AXIS:       0.8474
+FINGER:     1.0000
+TOKEN:      0.8346
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00396__Teacher__session183__clip000.npz
+NO SCORE:   0.9353
+SPATIAL:    0.9261
+MOVEMENT:   1.0000
+AXIS:       0.7936
+FINGER:     0.9314
+TOKEN:      0.9666
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00083__Father__session123__clip000.npz
+NO SCORE:   0.9352
+SPATIAL:    0.9071
+MOVEMENT:   1.0000
+AXIS:       0.9369
+FINGER:     0.8098
+TOKEN:      0.9760
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: goodbye
+FILE:       video_datagov_Bye_Goodbye.npz
+NO SCORE:   0.9331
+SPATIAL:    0.8714
+MOVEMENT:   1.0000
+AXIS:       0.9851
+FINGER:     0.8715
+TOKEN:      0.9115
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00336__Please__000001.npz
+NO SCORE:   0.9324
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.9310
+FINGER:     0.9958
+TOKEN:      1.0000
+DURATION:   0.4338
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00501__MVI_3538.npz
+NO SCORE:   0.9320
+SPATIAL:    0.9010
+MOVEMENT:   1.0000
+AXIS:       0.9900
+FINGER:     0.8470
+TOKEN:      0.8745
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00500__MVI_3537.npz
+NO SCORE:   0.9320
+SPATIAL:    0.9696
+MOVEMENT:   1.0000
+AXIS:       0.9350
+FINGER:     0.8188
+TOKEN:      0.8432
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00088__Help__session111__clip022.npz
+NO SCORE:   0.9318
+SPATIAL:    0.9021
+MOVEMENT:   1.0000
+AXIS:       0.7903
+FINGER:     1.0000
+TOKEN:      0.9180
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00499__MVI_3536.npz
+NO SCORE:   0.9318
+SPATIAL:    0.8884
+MOVEMENT:   1.0000
+AXIS:       0.9886
+FINGER:     0.8223
+TOKEN:      0.9204
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00229__School__session107__clip012.npz
+NO SCORE:   0.9317
+SPATIAL:    0.8407
+MOVEMENT:   1.0000
+AXIS:       0.8958
+FINGER:     1.0000
+TOKEN:      0.9147
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00130__Water__session158__clip023.npz
+NO SCORE:   0.9317
+SPATIAL:    0.9132
+MOVEMENT:   1.0000
+AXIS:       0.7855
+FINGER:     0.9515
+TOKEN:      0.9524
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__CISLR__00038__OvDIlDiFmnU.npz
+NO SCORE:   0.9315
+SPATIAL:    0.8130
+MOVEMENT:   1.0000
+AXIS:       0.9730
+FINGER:     0.9993
+TOKEN:      0.8824
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00153__Teacher__session113__clip020.npz
+NO SCORE:   0.9314
+SPATIAL:    0.9073
+MOVEMENT:   1.0000
+AXIS:       0.9053
+FINGER:     0.9393
+TOKEN:      0.8526
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00337__School__000001.npz
+NO SCORE:   0.9310
+SPATIAL:    0.9200
+MOVEMENT:   1.0000
+AXIS:       0.6732
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00160__Yes__session114__clip001.npz
+NO SCORE:   0.9304
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8635
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   0.5088
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00371__Thankyou__session119__clip002.npz
+NO SCORE:   0.9300
+SPATIAL:    0.9361
+MOVEMENT:   1.0000
+AXIS:       0.7178
+FINGER:     1.0000
+TOKEN:      0.9219
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001818.npz
+NO SCORE:   0.9294
+SPATIAL:    0.9327
+MOVEMENT:   1.0000
+AXIS:       0.9380
+FINGER:     0.9216
+TOKEN:      0.7821
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: stop
+FILE:       stop__ISLRTC_dictionary__00639__Stop.npz
+NO SCORE:   0.9289
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.6531
+FINGER:     1.0000
+TOKEN:      0.8729
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00184__Water__session121__clip007.npz
+NO SCORE:   0.9287
+SPATIAL:    0.8487
+MOVEMENT:   1.0000
+AXIS:       0.9969
+FINGER:     0.9518
+TOKEN:      0.8281
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00554__MVI_4124.npz
+NO SCORE:   0.9286
+SPATIAL:    0.9857
+MOVEMENT:   1.0000
+AXIS:       0.9479
+FINGER:     0.7036
+TOKEN:      0.8962
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00461__Father__session152__clip031.npz
+NO SCORE:   0.9285
+SPATIAL:    0.9178
+MOVEMENT:   1.0000
+AXIS:       0.8510
+FINGER:     0.8104
+TOKEN:      0.9993
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00123__Sister__session120__clip001.npz
+NO SCORE:   0.9285
+SPATIAL:    0.9251
+MOVEMENT:   1.0000
+AXIS:       0.8374
+FINGER:     0.8138
+TOKEN:      0.9972
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00466__Help__session102__clip026.npz
+NO SCORE:   0.9282
+SPATIAL:    0.9260
+MOVEMENT:   1.0000
+AXIS:       0.7770
+FINGER:     1.0000
+TOKEN:      0.8678
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: goodbye
+FILE:       goodbye__ISLRTC_dictionary__00630__Bye_Goodbye.npz
+NO SCORE:   0.9278
+SPATIAL:    0.8786
+MOVEMENT:   1.0000
+AXIS:       0.9845
+FINGER:     0.8505
+TOKEN:      0.8857
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00182__Thankyou__session104__clip023.npz
+NO SCORE:   0.9277
+SPATIAL:    0.8786
+MOVEMENT:   1.0000
+AXIS:       0.8402
+FINGER:     1.0000
+TOKEN:      0.8801
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00277__Help__session112__clip030.npz
+NO SCORE:   0.9276
+SPATIAL:    0.8300
+MOVEMENT:   1.0000
+AXIS:       0.9311
+FINGER:     1.0000
+TOKEN:      0.8693
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00085__Friend__session108__clip021.npz
+NO SCORE:   0.9273
+SPATIAL:    0.8594
+MOVEMENT:   1.0000
+AXIS:       0.8064
+FINGER:     1.0000
+TOKEN:      0.9429
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001506.npz
+NO SCORE:   0.9270
+SPATIAL:    0.9442
+MOVEMENT:   1.0000
+AXIS:       0.9443
+FINGER:     0.8528
+TOKEN:      0.8093
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00315__Teacher__000001.npz
+NO SCORE:   0.9270
+SPATIAL:    0.9232
+MOVEMENT:   1.0000
+AXIS:       0.9880
+FINGER:     0.8000
+TOKEN:      0.8531
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00474__Sister__session120__clip024.npz
+NO SCORE:   0.9261
+SPATIAL:    0.9701
+MOVEMENT:   1.0000
+AXIS:       0.5573
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00223__Help__session110__clip001.npz
+NO SCORE:   0.9258
+SPATIAL:    0.8910
+MOVEMENT:   1.0000
+AXIS:       0.9727
+FINGER:     1.0000
+TOKEN:      0.7146
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00148__School__session100__clip010.npz
+NO SCORE:   0.9257
+SPATIAL:    0.9755
+MOVEMENT:   1.0000
+AXIS:       0.9474
+FINGER:     1.0000
+TOKEN:      0.9422
+DURATION:   0.4838
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00309__Please__000001.npz
+NO SCORE:   0.9256
+SPATIAL:    0.9065
+MOVEMENT:   1.0000
+AXIS:       0.8196
+FINGER:     0.9749
+TOKEN:      0.8652
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00201__Please__session117__clip014.npz
+NO SCORE:   0.9254
+SPATIAL:    0.9374
+MOVEMENT:   1.0000
+AXIS:       0.6067
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00427__Water__session169__clip005.npz
+NO SCORE:   0.9246
+SPATIAL:    0.9301
+MOVEMENT:   1.0000
+AXIS:       0.6570
+FINGER:     1.0000
+TOKEN:      0.9569
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00384__Hello__session105__clip008.npz
+NO SCORE:   0.9242
+SPATIAL:    0.8811
+MOVEMENT:   1.0000
+AXIS:       0.9614
+FINGER:     0.8170
+TOKEN:      0.9144
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00355__Friend__session182__clip000.npz
+NO SCORE:   0.9237
+SPATIAL:    0.9147
+MOVEMENT:   1.0000
+AXIS:       0.8259
+FINGER:     1.0000
+TOKEN:      0.8072
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__CISLR__00028__IVY4EYIVHMI.npz
+NO SCORE:   0.9233
+SPATIAL:    0.9758
+MOVEMENT:   1.0000
+AXIS:       0.6550
+FINGER:     0.8744
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       sorry__CISLR__00049__TiPPYhh323E.npz
+NO SCORE:   0.9231
+SPATIAL:    0.9693
+MOVEMENT:   1.0000
+AXIS:       0.9286
+FINGER:     0.9276
+TOKEN:      0.9928
+DURATION:   0.5338
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00319__Water__000001.npz
+NO SCORE:   0.9229
+SPATIAL:    0.8211
+MOVEMENT:   1.0000
+AXIS:       0.9929
+FINGER:     0.9144
+TOKEN:      0.8766
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00199__Mother__session142__clip013.npz
+NO SCORE:   0.9226
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7635
+FINGER:     0.8000
+TOKEN:      0.9206
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00238__Water__session104__clip017.npz
+NO SCORE:   0.9222
+SPATIAL:    0.8140
+MOVEMENT:   1.0000
+AXIS:       0.9751
+FINGER:     0.9219
+TOKEN:      0.8943
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00202__School__session118__clip013.npz
+NO SCORE:   0.9222
+SPATIAL:    0.8085
+MOVEMENT:   1.0000
+AXIS:       0.8994
+FINGER:     1.0000
+TOKEN:      0.9011
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00444__Please__session133__clip003.npz
+NO SCORE:   0.9221
+SPATIAL:    0.8271
+MOVEMENT:   1.0000
+AXIS:       0.8969
+FINGER:     1.0000
+TOKEN:      0.8720
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001749.npz
+NO SCORE:   0.9220
+SPATIAL:    0.9313
+MOVEMENT:   1.0000
+AXIS:       0.9702
+FINGER:     0.7980
+TOKEN:      0.8261
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001741.npz
+NO SCORE:   0.9209
+SPATIAL:    0.9476
+MOVEMENT:   1.0000
+AXIS:       0.8147
+FINGER:     0.8699
+TOKEN:      0.8753
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       sorry__ISLRTC_dictionary__00636__Sorry.npz
+NO SCORE:   0.9203
+SPATIAL:    0.9527
+MOVEMENT:   1.0000
+AXIS:       0.7975
+FINGER:     0.8997
+TOKEN:      0.8500
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00301__Friend__000001.npz
+NO SCORE:   0.9199
+SPATIAL:    0.8978
+MOVEMENT:   1.0000
+AXIS:       0.7509
+FINGER:     1.0000
+TOKEN:      0.8857
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00096__Sister__session100__clip016.npz
+NO SCORE:   0.9190
+SPATIAL:    0.9938
+MOVEMENT:   1.0000
+AXIS:       0.8481
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   0.4338
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       sorry__CISLR__00031__KXnSguJGdN8.npz
+NO SCORE:   0.9189
+SPATIAL:    0.8999
+MOVEMENT:   1.0000
+AXIS:       0.7054
+FINGER:     1.0000
+TOKEN:      0.9206
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00290__Thankyou__000001.npz
+NO SCORE:   0.9183
+SPATIAL:    0.8758
+MOVEMENT:   1.0000
+AXIS:       0.7033
+FINGER:     1.0000
+TOKEN:      0.9589
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00450__Teacher__session139__clip013.npz
+NO SCORE:   0.9177
+SPATIAL:    0.8408
+MOVEMENT:   1.0000
+AXIS:       0.9942
+FINGER:     0.8184
+TOKEN:      0.9042
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00330__Hello__000001.npz
+NO SCORE:   0.9175
+SPATIAL:    0.8974
+MOVEMENT:   1.0000
+AXIS:       0.8477
+FINGER:     0.8508
+TOKEN:      0.9228
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00141__Hello__session13__clip003.npz
+NO SCORE:   0.9175
+SPATIAL:    0.8887
+MOVEMENT:   1.0000
+AXIS:       0.8309
+FINGER:     0.8893
+TOKEN:      0.9153
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001520.npz
+NO SCORE:   0.9170
+SPATIAL:    0.9459
+MOVEMENT:   1.0000
+AXIS:       0.8828
+FINGER:     0.7741
+TOKEN:      0.8803
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__CISLR__00078__z2B7VrBSA5c.npz
+NO SCORE:   0.9169
+SPATIAL:    0.9776
+MOVEMENT:   1.0000
+AXIS:       0.6268
+FINGER:     0.8567
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00498__MVI_3535.npz
+NO SCORE:   0.9168
+SPATIAL:    0.8915
+MOVEMENT:   1.0000
+AXIS:       0.9890
+FINGER:     0.8276
+TOKEN:      0.8094
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: house
+FILE:       video_datagov_House_Home.npz
+NO SCORE:   0.9166
+SPATIAL:    0.8674
+MOVEMENT:   1.0000
+AXIS:       0.8423
+FINGER:     0.8808
+TOKEN:      0.9419
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00204__Sister__session144__clip013.npz
+NO SCORE:   0.9166
+SPATIAL:    0.9540
+MOVEMENT:   1.0000
+AXIS:       0.6839
+FINGER:     0.8366
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001659.npz
+NO SCORE:   0.9150
+SPATIAL:    0.9116
+MOVEMENT:   1.0000
+AXIS:       0.8806
+FINGER:     0.8624
+TOKEN:      0.8378
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       sorry__ISLRTC_dictionary__00637__Sorry_(Sign_2).npz
+NO SCORE:   0.9141
+SPATIAL:    0.8852
+MOVEMENT:   1.0000
+AXIS:       0.8221
+FINGER:     0.9080
+TOKEN:      0.8884
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00496__MVI_3458.npz
+NO SCORE:   0.9134
+SPATIAL:    0.8831
+MOVEMENT:   1.0000
+AXIS:       0.8784
+FINGER:     0.8249
+TOKEN:      0.9140
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00147__Please__session111__clip009.npz
+NO SCORE:   0.9133
+SPATIAL:    0.9684
+MOVEMENT:   1.0000
+AXIS:       0.8811
+FINGER:     1.0000
+TOKEN:      0.9045
+DURATION:   0.5338
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00479__Thankyou__session121__clip026.npz
+NO SCORE:   0.9130
+SPATIAL:    0.9251
+MOVEMENT:   1.0000
+AXIS:       0.6510
+FINGER:     1.0000
+TOKEN:      0.8941
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00273__Food__000001.npz
+NO SCORE:   0.9130
+SPATIAL:    0.8860
+MOVEMENT:   1.0000
+AXIS:       0.6937
+FINGER:     0.9999
+TOKEN:      0.9160
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00346__Water__000001.npz
+NO SCORE:   0.9122
+SPATIAL:    0.8807
+MOVEMENT:   1.0000
+AXIS:       0.7372
+FINGER:     0.9378
+TOKEN:      0.9386
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00115__Help__session155__clip011.npz
+NO SCORE:   0.9120
+SPATIAL:    0.7854
+MOVEMENT:   1.0000
+AXIS:       0.9155
+FINGER:     1.0000
+TOKEN:      0.8557
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__CISLR__00024__Gm2HCSz7Jqg_1.npz
+NO SCORE:   0.9113
+SPATIAL:    0.9897
+MOVEMENT:   1.0000
+AXIS:       0.9029
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   0.2838
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00180__Teacher__session108__clip024.npz
+NO SCORE:   0.9113
+SPATIAL:    0.8244
+MOVEMENT:   1.0000
+AXIS:       0.8508
+FINGER:     1.0000
+TOKEN:      0.8507
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00477__Teacher__session126__clip026.npz
+NO SCORE:   0.9101
+SPATIAL:    0.9316
+MOVEMENT:   1.0000
+AXIS:       0.7787
+FINGER:     0.8000
+TOKEN:      0.9360
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00121__School__session116__clip001.npz
+NO SCORE:   0.9101
+SPATIAL:    0.8277
+MOVEMENT:   1.0000
+AXIS:       0.7830
+FINGER:     1.0000
+TOKEN:      0.9045
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000639.npz
+NO SCORE:   0.9097
+SPATIAL:    0.9959
+MOVEMENT:   1.0000
+AXIS:       0.5991
+FINGER:     0.8644
+TOKEN:      0.9413
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00366__Sister__session109__clip000.npz
+NO SCORE:   0.9095
+SPATIAL:    0.7879
+MOVEMENT:   1.0000
+AXIS:       0.9315
+FINGER:     1.0000
+TOKEN:      0.8188
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001706.npz
+NO SCORE:   0.9088
+SPATIAL:    0.8658
+MOVEMENT:   1.0000
+AXIS:       0.8174
+FINGER:     0.9791
+TOKEN:      0.8190
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00562__MVI_5299.npz
+NO SCORE:   0.9083
+SPATIAL:    0.8553
+MOVEMENT:   1.0000
+AXIS:       0.9724
+FINGER:     0.8663
+TOKEN:      0.7909
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00412__Help__session230__clip002.npz
+NO SCORE:   0.9081
+SPATIAL:    0.9784
+MOVEMENT:   1.0000
+AXIS:       0.9910
+FINGER:     1.0000
+TOKEN:      0.9934
+DURATION:   0.1588
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00126__Teacher__session154__clip020.npz
+NO SCORE:   0.9078
+SPATIAL:    0.9245
+MOVEMENT:   1.0000
+AXIS:       0.9027
+FINGER:     0.8000
+TOKEN:      0.8087
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00552__MVI_4122.npz
+NO SCORE:   0.9073
+SPATIAL:    0.8779
+MOVEMENT:   1.0000
+AXIS:       0.8844
+FINGER:     0.7983
+TOKEN:      0.9027
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00415__Mother__session121__clip003.npz
+NO SCORE:   0.9070
+SPATIAL:    0.9350
+MOVEMENT:   1.0000
+AXIS:       0.9675
+FINGER:     0.8457
+TOKEN:      0.9862
+DURATION:   0.5338
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00481__Water__session119__clip002.npz
+NO SCORE:   0.9070
+SPATIAL:    0.9225
+MOVEMENT:   1.0000
+AXIS:       0.9542
+FINGER:     0.7421
+TOKEN:      0.8130
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00547__MVI_3827.npz
+NO SCORE:   0.9067
+SPATIAL:    0.9629
+MOVEMENT:   1.0000
+AXIS:       0.6491
+FINGER:     0.8480
+TOKEN:      0.9430
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00245__Father__000001__c545daf6-s099-013_Father.npz
+NO SCORE:   0.9067
+SPATIAL:    0.8359
+MOVEMENT:   1.0000
+AXIS:       0.9057
+FINGER:     0.8589
+TOKEN:      0.8869
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00137__Father__session171__clip018.npz
+NO SCORE:   0.9064
+SPATIAL:    0.9387
+MOVEMENT:   1.0000
+AXIS:       0.9674
+FINGER:     0.8775
+TOKEN:      0.9942
+DURATION:   0.4588
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00388__Mother__session136__clip001.npz
+NO SCORE:   0.9058
+SPATIAL:    0.8224
+MOVEMENT:   1.0000
+AXIS:       0.9577
+FINGER:     0.8658
+TOKEN:      0.8442
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00457__Yes__session139__clip024.npz
+NO SCORE:   0.9049
+SPATIAL:    0.7956
+MOVEMENT:   1.0000
+AXIS:       0.9190
+FINGER:     1.0000
+TOKEN:      0.7878
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00447__Sister__session117__clip004.npz
+NO SCORE:   0.9044
+SPATIAL:    0.8232
+MOVEMENT:   1.0000
+AXIS:       0.8685
+FINGER:     1.0000
+TOKEN:      0.7886
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00099__Teacher__session101__clip005.npz
+NO SCORE:   0.9040
+SPATIAL:    0.8769
+MOVEMENT:   1.0000
+AXIS:       0.9304
+FINGER:     0.8011
+TOKEN:      0.8338
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001513.npz
+NO SCORE:   0.9040
+SPATIAL:    0.9132
+MOVEMENT:   1.0000
+AXIS:       0.9331
+FINGER:     0.8122
+TOKEN:      0.7594
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00150__Sister__session104__clip029.npz
+NO SCORE:   0.9033
+SPATIAL:    0.8447
+MOVEMENT:   1.0000
+AXIS:       0.6967
+FINGER:     1.0000
+TOKEN:      0.9176
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00420__Sister__session146__clip001.npz
+NO SCORE:   0.9033
+SPATIAL:    0.9747
+MOVEMENT:   1.0000
+AXIS:       0.9749
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   0.1338
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00084__Food__session108__clip023.npz
+NO SCORE:   0.9029
+SPATIAL:    0.8231
+MOVEMENT:   1.0000
+AXIS:       0.9492
+FINGER:     0.9178
+TOKEN:      0.7806
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00452__Thankyou__session121__clip014.npz
+NO SCORE:   0.9029
+SPATIAL:    0.8023
+MOVEMENT:   1.0000
+AXIS:       0.7821
+FINGER:     1.0000
+TOKEN:      0.9001
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001652.npz
+NO SCORE:   0.9029
+SPATIAL:    0.8840
+MOVEMENT:   1.0000
+AXIS:       0.8493
+FINGER:     0.8676
+TOKEN:      0.8289
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00563__MVI_5300.npz
+NO SCORE:   0.9025
+SPATIAL:    0.8580
+MOVEMENT:   1.0000
+AXIS:       0.9425
+FINGER:     0.8503
+TOKEN:      0.7937
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00209__Thankyou__session101__clip015.npz
+NO SCORE:   0.9023
+SPATIAL:    0.9034
+MOVEMENT:   1.0000
+AXIS:       0.9735
+FINGER:     1.0000
+TOKEN:      0.8469
+DURATION:   0.5338
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00195__Hello__session152__clip002.npz
+NO SCORE:   0.9019
+SPATIAL:    0.9081
+MOVEMENT:   1.0000
+AXIS:       0.7757
+FINGER:     0.8940
+TOKEN:      0.8293
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__ISL500__00391__School__session169__clip001.npz
+NO SCORE:   0.9017
+SPATIAL:    0.8303
+MOVEMENT:   1.0000
+AXIS:       0.7432
+FINGER:     1.0000
+TOKEN:      0.8840
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001734.npz
+NO SCORE:   0.9008
+SPATIAL:    0.9303
+MOVEMENT:   1.0000
+AXIS:       0.8457
+FINGER:     0.8653
+TOKEN:      0.7438
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       sorry__CISLR__00072__v7LOMsrEiVI_1.npz
+NO SCORE:   0.8999
+SPATIAL:    0.8412
+MOVEMENT:   1.0000
+AXIS:       0.6961
+FINGER:     1.0000
+TOKEN:      0.9011
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00564__MVI_5301.npz
+NO SCORE:   0.8994
+SPATIAL:    0.8183
+MOVEMENT:   1.0000
+AXIS:       0.9755
+FINGER:     0.8868
+TOKEN:      0.7694
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001616.npz
+NO SCORE:   0.8990
+SPATIAL:    0.8846
+MOVEMENT:   1.0000
+AXIS:       0.8837
+FINGER:     0.7978
+TOKEN:      0.8377
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00339__Sister__000001.npz
+NO SCORE:   0.8983
+SPATIAL:    0.9925
+MOVEMENT:   1.0000
+AXIS:       0.8354
+FINGER:     0.9595
+TOKEN:      1.0000
+DURATION:   0.3088
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__CISLR__00075__vMbLDoCayk8.npz
+NO SCORE:   0.8969
+SPATIAL:    0.9869
+MOVEMENT:   1.0000
+AXIS:       0.8656
+FINGER:     0.9462
+TOKEN:      1.0000
+DURATION:   0.2838
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       video_datagov_Sorry_(Sign_2).npz
+NO SCORE:   0.8966
+SPATIAL:    0.8741
+MOVEMENT:   1.0000
+AXIS:       0.7631
+FINGER:     0.8780
+TOKEN:      0.8793
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00288__Teacher__000001.npz
+NO SCORE:   0.8963
+SPATIAL:    0.9112
+MOVEMENT:   1.0000
+AXIS:       0.8566
+FINGER:     0.8000
+TOKEN:      0.7998
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00557__MVI_4998.npz
+NO SCORE:   0.8963
+SPATIAL:    0.9907
+MOVEMENT:   1.0000
+AXIS:       0.6930
+FINGER:     0.7509
+TOKEN:      0.8799
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00491__MVI_3372.npz
+NO SCORE:   0.8962
+SPATIAL:    0.8778
+MOVEMENT:   1.0000
+AXIS:       0.9727
+FINGER:     0.7673
+TOKEN:      0.7715
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00503__MVI_3615.npz
+NO SCORE:   0.8962
+SPATIAL:    0.9343
+MOVEMENT:   1.0000
+AXIS:       0.6748
+FINGER:     0.8702
+TOKEN:      0.8726
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000618.npz
+NO SCORE:   0.8958
+SPATIAL:    0.9925
+MOVEMENT:   1.0000
+AXIS:       0.8600
+FINGER:     0.9254
+TOKEN:      0.9597
+DURATION:   0.3588
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00400__Water__session208__clip003.npz
+NO SCORE:   0.8954
+SPATIAL:    0.7468
+MOVEMENT:   1.0000
+AXIS:       0.8817
+FINGER:     0.9548
+TOKEN:      0.8879
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__CISLR__00003__0t5NaJwemgI_1.npz
+NO SCORE:   0.8953
+SPATIAL:    0.9887
+MOVEMENT:   1.0000
+AXIS:       0.8616
+FINGER:     0.8203
+TOKEN:      1.0000
+DURATION:   0.4588
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00381__Food__session217__clip003.npz
+NO SCORE:   0.8951
+SPATIAL:    0.7751
+MOVEMENT:   1.0000
+AXIS:       0.9123
+FINGER:     1.0000
+TOKEN:      0.7633
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001534.npz
+NO SCORE:   0.8950
+SPATIAL:    0.9075
+MOVEMENT:   1.0000
+AXIS:       0.7952
+FINGER:     0.7994
+TOKEN:      0.8596
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__INCLUDE__00608__MVI_0006.npz
+NO SCORE:   0.8949
+SPATIAL:    0.9752
+MOVEMENT:   1.0000
+AXIS:       0.6425
+FINGER:     0.8303
+TOKEN:      0.8680
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00087__Hello__session101__clip021.npz
+NO SCORE:   0.8948
+SPATIAL:    0.8632
+MOVEMENT:   1.0000
+AXIS:       0.8189
+FINGER:     0.8157
+TOKEN:      0.8921
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00133__Yes__session140__clip009.npz
+NO SCORE:   0.8944
+SPATIAL:    0.9440
+MOVEMENT:   1.0000
+AXIS:       0.8883
+FINGER:     1.0000
+TOKEN:      0.9785
+DURATION:   0.2838
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00307__Mother__000001.npz
+NO SCORE:   0.8943
+SPATIAL:    0.8082
+MOVEMENT:   1.0000
+AXIS:       0.9522
+FINGER:     0.8000
+TOKEN:      0.8628
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00493__MVI_3374.npz
+NO SCORE:   0.8934
+SPATIAL:    0.9949
+MOVEMENT:   1.0000
+AXIS:       0.5787
+FINGER:     0.7651
+TOKEN:      0.9543
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00285__Sister__000001.npz
+NO SCORE:   0.8932
+SPATIAL:    0.9499
+MOVEMENT:   1.0000
+AXIS:       0.5477
+FINGER:     0.9582
+TOKEN:      0.8657
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__ISL500__00425__Thankyou__session159__clip001.npz
+NO SCORE:   0.8925
+SPATIAL:    0.8782
+MOVEMENT:   1.0000
+AXIS:       0.9550
+FINGER:     1.0000
+TOKEN:      0.9088
+DURATION:   0.4338
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00504__MVI_3616.npz
+NO SCORE:   0.8924
+SPATIAL:    0.9396
+MOVEMENT:   1.0000
+AXIS:       0.5829
+FINGER:     0.8533
+TOKEN:      0.9470
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001638.npz
+NO SCORE:   0.8905
+SPATIAL:    0.9178
+MOVEMENT:   1.0000
+AXIS:       0.8175
+FINGER:     0.7338
+TOKEN:      0.8556
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00331__Help__000001.npz
+NO SCORE:   0.8904
+SPATIAL:    0.8849
+MOVEMENT:   1.0000
+AXIS:       0.6230
+FINGER:     1.0000
+TOKEN:      0.8382
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00299__Father__000001.npz
+NO SCORE:   0.8903
+SPATIAL:    0.8054
+MOVEMENT:   1.0000
+AXIS:       0.8608
+FINGER:     0.8577
+TOKEN:      0.8748
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00561__MVI_5147.npz
+NO SCORE:   0.8903
+SPATIAL:    0.9626
+MOVEMENT:   1.0000
+AXIS:       0.8415
+FINGER:     0.8570
+TOKEN:      0.9715
+DURATION:   0.4912
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00300__Food__000001.npz
+NO SCORE:   0.8902
+SPATIAL:    0.8817
+MOVEMENT:   1.0000
+AXIS:       0.7618
+FINGER:     0.9303
+TOKEN:      0.7732
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00303__Hello__000001.npz
+NO SCORE:   0.8898
+SPATIAL:    0.8845
+MOVEMENT:   1.0000
+AXIS:       0.6808
+FINGER:     0.8563
+TOKEN:      0.9210
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00502__MVI_3614.npz
+NO SCORE:   0.8893
+SPATIAL:    0.9452
+MOVEMENT:   1.0000
+AXIS:       0.7253
+FINGER:     0.8176
+TOKEN:      0.8102
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00454__Water__session112__clip016.npz
+NO SCORE:   0.8886
+SPATIAL:    0.7238
+MOVEMENT:   1.0000
+AXIS:       0.9661
+FINGER:     0.9587
+TOKEN:      0.7927
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__ISL500__00214__Yes__session114__clip002.npz
+NO SCORE:   0.8886
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.6766
+FINGER:     1.0000
+TOKEN:      0.8914
+DURATION:   0.5338
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001458.npz
+NO SCORE:   0.8872
+SPATIAL:    0.9129
+MOVEMENT:   1.0000
+AXIS:       0.9287
+FINGER:     0.7270
+TOKEN:      0.7372
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00390__Please__session159__clip001.npz
+NO SCORE:   0.8870
+SPATIAL:    0.9229
+MOVEMENT:   1.0000
+AXIS:       0.9068
+FINGER:     1.0000
+TOKEN:      0.9623
+DURATION:   0.2588
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00326__Father__000001.npz
+NO SCORE:   0.8866
+SPATIAL:    0.8645
+MOVEMENT:   1.0000
+AXIS:       0.7511
+FINGER:     0.8183
+TOKEN:      0.9005
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001624.npz
+NO SCORE:   0.8853
+SPATIAL:    0.8769
+MOVEMENT:   1.0000
+AXIS:       0.9606
+FINGER:     0.6280
+TOKEN:      0.8521
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00103__Water__session117__clip006.npz
+NO SCORE:   0.8853
+SPATIAL:    0.8029
+MOVEMENT:   1.0000
+AXIS:       0.7078
+FINGER:     0.9434
+TOKEN:      0.9126
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00548__MVI_3828.npz
+NO SCORE:   0.8853
+SPATIAL:    0.9619
+MOVEMENT:   1.0000
+AXIS:       0.6314
+FINGER:     0.7286
+TOKEN:      0.9387
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: food
+FILE:       food__ISL500__00435__Food__session157__clip033.npz
+NO SCORE:   0.8853
+SPATIAL:    0.8876
+MOVEMENT:   1.0000
+AXIS:       0.8270
+FINGER:     1.0000
+TOKEN:      0.9185
+DURATION:   0.5162
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00558__MVI_4999.npz
+NO SCORE:   0.8850
+SPATIAL:    0.8799
+MOVEMENT:   1.0000
+AXIS:       0.9248
+FINGER:     0.7362
+TOKEN:      0.7726
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00373__Water__session127__clip006.npz
+NO SCORE:   0.8848
+SPATIAL:    0.8747
+MOVEMENT:   1.0000
+AXIS:       0.6696
+FINGER:     0.9576
+TOKEN:      0.8139
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001527.npz
+NO SCORE:   0.8844
+SPATIAL:    0.9297
+MOVEMENT:   1.0000
+AXIS:       0.6833
+FINGER:     0.9321
+TOKEN:      0.7309
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00211__Water__session109__clip006.npz
+NO SCORE:   0.8836
+SPATIAL:    0.8403
+MOVEMENT:   1.0000
+AXIS:       0.8854
+FINGER:     0.6956
+TOKEN:      0.9089
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00439__Help__session149__clip021.npz
+NO SCORE:   0.8835
+SPATIAL:    0.8542
+MOVEMENT:   1.0000
+AXIS:       0.9526
+FINGER:     1.0000
+TOKEN:      0.8698
+DURATION:   0.4662
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001720.npz
+NO SCORE:   0.8834
+SPATIAL:    0.9208
+MOVEMENT:   1.0000
+AXIS:       0.8593
+FINGER:     0.7984
+TOKEN:      0.6968
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__ISL500__00304__Help__000001.npz
+NO SCORE:   0.8828
+SPATIAL:    0.8806
+MOVEMENT:   1.0000
+AXIS:       0.5762
+FINGER:     1.0000
+TOKEN:      0.8418
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__CISLR__00044__Qy_q0sAucuw.npz
+NO SCORE:   0.8827
+SPATIAL:    0.8740
+MOVEMENT:   1.0000
+AXIS:       0.6582
+FINGER:     0.9727
+TOKEN:      0.7973
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: goodbye
+FILE:       video_bridgeconn_156_farewell_2.npz
+NO SCORE:   0.8816
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.8775
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00218__Father__session128__clip022.npz
+NO SCORE:   0.8812
+SPATIAL:    0.8138
+MOVEMENT:   1.0000
+AXIS:       0.9671
+FINGER:     0.8057
+TOKEN:      0.7456
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00436__Friend__session117__clip005.npz
+NO SCORE:   0.8807
+SPATIAL:    0.7771
+MOVEMENT:   1.0000
+AXIS:       0.7961
+FINGER:     1.0000
+TOKEN:      0.7801
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000646.npz
+NO SCORE:   0.8806
+SPATIAL:    0.9985
+MOVEMENT:   1.0000
+AXIS:       0.3653
+FINGER:     0.8987
+TOKEN:      0.9423
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00112__Friend__session162__clip025.npz
+NO SCORE:   0.8805
+SPATIAL:    0.8687
+MOVEMENT:   1.0000
+AXIS:       0.5767
+FINGER:     1.0000
+TOKEN:      0.8458
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001713.npz
+NO SCORE:   0.8794
+SPATIAL:    0.9146
+MOVEMENT:   1.0000
+AXIS:       0.7876
+FINGER:     0.7900
+TOKEN:      0.7607
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: father
+FILE:       father__ISL500__00434__Father__session157__clip032.npz
+NO SCORE:   0.8788
+SPATIAL:    0.7088
+MOVEMENT:   1.0000
+AXIS:       0.9509
+FINGER:     0.9664
+TOKEN:      0.7600
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00361__Mother__session153__clip028.npz
+NO SCORE:   0.8780
+SPATIAL:    0.8431
+MOVEMENT:   1.0000
+AXIS:       0.7128
+FINGER:     0.8000
+TOKEN:      0.9355
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001804.npz
+NO SCORE:   0.8772
+SPATIAL:    0.8797
+MOVEMENT:   1.0000
+AXIS:       0.6860
+FINGER:     0.8739
+TOKEN:      0.8222
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00292__Water__000001.npz
+NO SCORE:   0.8766
+SPATIAL:    0.8289
+MOVEMENT:   1.0000
+AXIS:       0.5770
+FINGER:     1.0000
+TOKEN:      0.8852
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00207__Teacher__session101__clip005.npz
+NO SCORE:   0.8760
+SPATIAL:    0.9217
+MOVEMENT:   1.0000
+AXIS:       0.9676
+FINGER:     0.8400
+TOKEN:      0.9068
+DURATION:   0.3838
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00369__Teacher__session118__clip012.npz
+NO SCORE:   0.8758
+SPATIAL:    0.8167
+MOVEMENT:   1.0000
+AXIS:       0.8602
+FINGER:     0.8000
+TOKEN:      0.8170
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__ISL500__00157__Water__session102__clip018.npz
+NO SCORE:   0.8758
+SPATIAL:    0.8324
+MOVEMENT:   1.0000
+AXIS:       0.7893
+FINGER:     0.7652
+TOKEN:      0.8965
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00494__MVI_3456.npz
+NO SCORE:   0.8755
+SPATIAL:    0.8910
+MOVEMENT:   1.0000
+AXIS:       0.7503
+FINGER:     0.8714
+TOKEN:      0.7298
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00555__MVI_4246.npz
+NO SCORE:   0.8742
+SPATIAL:    0.9623
+MOVEMENT:   1.0000
+AXIS:       0.7574
+FINGER:     0.5220
+TOKEN:      0.9445
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001541.npz
+NO SCORE:   0.8720
+SPATIAL:    0.8880
+MOVEMENT:   1.0000
+AXIS:       0.7558
+FINGER:     0.7296
+TOKEN:      0.8481
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001811.npz
+NO SCORE:   0.8709
+SPATIAL:    0.8679
+MOVEMENT:   1.0000
+AXIS:       0.7525
+FINGER:     0.7751
+TOKEN:      0.8320
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00505__MVI_3617.npz
+NO SCORE:   0.8709
+SPATIAL:    0.9155
+MOVEMENT:   1.0000
+AXIS:       0.5358
+FINGER:     0.8210
+TOKEN:      0.9230
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001609.npz
+NO SCORE:   0.8707
+SPATIAL:    0.8965
+MOVEMENT:   1.0000
+AXIS:       0.9421
+FINGER:     0.6512
+TOKEN:      0.7169
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: teacher
+FILE:       teacher__ISL500__00261__Teacher__000001__c545daf6-s157-008_Teacher.npz
+NO SCORE:   0.8703
+SPATIAL:    0.7728
+MOVEMENT:   1.0000
+AXIS:       0.7295
+FINGER:     1.0000
+TOKEN:      0.7848
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00488__MVI_3292.npz
+NO SCORE:   0.8684
+SPATIAL:    0.9104
+MOVEMENT:   1.0000
+AXIS:       0.7998
+FINGER:     0.7027
+TOKEN:      0.7693
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00497__MVI_3459.npz
+NO SCORE:   0.8672
+SPATIAL:    0.8972
+MOVEMENT:   1.0000
+AXIS:       0.7370
+FINGER:     0.8416
+TOKEN:      0.7075
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00495__MVI_3457.npz
+NO SCORE:   0.8666
+SPATIAL:    0.8610
+MOVEMENT:   1.0000
+AXIS:       0.6819
+FINGER:     0.7932
+TOKEN:      0.8670
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00139__Friend__session104__clip030.npz
+NO SCORE:   0.8664
+SPATIAL:    0.8538
+MOVEMENT:   1.0000
+AXIS:       0.7790
+FINGER:     1.0000
+TOKEN:      0.9014
+DURATION:   0.5088
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__CISLR__00041__QlqLuC-1u1U_1.npz
+NO SCORE:   0.8637
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.7583
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__INCLUDE__00609__MVI_0007.npz
+NO SCORE:   0.8634
+SPATIAL:    0.9928
+MOVEMENT:   1.0000
+AXIS:       0.8218
+FINGER:     0.8124
+TOKEN:      0.7776
+DURATION:   0.5338
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00145__Mother__session107__clip029.npz
+NO SCORE:   0.8626
+SPATIAL:    0.7992
+MOVEMENT:   1.0000
+AXIS:       0.7777
+FINGER:     0.8000
+TOKEN:      0.8409
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00553__MVI_4123.npz
+NO SCORE:   0.8618
+SPATIAL:    0.8970
+MOVEMENT:   1.0000
+AXIS:       0.6956
+FINGER:     0.7103
+TOKEN:      0.8446
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sorry
+FILE:       sorry__CISLR__00002__0sE5EMDNsDo.npz
+NO SCORE:   0.8618
+SPATIAL:    0.8810
+MOVEMENT:   1.0000
+AXIS:       0.3750
+FINGER:     1.0000
+TOKEN:      0.9018
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__CISLR__00048__T3DNMjNynU0_1.npz
+NO SCORE:   0.8611
+SPATIAL:    0.9703
+MOVEMENT:   1.0000
+AXIS:       0.2034
+FINGER:     0.9199
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       thank_you__CISLR__00054__W_qFjH-GKzA_1.npz
+NO SCORE:   0.8602
+SPATIAL:    0.9817
+MOVEMENT:   1.0000
+AXIS:       0.0988
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001645.npz
+NO SCORE:   0.8595
+SPATIAL:    0.9191
+MOVEMENT:   1.0000
+AXIS:       0.8574
+FINGER:     0.6103
+TOKEN:      0.7303
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000632.npz
+NO SCORE:   0.8571
+SPATIAL:    0.9919
+MOVEMENT:   1.0000
+AXIS:       0.6781
+FINGER:     0.8590
+TOKEN:      0.9630
+DURATION:   0.3412
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__ISL500__00177__Sister__session108__clip018.npz
+NO SCORE:   0.8570
+SPATIAL:    0.9222
+MOVEMENT:   1.0000
+AXIS:       0.3955
+FINGER:     1.0000
+TOKEN:      0.7807
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: please
+FILE:       please__ISL500__00417__Please__session130__clip003.npz
+NO SCORE:   0.8552
+SPATIAL:    0.9797
+MOVEMENT:   1.0000
+AXIS:       0.7351
+FINGER:     1.0000
+TOKEN:      1.0000
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: mother
+FILE:       mother__ISL500__00442__Mother__session132__clip018.npz
+NO SCORE:   0.8552
+SPATIAL:    0.8241
+MOVEMENT:   1.0000
+AXIS:       0.5889
+FINGER:     0.9450
+TOKEN:      0.7938
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00357__Hello__session172__clip006.npz
+NO SCORE:   0.8541
+SPATIAL:    0.8244
+MOVEMENT:   1.0000
+AXIS:       0.8322
+FINGER:     0.8919
+TOKEN:      0.9186
+DURATION:   0.5162
+----------------------------------------
+TRUE CLASS: goodbye
+FILE:       video_bridgeconn_253_farewell_1.npz
+NO SCORE:   0.8499
+SPATIAL:    0.9971
+MOVEMENT:   1.0000
+AXIS:       0.7677
+FINGER:     0.9614
+TOKEN:      0.9416
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: house
+FILE:       home__CISLR__00008__3SRihi99gjc_1.npz
+NO SCORE:   0.8492
+SPATIAL:    0.8408
+MOVEMENT:   1.0000
+AXIS:       0.4234
+FINGER:     1.0000
+TOKEN:      0.8366
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: help
+FILE:       help__CISLR__00018__E91cfQBn8_4_1.npz
+NO SCORE:   0.8473
+SPATIAL:    0.8426
+MOVEMENT:   1.0000
+AXIS:       0.5876
+FINGER:     0.8118
+TOKEN:      0.8451
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: brother
+FILE:       brother__CISLR__00077__yMqhsoFHB_Q_1.npz
+NO SCORE:   0.8456
+SPATIAL:    0.8941
+MOVEMENT:   1.0000
+AXIS:       0.9658
+FINGER:     0.8716
+TOKEN:      0.9763
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00409__Friend__session296__clip001.npz
+NO SCORE:   0.8449
+SPATIAL:    0.8455
+MOVEMENT:   1.0000
+AXIS:       0.9920
+FINGER:     1.0000
+TOKEN:      0.8981
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001756.npz
+NO SCORE:   0.8447
+SPATIAL:    0.8827
+MOVEMENT:   1.0000
+AXIS:       0.6809
+FINGER:     0.6634
+TOKEN:      0.8160
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__CISLR__00045__Rj6pX9wzxqA_1.npz
+NO SCORE:   0.8439
+SPATIAL:    0.9520
+MOVEMENT:   1.0000
+AXIS:       0.7164
+FINGER:     0.9893
+TOKEN:      1.0000
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: house
+FILE:       video_bridgeconn_1265_house_and_home.npz
+NO SCORE:   0.8425
+SPATIAL:    0.9944
+MOVEMENT:   1.0000
+AXIS:       0.8707
+FINGER:     0.7829
+TOKEN:      0.9727
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__ISL500__00193__Friend__session165__clip015.npz
+NO SCORE:   0.8403
+SPATIAL:    0.6429
+MOVEMENT:   1.0000
+AXIS:       0.7538
+FINGER:     0.9995
+TOKEN:      0.7772
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: brother
+FILE:       brother__CISLR__00071__pcz5j3TcyEs_1.npz
+NO SCORE:   0.8398
+SPATIAL:    0.9713
+MOVEMENT:   1.0000
+AXIS:       0.6900
+FINGER:     0.9565
+TOKEN:      1.0000
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: stop
+FILE:       video_bridgeconn_2059_stop.npz
+NO SCORE:   0.8340
+SPATIAL:    0.8507
+MOVEMENT:   1.0000
+AXIS:       0.9792
+FINGER:     0.9387
+TOKEN:      0.8913
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: water
+FILE:       water__CISLR__00010__5FSC6Og1RBQ_2.npz
+NO SCORE:   0.8338
+SPATIAL:    0.9896
+MOVEMENT:   1.0000
+AXIS:       0.3949
+FINGER:     1.0000
+TOKEN:      0.9041
+DURATION:   0.4162
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00490__MVI_3371.npz
+NO SCORE:   0.8338
+SPATIAL:    0.9927
+MOVEMENT:   1.0000
+AXIS:       0.6701
+FINGER:     0.7234
+TOKEN:      0.9219
+DURATION:   0.3838
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000708.npz
+NO SCORE:   0.8325
+SPATIAL:    0.9536
+MOVEMENT:   1.0000
+AXIS:       0.5699
+FINGER:     0.9326
+TOKEN:      0.9689
+DURATION:   0.2338
+----------------------------------------
+TRUE CLASS: goodbye
+FILE:       video_datagov_Bye.npz
+NO SCORE:   0.8303
+SPATIAL:    0.7925
+MOVEMENT:   1.0000
+AXIS:       0.9967
+FINGER:     1.0000
+TOKEN:      0.8841
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000701.npz
+NO SCORE:   0.8297
+SPATIAL:    0.9657
+MOVEMENT:   1.0000
+AXIS:       0.6985
+FINGER:     0.9365
+TOKEN:      0.9532
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: stop
+FILE:       stop__ISLRTC_dictionary__00631__Cease_Discontinue_Halt_Stop.npz
+NO SCORE:   0.8286
+SPATIAL:    0.8566
+MOVEMENT:   1.0000
+AXIS:       0.8416
+FINGER:     1.0000
+TOKEN:      0.9212
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000653.npz
+NO SCORE:   0.8278
+SPATIAL:    0.9782
+MOVEMENT:   1.0000
+AXIS:       0.6335
+FINGER:     0.9262
+TOKEN:      0.9563
+DURATION:   0.0588
+----------------------------------------
+TRUE CLASS: goodbye
+FILE:       goodbye__ISLRTC_dictionary__00629__Bye.npz
+NO SCORE:   0.8264
+SPATIAL:    0.7882
+MOVEMENT:   1.0000
+AXIS:       0.9689
+FINGER:     1.0000
+TOKEN:      0.8932
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000743.npz
+NO SCORE:   0.8264
+SPATIAL:    0.9891
+MOVEMENT:   1.0000
+AXIS:       0.5165
+FINGER:     0.9215
+TOKEN:      0.9671
+DURATION:   0.1838
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000722.npz
+NO SCORE:   0.8263
+SPATIAL:    0.9815
+MOVEMENT:   1.0000
+AXIS:       0.6654
+FINGER:     0.9074
+TOKEN:      0.9667
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000729.npz
+NO SCORE:   0.8255
+SPATIAL:    0.9909
+MOVEMENT:   1.0000
+AXIS:       0.6174
+FINGER:     0.9373
+TOKEN:      0.9636
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00489__MVI_3293.npz
+NO SCORE:   0.8255
+SPATIAL:    0.9424
+MOVEMENT:   1.0000
+AXIS:       0.6482
+FINGER:     0.7699
+TOKEN:      0.9586
+DURATION:   0.3338
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000757.npz
+NO SCORE:   0.8238
+SPATIAL:    0.9827
+MOVEMENT:   1.0000
+AXIS:       0.5104
+FINGER:     0.9308
+TOKEN:      0.9569
+DURATION:   0.1838
+----------------------------------------
+TRUE CLASS: goodbye
+FILE:       goodbye__CISLR__00036__O6YJgD20e2g.npz
+NO SCORE:   0.8231
+SPATIAL:    0.6968
+MOVEMENT:   1.0000
+AXIS:       0.3835
+FINGER:     1.0000
+TOKEN:      0.9424
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001555.npz
+NO SCORE:   0.8228
+SPATIAL:    0.9167
+MOVEMENT:   1.0000
+AXIS:       0.4354
+FINGER:     0.9449
+TOKEN:      0.5771
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00492__MVI_3373.npz
+NO SCORE:   0.8221
+SPATIAL:    0.9703
+MOVEMENT:   1.0000
+AXIS:       0.6680
+FINGER:     0.7614
+TOKEN:      0.7448
+DURATION:   0.5338
+----------------------------------------
+TRUE CLASS: goodbye
+FILE:       video_bridgeconn_2086_goodbye.npz
+NO SCORE:   0.8217
+SPATIAL:    0.9092
+MOVEMENT:   1.0000
+AXIS:       0.9877
+FINGER:     0.7465
+TOKEN:      0.8953
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000604.npz
+NO SCORE:   0.8198
+SPATIAL:    0.9786
+MOVEMENT:   1.0000
+AXIS:       0.6859
+FINGER:     0.8508
+TOKEN:      0.9642
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00559__MVI_5145.npz
+NO SCORE:   0.8189
+SPATIAL:    0.8525
+MOVEMENT:   1.0000
+AXIS:       0.6533
+FINGER:     0.8250
+TOKEN:      0.9162
+DURATION:   0.4662
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000736.npz
+NO SCORE:   0.8188
+SPATIAL:    0.9875
+MOVEMENT:   1.0000
+AXIS:       0.6073
+FINGER:     0.9114
+TOKEN:      0.9609
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__ISL500__00438__Hello__session166__clip005.npz
+NO SCORE:   0.8086
+SPATIAL:    0.6285
+MOVEMENT:   1.0000
+AXIS:       0.7462
+FINGER:     0.9353
+TOKEN:      0.6619
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235306.npz
+NO SCORE:   0.8063
+SPATIAL:    0.8468
+MOVEMENT:   1.0000
+AXIS:       0.2492
+FINGER:     1.0000
+TOKEN:      0.7152
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000611.npz
+NO SCORE:   0.8052
+SPATIAL:    0.9574
+MOVEMENT:   1.0000
+AXIS:       0.6065
+FINGER:     0.8634
+TOKEN:      0.9694
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000715.npz
+NO SCORE:   0.8052
+SPATIAL:    0.9674
+MOVEMENT:   1.0000
+AXIS:       0.5451
+FINGER:     0.9127
+TOKEN:      0.9647
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00486__MVI_3290.npz
+NO SCORE:   0.8015
+SPATIAL:    0.9064
+MOVEMENT:   1.0000
+AXIS:       0.8295
+FINGER:     0.7218
+TOKEN:      0.7753
+DURATION:   0.2588
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001548.npz
+NO SCORE:   0.8013
+SPATIAL:    0.8522
+MOVEMENT:   1.0000
+AXIS:       0.6058
+FINGER:     0.8969
+TOKEN:      0.7630
+DURATION:   0.4838
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00560__MVI_5146.npz
+NO SCORE:   0.8001
+SPATIAL:    0.9884
+MOVEMENT:   0.9893
+AXIS:       0.5716
+FINGER:     0.8091
+TOKEN:      0.8930
+DURATION:   0.1412
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000557.npz
+NO SCORE:   0.7964
+SPATIAL:    1.0000
+MOVEMENT:   1.0000
+AXIS:       0.5007
+FINGER:     0.8556
+TOKEN:      0.9532
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000750.npz
+NO SCORE:   0.7954
+SPATIAL:    0.9790
+MOVEMENT:   1.0000
+AXIS:       0.4835
+FINGER:     0.9015
+TOKEN:      0.9529
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260910_001631.npz
+NO SCORE:   0.7953
+SPATIAL:    0.8660
+MOVEMENT:   1.0000
+AXIS:       0.5456
+FINGER:     0.4718
+TOKEN:      0.8413
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__INCLUDE__00570__MVI_0037.npz
+NO SCORE:   0.7931
+SPATIAL:    0.7107
+MOVEMENT:   1.0000
+AXIS:       0.4396
+FINGER:     0.8302
+TOKEN:      0.8327
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: sister
+FILE:       sister__CISLR__00066__jWWLAybE8C8_1.npz
+NO SCORE:   0.7827
+SPATIAL:    0.8925
+MOVEMENT:   1.0000
+AXIS:       0.7893
+FINGER:     0.7848
+TOKEN:      0.8231
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000431.npz
+NO SCORE:   0.7824
+SPATIAL:    0.9135
+MOVEMENT:   1.0000
+AXIS:       0.6168
+FINGER:     0.9052
+TOKEN:      0.8383
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: school
+FILE:       school__INCLUDE__00487__MVI_3291.npz
+NO SCORE:   0.7804
+SPATIAL:    0.8778
+MOVEMENT:   1.0000
+AXIS:       0.6245
+FINGER:     0.7187
+TOKEN:      0.8073
+DURATION:   0.3838
+----------------------------------------
+TRUE CLASS: brother
+FILE:       video_bridgeconn_1000_andrew_brother_peter.npz
+NO SCORE:   0.7751
+SPATIAL:    0.8568
+MOVEMENT:   1.0000
+AXIS:       0.9383
+FINGER:     0.6191
+TOKEN:      0.8486
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000453.npz
+NO SCORE:   0.7717
+SPATIAL:    0.9727
+MOVEMENT:   1.0000
+AXIS:       0.2990
+FINGER:     0.9246
+TOKEN:      0.9667
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260822_230546.npz
+NO SCORE:   0.7668
+SPATIAL:    0.9061
+MOVEMENT:   1.0000
+AXIS:       0.2474
+FINGER:     0.5714
+TOKEN:      0.7827
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000514.npz
+NO SCORE:   0.7578
+SPATIAL:    0.9501
+MOVEMENT:   1.0000
+AXIS:       0.2139
+FINGER:     0.9654
+TOKEN:      0.9557
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000500.npz
+NO SCORE:   0.7571
+SPATIAL:    0.9560
+MOVEMENT:   1.0000
+AXIS:       0.2344
+FINGER:     0.9251
+TOKEN:      0.9611
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: brother
+FILE:       brother__CISLR__00050__UDcg2skGRXM_1.npz
+NO SCORE:   0.7568
+SPATIAL:    0.8518
+MOVEMENT:   1.0000
+AXIS:       0.6472
+FINGER:     0.8987
+TOKEN:      0.7465
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: welcome
+FILE:       video_20260822_230539.npz
+NO SCORE:   0.7548
+SPATIAL:    0.9010
+MOVEMENT:   1.0000
+AXIS:       0.2710
+FINGER:     0.5009
+TOKEN:      0.7585
+DURATION:   1.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000439.npz
+NO SCORE:   0.7532
+SPATIAL:    0.9538
+MOVEMENT:   1.0000
+AXIS:       0.2073
+FINGER:     0.9225
+TOKEN:      0.9684
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000535.npz
+NO SCORE:   0.7486
+SPATIAL:    0.9216
+MOVEMENT:   1.0000
+AXIS:       0.1286
+FINGER:     0.9753
+TOKEN:      0.9445
+DURATION:   0.1088
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000507.npz
+NO SCORE:   0.7433
+SPATIAL:    0.9299
+MOVEMENT:   1.0000
+AXIS:       0.1719
+FINGER:     0.9440
+TOKEN:      0.9562
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000446.npz
+NO SCORE:   0.7425
+SPATIAL:    0.9174
+MOVEMENT:   1.0000
+AXIS:       0.3565
+FINGER:     0.8929
+TOKEN:      0.8384
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235203.npz
+NO SCORE:   0.7405
+SPATIAL:    0.9271
+MOVEMENT:   1.0000
+AXIS:       0.2267
+FINGER:     1.0000
+TOKEN:      0.8315
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235156.npz
+NO SCORE:   0.7403
+SPATIAL:    0.9046
+MOVEMENT:   1.0000
+AXIS:       0.3133
+FINGER:     0.9856
+TOKEN:      0.6893
+DURATION:   0.1588
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235059.npz
+NO SCORE:   0.7388
+SPATIAL:    0.9047
+MOVEMENT:   1.0000
+AXIS:       0.2669
+FINGER:     1.0000
+TOKEN:      0.7784
+DURATION:   0.0588
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000543.npz
+NO SCORE:   0.7385
+SPATIAL:    0.9436
+MOVEMENT:   1.0000
+AXIS:       0.1165
+FINGER:     0.9206
+TOKEN:      0.9408
+DURATION:   0.0588
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000550.npz
+NO SCORE:   0.7384
+SPATIAL:    0.9308
+MOVEMENT:   1.0000
+AXIS:       0.1540
+FINGER:     0.9363
+TOKEN:      0.9474
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235210.npz
+NO SCORE:   0.7374
+SPATIAL:    0.9174
+MOVEMENT:   1.0000
+AXIS:       0.2538
+FINGER:     1.0000
+TOKEN:      0.7608
+DURATION:   0.0588
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_234948.npz
+NO SCORE:   0.7372
+SPATIAL:    0.9021
+MOVEMENT:   1.0000
+AXIS:       0.2690
+FINGER:     0.9323
+TOKEN:      0.8763
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235217.npz
+NO SCORE:   0.7368
+SPATIAL:    0.9052
+MOVEMENT:   1.0000
+AXIS:       0.2777
+FINGER:     1.0000
+TOKEN:      0.7033
+DURATION:   0.1338
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235120.npz
+NO SCORE:   0.7367
+SPATIAL:    0.8713
+MOVEMENT:   1.0000
+AXIS:       0.2127
+FINGER:     1.0000
+TOKEN:      0.8236
+DURATION:   0.1338
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235031.npz
+NO SCORE:   0.7343
+SPATIAL:    0.8459
+MOVEMENT:   1.0000
+AXIS:       0.2819
+FINGER:     1.0000
+TOKEN:      0.8700
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235148.npz
+NO SCORE:   0.7341
+SPATIAL:    0.8850
+MOVEMENT:   1.0000
+AXIS:       0.1986
+FINGER:     1.0000
+TOKEN:      0.7979
+DURATION:   0.1338
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000521.npz
+NO SCORE:   0.7339
+SPATIAL:    0.8433
+MOVEMENT:   1.0000
+AXIS:       0.2332
+FINGER:     0.9621
+TOKEN:      0.9586
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235231.npz
+NO SCORE:   0.7336
+SPATIAL:    0.8670
+MOVEMENT:   1.0000
+AXIS:       0.2392
+FINGER:     1.0000
+TOKEN:      0.7836
+DURATION:   0.1338
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235224.npz
+NO SCORE:   0.7313
+SPATIAL:    0.8761
+MOVEMENT:   1.0000
+AXIS:       0.2433
+FINGER:     1.0000
+TOKEN:      0.8384
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235252.npz
+NO SCORE:   0.7310
+SPATIAL:    0.8980
+MOVEMENT:   1.0000
+AXIS:       0.2565
+FINGER:     1.0000
+TOKEN:      0.7871
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235113.npz
+NO SCORE:   0.7309
+SPATIAL:    0.9141
+MOVEMENT:   1.0000
+AXIS:       0.2422
+FINGER:     1.0000
+TOKEN:      0.7736
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235245.npz
+NO SCORE:   0.7301
+SPATIAL:    0.9317
+MOVEMENT:   1.0000
+AXIS:       0.2473
+FINGER:     1.0000
+TOKEN:      0.7336
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235127.npz
+NO SCORE:   0.7299
+SPATIAL:    0.9180
+MOVEMENT:   1.0000
+AXIS:       0.2821
+FINGER:     1.0000
+TOKEN:      0.7205
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235045.npz
+NO SCORE:   0.7289
+SPATIAL:    0.9122
+MOVEMENT:   1.0000
+AXIS:       0.1825
+FINGER:     1.0000
+TOKEN:      0.8005
+DURATION:   0.0338
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260910_000528.npz
+NO SCORE:   0.7243
+SPATIAL:    0.8376
+MOVEMENT:   1.0000
+AXIS:       0.1843
+FINGER:     0.9615
+TOKEN:      0.9536
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235141.npz
+NO SCORE:   0.7240
+SPATIAL:    0.8738
+MOVEMENT:   1.0000
+AXIS:       0.2382
+FINGER:     1.0000
+TOKEN:      0.7988
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235038.npz
+NO SCORE:   0.7210
+SPATIAL:    0.9225
+MOVEMENT:   1.0000
+AXIS:       0.1231
+FINGER:     1.0000
+TOKEN:      0.7735
+DURATION:   0.0588
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235238.npz
+NO SCORE:   0.7206
+SPATIAL:    0.8692
+MOVEMENT:   1.0000
+AXIS:       0.2333
+FINGER:     1.0000
+TOKEN:      0.7662
+DURATION:   0.0338
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_234941.npz
+NO SCORE:   0.7201
+SPATIAL:    0.8363
+MOVEMENT:   1.0000
+AXIS:       0.2859
+FINGER:     0.9741
+TOKEN:      0.7746
+DURATION:   0.0588
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235017.npz
+NO SCORE:   0.7188
+SPATIAL:    0.8992
+MOVEMENT:   1.0000
+AXIS:       0.2425
+FINGER:     0.9318
+TOKEN:      0.7857
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235003.npz
+NO SCORE:   0.7156
+SPATIAL:    0.8318
+MOVEMENT:   1.0000
+AXIS:       0.2312
+FINGER:     1.0000
+TOKEN:      0.8198
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235259.npz
+NO SCORE:   0.7144
+SPATIAL:    0.8187
+MOVEMENT:   1.0000
+AXIS:       0.2627
+FINGER:     1.0000
+TOKEN:      0.8019
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_234956.npz
+NO SCORE:   0.7133
+SPATIAL:    0.9018
+MOVEMENT:   1.0000
+AXIS:       0.2434
+FINGER:     0.9137
+TOKEN:      0.7618
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: brother
+FILE:       video_bridgeconn_2650_brother.npz
+NO SCORE:   0.7096
+SPATIAL:    0.7317
+MOVEMENT:   1.0000
+AXIS:       0.7508
+FINGER:     0.6802
+TOKEN:      0.7468
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__INCLUDE__00566__MVI_0029.npz
+NO SCORE:   0.7075
+SPATIAL:    0.7047
+MOVEMENT:   1.0000
+AXIS:       0.3382
+FINGER:     0.9393
+TOKEN:      0.8090
+DURATION:   0.1838
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235052.npz
+NO SCORE:   0.7065
+SPATIAL:    0.8978
+MOVEMENT:   1.0000
+AXIS:       0.1993
+FINGER:     1.0000
+TOKEN:      0.6813
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235134.npz
+NO SCORE:   0.7037
+SPATIAL:    0.7495
+MOVEMENT:   1.0000
+AXIS:       0.3530
+FINGER:     1.0000
+TOKEN:      0.7555
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235024.npz
+NO SCORE:   0.7022
+SPATIAL:    0.8786
+MOVEMENT:   1.0000
+AXIS:       0.3051
+FINGER:     0.7523
+TOKEN:      0.7870
+DURATION:   0.0588
+----------------------------------------
+TRUE CLASS: thank_you
+FILE:       video_20260822_221717.npz
+NO SCORE:   0.7020
+SPATIAL:    0.8059
+MOVEMENT:   1.0000
+AXIS:       0.0727
+FINGER:     0.9711
+TOKEN:      0.7373
+DURATION:   0.3338
+----------------------------------------
+TRUE CLASS: yes
+FILE:       yes__CISLR__00034__MXmTYGHWvvE.npz
+NO SCORE:   0.7000
+SPATIAL:    0.9924
+MOVEMENT:   1.0000
+AXIS:       0.0000
+FINGER:     0.6060
+TOKEN:      0.9458
+DURATION:   0.1912
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235010.npz
+NO SCORE:   0.6972
+SPATIAL:    0.8209
+MOVEMENT:   1.0000
+AXIS:       0.3006
+FINGER:     0.8849
+TOKEN:      0.7388
+DURATION:   0.0338
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__INCLUDE__00568__MVI_0031.npz
+NO SCORE:   0.6941
+SPATIAL:    0.7452
+MOVEMENT:   1.0000
+AXIS:       0.4671
+FINGER:     0.6852
+TOKEN:      0.8107
+DURATION:   0.1338
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__CISLR__00026__HiKegjOx1kw.npz
+NO SCORE:   0.6916
+SPATIAL:    0.7263
+MOVEMENT:   1.0000
+AXIS:       0.3924
+FINGER:     1.0000
+TOKEN:      0.6742
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__CISLR__00020__ElXP4DjT3H8_1.npz
+NO SCORE:   0.6910
+SPATIAL:    0.7403
+MOVEMENT:   1.0000
+AXIS:       0.3710
+FINGER:     1.0000
+TOKEN:      0.6681
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00551__MVI_3977.npz
+NO SCORE:   0.6887
+SPATIAL:    0.7104
+MOVEMENT:   1.0000
+AXIS:       0.3601
+FINGER:     0.7608
+TOKEN:      0.6805
+DURATION:   0.4088
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260822_195105.npz
+NO SCORE:   0.6853
+SPATIAL:    0.7625
+MOVEMENT:   1.0000
+AXIS:       0.0171
+FINGER:     1.0000
+TOKEN:      0.7248
+DURATION:   0.3338
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__INCLUDE__00569__MVI_0032.npz
+NO SCORE:   0.6831
+SPATIAL:    0.7190
+MOVEMENT:   1.0000
+AXIS:       0.3304
+FINGER:     0.7082
+TOKEN:      0.8113
+DURATION:   0.2588
+----------------------------------------
+TRUE CLASS: hello
+FILE:       video_20260909_235106.npz
+NO SCORE:   0.6768
+SPATIAL:    0.7748
+MOVEMENT:   1.0000
+AXIS:       0.2581
+FINGER:     0.8228
+TOKEN:      0.8061
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00550__MVI_3976.npz
+NO SCORE:   0.6706
+SPATIAL:    0.7078
+MOVEMENT:   1.0000
+AXIS:       0.4896
+FINGER:     0.7808
+TOKEN:      0.6872
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: hello
+FILE:       hello__INCLUDE__00567__MVI_0030.npz
+NO SCORE:   0.6679
+SPATIAL:    0.6975
+MOVEMENT:   1.0000
+AXIS:       0.3867
+FINGER:     0.7616
+TOKEN:      0.8084
+DURATION:   0.0000
+----------------------------------------
+TRUE CLASS: friend
+FILE:       friend__INCLUDE__00549__MVI_3975.npz
+NO SCORE:   0.6628
+SPATIAL:    0.7014
+MOVEMENT:   1.0000
+AXIS:       0.2148
+FINGER:     0.8892
+TOKEN:      0.7063
+DURATION:   0.1588
+----------------------------------------
+
+--------------------------------------------------
+False negatives (NO < 0.65): Count = 0
+--------------------------------------------------
+None
+
+--------------------------------------------------
+Signer validation:
+--------------------------------------------------
+NO signers/sessions:     12
+Non-NO signers/sessions: 76
+Signer validation saved to: models/no_detector_signer_validation.csv
+
+--------------------------------------------------
+Sample sufficiency:
+--------------------------------------------------
+SUFFICIENT NO SAMPLES (23 recordings)
+
+--------------------------------------------------
+Final status:
+--------------------------------------------------
+NOT SUFFICIENTLY SEPARABLE
+Reason: High False Positive Rate (98.0%) across 20 non-NO classes. NO signature overlaps significantly with gestures sharing Y-axis motion or finger extension.
+
+==================================================

@@ -1,0 +1,298 @@
+{
+  "timestamp": "2026-09-29T00:06:00Z",
+  "total_classes": 21,
+  "classes": [
+    "hello",
+    "thank_you",
+    "welcome",
+    "goodbye",
+    "yes",
+    "no",
+    "please",
+    "sorry",
+    "help",
+    "stop",
+    "water",
+    "food",
+    "school",
+    "teacher",
+    "mother",
+    "father",
+    "sister",
+    "brother",
+    "friend",
+    "house",
+    "work"
+  ],
+  "total_videos": 380,
+  "total_valid_sequences": 381,
+  "duplicate_count": 0,
+  "corrupt_video_count": 0,
+  "invalid_token_count": 0,
+  "missing_classes": [],
+  "token_shape": [
+    25,
+    6
+  ],
+  "feature_order": [
+    "Hx",
+    "Hy",
+    "Mx",
+    "My",
+    "Rx",
+    "Ry"
+  ],
+  "num_hands": 2,
+  "split_summary": {
+    "train_count": 263,
+    "validation_count": 59,
+    "test_count": 59,
+    "total_count": 381
+  },
+  "per_class": {
+    "hello": {
+      "videos": 30,
+      "tokens": 30,
+      "signers": [
+        "signer_01"
+      ],
+      "signer_count": 1,
+      "train": 22,
+      "val": 4,
+      "test": 4
+    },
+    "thank_you": {
+      "videos": 30,
+      "tokens": 30,
+      "signers": [
+        "signer_01"
+      ],
+      "signer_count": 1,
+      "train": 22,
+      "val": 4,
+      "test": 4
+    },
+    "welcome": {
+      "videos": 35,
+      "tokens": 35,
+      "signers": [
+        "1",
+        "signer_01"
+      ],
+      "signer_count": 2,
+      "train": 25,
+      "val": 5,
+      "test": 5
+    },
+    "goodbye": {
+      "videos": 8,
+      "tokens": 8,
+      "signers": [
+        "bridgeconn",
+        "datagov",
+        "hf_real"
+      ],
+      "signer_count": 3,
+      "train": 6,
+      "val": 1,
+      "test": 1
+    },
+    "yes": {
+      "videos": 17,
+      "tokens": 17,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 11,
+      "val": 3,
+      "test": 3
+    },
+    "no": {
+      "videos": 17,
+      "tokens": 17,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 11,
+      "val": 3,
+      "test": 3
+    },
+    "please": {
+      "videos": 18,
+      "tokens": 18,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 12,
+      "val": 3,
+      "test": 3
+    },
+    "sorry": {
+      "videos": 9,
+      "tokens": 9,
+      "signers": [
+        "datagov",
+        "hf_real"
+      ],
+      "signer_count": 2,
+      "train": 7,
+      "val": 1,
+      "test": 1
+    },
+    "help": {
+      "videos": 15,
+      "tokens": 15,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 11,
+      "val": 2,
+      "test": 2
+    },
+    "stop": {
+      "videos": 7,
+      "tokens": 7,
+      "signers": [
+        "bridgeconn",
+        "datagov",
+        "hf_real"
+      ],
+      "signer_count": 3,
+      "train": 5,
+      "val": 1,
+      "test": 1
+    },
+    "water": {
+      "videos": 19,
+      "tokens": 19,
+      "signers": [
+        "hf_real",
+        "signer_01"
+      ],
+      "signer_count": 2,
+      "train": 13,
+      "val": 3,
+      "test": 3
+    },
+    "food": {
+      "videos": 19,
+      "tokens": 19,
+      "signers": [
+        "hf_real",
+        "signer_01"
+      ],
+      "signer_count": 2,
+      "train": 13,
+      "val": 3,
+      "test": 3
+    },
+    "school": {
+      "videos": 38,
+      "tokens": 38,
+      "signers": [
+        "hf_real",
+        "signer_01"
+      ],
+      "signer_count": 2,
+      "train": 26,
+      "val": 6,
+      "test": 6
+    },
+    "teacher": {
+      "videos": 17,
+      "tokens": 17,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 11,
+      "val": 3,
+      "test": 3
+    },
+    "mother": {
+      "videos": 18,
+      "tokens": 18,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 12,
+      "val": 3,
+      "test": 3
+    },
+    "father": {
+      "videos": 16,
+      "tokens": 16,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 12,
+      "val": 2,
+      "test": 2
+    },
+    "sister": {
+      "videos": 17,
+      "tokens": 17,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 11,
+      "val": 3,
+      "test": 3
+    },
+    "brother": {
+      "videos": 6,
+      "tokens": 7,
+      "signers": [
+        "bridgeconn",
+        "datagov",
+        "hf_real"
+      ],
+      "signer_count": 3,
+      "train": 5,
+      "val": 1,
+      "test": 1
+    },
+    "friend": {
+      "videos": 38,
+      "tokens": 38,
+      "signers": [
+        "hf_real"
+      ],
+      "signer_count": 1,
+      "train": 26,
+      "val": 6,
+      "test": 6
+    },
+    "house": {
+      "videos": 3,
+      "tokens": 3,
+      "signers": [
+        "bridgeconn",
+        "datagov",
+        "hf_real"
+      ],
+      "signer_count": 3,
+      "train": 1,
+      "val": 1,
+      "test": 1
+    },
+    "work": {
+      "videos": 3,
+      "tokens": 3,
+      "signers": [
+        "datagov"
+      ],
+      "signer_count": 1,
+      "train": 1,
+      "val": 1,
+      "test": 1
+    }
+  }
+}

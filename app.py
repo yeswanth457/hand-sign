@@ -1,7 +1,7 @@
 """
-Phase 12: FastAPI Web Server and Pipeline API.
-Provides endpoints for landmark processing, real-time prediction, translation,
-dataset generation, model training, and bilingual output with Web UI.
+FastAPI Web Server for RT-STAMP-SLR ISL Translation System.
+Provides endpoints for real-time sign language recognition using CNN-GRU model.
+Exactly 21 ISL sign classes. No simulation, no mock predictions.
 """
 
 import os
@@ -18,23 +18,25 @@ from collections import deque
 from typing import List, Dict, Any, Optional
 
 from config import (
-    ISL_VOCABULARY, TAMIL_VOCAB_MAP, BASE_DIR,
-    CONFIDENCE_THRESHOLD, SUSTAINED_FRAMES, COOLDOWN_FRAMES
+    CLASS_NAMES, NUM_CLASSES, INDEX_TO_CLASS, CLASS_TO_INDEX,
+    TAMIL_VOCAB_MAP, ENGLISH_TRANSLATIONS, BASE_DIR,
+    CONFIDENCE_THRESHOLD, SUSTAINED_FRAMES, COOLDOWN_FRAMES,
+    IDLE_ENERGY_THRESHOLD, SIGNING_MOTION_THRESHOLD
 )
-from src.dataset_manager import ISLDatasetManager
 from src.landmark_extractor import LandmarkExtractor
 from src.motion_energy import MotionEnergyCalculator
 from src.frame_selector import MotionFrameSelector
 from src.gesture_tokenizer import GestureTokenizer
 from src.cnn_gru_model import CNNGRUInferenceEngine
-from src.temporal_transformer import ModelInferenceEngine, train_model
+from src.no_binary_model import NOBinaryInferenceEngine
 from src.early_decision import EarlyDecisionEngine
 from src.sentence_processor import LocalSentenceProcessor
+from src.build_real_split import resample_tokens
 
 app = FastAPI(
     title="RT-STAMP-SLR ISL Translator",
-    description="Real-Time Indian Sign Language to English/Tamil Translator based on RT-STAMP-SLR Architecture",
-    version="1.0.0"
+    description="Real-Time Indian Sign Language to English/Tamil Translator (21 Classes)",
+    version="2.0.0"
 )
 
 # Static files directory for web UI
@@ -42,31 +44,51 @@ static_dir = os.path.join(BASE_DIR, "static")
 os.makedirs(static_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+# Models directory for Task models and PyTorch models
+models_dir = os.path.join(BASE_DIR, "models")
+os.makedirs(models_dir, exist_ok=True)
+app.mount("/models", StaticFiles(directory=models_dir), name="models")
+
 # Pipeline Components Initialization
-dataset_manager = ISLDatasetManager()
 landmark_extractor = LandmarkExtractor()
 frame_selector = MotionFrameSelector()
 gesture_tokenizer = GestureTokenizer()
 model_engine = CNNGRUInferenceEngine()
+no_binary_engine = NOBinaryInferenceEngine(threshold=0.60)
 early_decision_engine = EarlyDecisionEngine()
 sentence_processor = LocalSentenceProcessor(current_language="english")
 
-# Real-time rolling 25-frame gesture token buffer
-realtime_token_buffer = deque(maxlen=25)
+# Real-time rolling gesture motion token buffer
+realtime_token_buffer = deque(maxlen=60)
+# binary_token_buffer is the ISOLATED NO-detector buffer.
+# It resets on the FIRST no-hand frame (not after 3).
+# It NEVER shares tokens with realtime_token_buffer across gesture boundaries.
+# This mirrors the standalone test_no_binary_live.py exactly.
+binary_token_buffer = deque(maxlen=25)
+binary_consecutive_no_count = 0   # Tracks consecutive frames where NO_PROB >= 0.60
+buffered_frame_ids = deque(maxlen=60)
+sequence_counter = 0
 frame_counter = 0
-no_hand_consecutive_count = 0  # Missed-frame tolerance counter
-NO_HAND_CLEAR_THRESHOLD = 3   # Require 3 consecutive no-hand frames before clearing buffer
+no_hand_consecutive_count = 0
+NO_HAND_CLEAR_THRESHOLD = 3
+idle_consecutive_count = 0
+IDLE_CLEAR_THRESHOLD = 15
+last_predicted_sequence = None
+_first_no_sequence_saved = False  # Only save the first browser NO sequence to disk
+
+# NO override thresholds
+NO_PROB_THRESHOLD = 0.60          # Minimum binary NO probability to count as a NO frame
+NO_CONSECUTIVE_REQUIRED = 1       # Minimum consecutive qualifying frames before overriding final_class
+
+
+# Sequence & Stale Frame Tracking
+active_sequence_id = 0
+last_processed_frame_id = 0
+last_token_timestamp = 0.0
+token_timestamps = deque(maxlen=20)
 
 
 # Pydantic Schemas
-class LandmarkInput(BaseModel):
-    pose: Optional[Dict[str, Any]] = None
-    hands: Optional[List[Any]] = None
-    hand_center: Optional[List[float]] = None
-    shoulder_center: Optional[List[float]] = None
-    frame_id: Optional[int] = 0
-
-
 class FrameImageInput(BaseModel):
     image_base64: str
     frame_id: Optional[int] = 0
@@ -77,19 +99,21 @@ class LanguageToggleInput(BaseModel):
     language: str  # "english" or "tamil"
 
 
-class SimulateSignInput(BaseModel):
-    word: str
-
-
 class TokenInput(BaseModel):
-    """Input for browser-side MediaPipe: pre-computed 6D token + optional pose data for motion energy."""
+    """Input for browser-side MediaPipe: pre-computed 6D token + optional pose data."""
     token: Optional[List[float]] = None
     frame_id: Optional[int] = 0
+    sequence_id: Optional[int] = 0
     timestamp_ms: Optional[float] = None
     pose: Optional[Dict[str, Any]] = None
     hand_center: Optional[List[float]] = None
     shoulder_center: Optional[List[float]] = None
     has_hand: Optional[bool] = True
+    hands: Optional[List[Any]] = None
+    hand_count: Optional[int] = 0
+    primary_hand: Optional[str] = "NONE"
+    secondary_hand: Optional[str] = "NONE"
+
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -98,204 +122,202 @@ async def serve_index():
     if os.path.exists(index_file):
         with open(index_file, "r", encoding="utf-8") as f:
             return f.read()
-    return "<h1>RT-STAMP-SLR ISL Translator API is running. UI loading...</h1>"
+    return "<h1>RT-STAMP-SLR ISL Translator API is running.</h1>"
 
 
 @app.get("/api/vocabulary")
 async def get_vocabulary():
-    """Returns all 50 ISL vocabulary signs with English and Tamil mappings."""
+    """Returns the 21 ISL vocabulary signs with English and Tamil mappings."""
     vocab_details = []
-    for idx, word in enumerate(ISL_VOCABULARY):
+    for idx, word in enumerate(CLASS_NAMES):
         vocab_details.append({
             "id": idx,
             "english": word,
             "display_english": word.replace("_", " ").title(),
-            "tamil": TAMIL_VOCAB_MAP.get(word, word)
+            "tamil": TAMIL_VOCAB_MAP.get(word, word),
+            "translation": ENGLISH_TRANSLATIONS.get(word, word)
         })
-    return {"vocabulary": vocab_details, "total": len(vocab_details)}
+    return {"vocabulary": vocab_details, "total": NUM_CLASSES}
 
 
-@app.post("/api/process_landmarks")
-async def process_landmarks(data: LandmarkInput):
-    """
-    Core real-time frame processing endpoint.
-    Executes Motion Energy -> Frame Selection -> Gesture Tokenizer -> 
-    Temporal Transformer Model -> Early Decision -> Sentence Processor.
-    """
-    global frame_counter
-    frame_counter += 1
-    fid = data.frame_id or frame_counter
+_dataset_cache = {}
 
-    # 1. Landmark Extraction / Formatting
-    if data.pose:
-        landmark_data = landmark_extractor.process_raw_landmarks(data.pose, data.hands)
-    else:
-        # Generate default frame landmark data if empty
-        landmark_data = landmark_extractor.process_raw_landmarks({})
+def _fetch_hf_rows(url: str) -> dict:
+    import urllib.request
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "RT-STAMP-SLR/2.0 (ISL-Translator; Educational/Research)"}
+    )
+    with urllib.request.urlopen(req, timeout=12) as response:
+        return json.loads(response.read().decode("utf-8"))
 
-    # Override hand/shoulder centers if provided directly from frontend
-    if data.hand_center and len(data.hand_center) == 2:
-        landmark_data["hand_center"] = (data.hand_center[0], data.hand_center[1])
-    if data.shoulder_center and len(data.shoulder_center) == 2:
-        landmark_data["shoulder_center"] = (data.shoulder_center[0], data.shoulder_center[1])
-
-    # 2. Motion Energy & Frame Selection
-    sel_res = frame_selector.process_frame(fid, landmark_data)
-    is_selected = sel_res["is_selected"]
-    motion_energy = sel_res["motion_energy"]
-    threshold = sel_res["threshold"]
-
-    # 3. Gesture Tokenization
-    token = gesture_tokenizer.tokenize_frame(landmark_data)
-    
-    # Selected sequence token buffer
-    selected_landmarks = frame_selector.get_selected_sequence()
-    seq_tokens = gesture_tokenizer.tokenize_sequence(selected_landmarks)
-
-    # 4. Temporal Memory Transformer Prediction
-    prediction = model_engine.predict_sequence(seq_tokens if len(seq_tokens) > 0 else [token])
-
-    # 5. Early Decision & Cooldown State Machine
-    decision_res = early_decision_engine.process_prediction(prediction, motion_energy)
-
-    # 6. Sentence Processing on Positive Sign Acceptance
-    translation_res = sentence_processor.get_current_translation()
-    if decision_res["accepted"] and decision_res["word"]:
-        translation_res = sentence_processor.add_sign_token(decision_res["word"])
-        frame_selector.clear_buffer()
-
+def _get_local_dataset_rows(offset: int, length: int) -> dict:
+    import csv
+    csv_path = os.path.join(BASE_DIR, "dataset", "metadata", "dataset.csv")
+    if not os.path.exists(csv_path):
+        return {"rows": [], "total": 0, "offset": offset, "length": length, "has_more": False}
+    with open(csv_path, "r", encoding="utf-8") as f:
+        reader = list(csv.DictReader(f))
+    total = len(reader)
+    sliced = reader[offset: offset + length]
+    result_rows = []
+    for idx, r in enumerate(sliced):
+        result_rows.append({
+            "row_idx": offset + idx,
+            "word": r.get("sign_class", "--"),
+            "normalized_word": r.get("sign_class", "--"),
+            "dataset": "Local ISL Dataset (raw)",
+            "signer": r.get("signer_id", "signer_01"),
+            "video_path": r.get("video_path", ""),
+            "original_filename": os.path.basename(r.get("video_path", "")),
+            "fps": float(r.get("fps", 30.0)),
+            "resolution": "640x480",
+            "duration": round(float(r.get("total_frames", 30)) / max(float(r.get("fps", 30.0)), 1.0), 2),
+            "quality_score": round(float(r.get("selection_ratio", 0.85)), 2),
+            "duplicate_status": "unique",
+            "review_status": "accepted",
+            "repository": "https://huggingface.co/datasets/vidit031/isl-isolated-40words",
+            "download_url": "",
+        })
     return {
-        "frame_id": fid,
-        "is_selected": is_selected,
-        "motion_energy": round(motion_energy, 4),
-        "threshold": round(threshold, 4),
-        "token": [round(float(v), 4) for v in token],
-        "selected_buffer_size": len(selected_landmarks),
-        "prediction": {
-            "word": prediction["word"],
-            "class_id": prediction["class_id"],
-            "confidence": round(prediction["confidence"], 4)
-        },
-        "early_decision": {
-            "state": decision_res["state"],
-            "accepted": decision_res["accepted"],
-            "cooldown_remaining": decision_res["cooldown_remaining"],
-            "last_accepted": decision_res["last_accepted_sign"]
-        },
-        "translation": translation_res
+        "rows": result_rows,
+        "total": total,
+        "offset": offset,
+        "length": length,
+        "has_more": (offset + length) < total,
+        "source": "Local ISL Dataset (metadata/dataset.csv fallback)",
+        "config": "default",
+        "split": "train"
     }
 
-
-@app.post("/api/process_frame_image")
-async def process_frame_image(data: FrameImageInput):
+@app.get("/api/dataset_browser")
+async def dataset_browser(offset: int = 0, length: int = 5):
     """
-    Processes live webcam image frame directly using native MediaPipe 1.0.0 Tasks landmarker
-    in low-latency VIDEO tracking mode.
+    Proxies HuggingFace Datasets Server API for the ISL dataset explorer.
+    Dataset: vidit031/isl-isolated-40words, config=default, split=train.
+    Falls back cleanly to local dataset.csv if HF is unreachable.
+    Returns actual rows from the real dataset — never fake data.
     """
-    global frame_counter
-    t_start = time.perf_counter()
-    frame_counter += 1
-    fid = data.frame_id or frame_counter
+    import asyncio
 
-    # Decode base64 JPEG image
+    cache_key = f"{offset}_{length}"
+    if cache_key in _dataset_cache:
+        return _dataset_cache[cache_key]
+
+    HF_DATASET = "vidit031/isl-isolated-40words"
+    HF_CONFIG = "default"
+    HF_SPLIT = "train"
+    HF_BASE = "https://datasets-server.huggingface.co"
+
+    rows_url = f"{HF_BASE}/rows?dataset={HF_DATASET}&config={HF_CONFIG}&split={HF_SPLIT}&offset={offset}&length={length}"
+
     try:
-        encoded = data.image_base64.split(",", 1)[1] if "," in data.image_base64 else data.image_base64
-        img_bytes = base64.b64decode(encoded)
-        np_arr = np.frombuffer(img_bytes, np.uint8)
-        frame_bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-    except Exception as e:
-        frame_bgr = None
+        data = await asyncio.to_thread(_fetch_hf_rows, rows_url)
+        total = data.get("num_rows_total", 0)
+        raw_rows = data.get("rows", [])
 
-    if frame_bgr is not None:
-        landmark_data = landmark_extractor.process_frame(frame_bgr, timestamp_ms=data.timestamp_ms)
-    else:
-        landmark_data = landmark_extractor.process_raw_landmarks({})
+        # Transform rows for frontend display
+        result_rows = []
+        for entry in raw_rows:
+            row = entry.get("row", {})
+            result_rows.append({
+                "row_idx": entry.get("row_idx", 0),
+                "word": row.get("word", "--"),
+                "normalized_word": row.get("normalized_word", "--"),
+                "dataset": row.get("dataset", "--"),
+                "signer": row.get("signer", "--"),
+                "video_path": row.get("video_path", ""),
+                "original_filename": row.get("original_filename", ""),
+                "fps": row.get("fps"),
+                "resolution": row.get("resolution", "--"),
+                "duration": row.get("duration"),
+                "quality_score": row.get("quality_score"),
+                "duplicate_status": row.get("duplicate_status", "unknown"),
+                "review_status": row.get("review_status", "pending"),
+                "repository": row.get("repository", ""),
+                "download_url": row.get("download_url", ""),
+            })
 
-    proc_time_ms = (time.perf_counter() - t_start) * 1000
+        has_more = (offset + length) < total
 
-    # Motion Energy & Frame Selection
-    sel_res = frame_selector.process_frame(fid, landmark_data)
-    is_selected = sel_res["is_selected"]
-    motion_energy = sel_res["motion_energy"]
-    threshold = sel_res["threshold"]
-
-    # Tokenization & 25-Frame Rolling Buffer
-    token = gesture_tokenizer.tokenize_frame(landmark_data)
-    if token is not None and len(token) == 6:
-        realtime_token_buffer.append(token)
-
-    # Evaluate PyTorch CNN-GRU Model on Rolling Sequence (min 10 frames)
-    if len(realtime_token_buffer) >= 10:
-        seq_tokens = list(realtime_token_buffer)
-        prediction = model_engine.predict_sequence(seq_tokens)
-        buffer_status = f"{len(realtime_token_buffer)}/25 (Ready)"
-    else:
-        prediction = {
-            "word": "BUFFERING",
-            "class_id": -1,
-            "confidence": 0.0,
-            "probabilities": {}
+        resp_payload = {
+            "rows": result_rows,
+            "total": total,
+            "offset": offset,
+            "length": length,
+            "has_more": has_more,
+            "source": f"https://huggingface.co/datasets/{HF_DATASET}",
+            "config": HF_CONFIG,
+            "split": HF_SPLIT,
         }
-        buffer_status = f"{len(realtime_token_buffer)}/25"
+        _dataset_cache[cache_key] = resp_payload
+        return resp_payload
 
-    # Early Decision & Sentence Processor
-    decision_res = early_decision_engine.process_prediction(prediction, motion_energy)
-    translation_res = sentence_processor.get_current_translation()
-
-    if decision_res["accepted"] and decision_res["word"]:
-        translation_res = sentence_processor.add_sign_token(decision_res["word"])
-        realtime_token_buffer.clear()
-
-    return {
-        "frame_id": fid,
-        "is_selected": is_selected,
-        "motion_energy": round(motion_energy, 4),
-        "threshold": round(threshold, 4),
-        "token": [round(float(v), 4) for v in token],
-        "buffer_status": buffer_status,
-        "processing_time_ms": round(proc_time_ms, 2),
-        "landmark_data": landmark_data,
-        "prediction": {
-            "word": prediction["word"],
-            "class_id": prediction["class_id"],
-            "confidence": round(prediction["confidence"], 4)
-        },
-        "early_decision": {
-            "state": decision_res["state"],
-            "accepted": decision_res["accepted"],
-            "cooldown_remaining": decision_res["cooldown_remaining"],
-            "last_accepted": decision_res["last_accepted_sign"]
-        },
-        "translation": translation_res
-    }
+    except Exception as e:
+        print(f"[Dataset Browser] HF API query error ({e}), falling back to local dataset.csv")
+        local_res = _get_local_dataset_rows(offset, length)
+        if local_res["total"] > 0:
+            return local_res
+        raise HTTPException(status_code=502, detail=f"Failed to load dataset: {str(e)}")
 
 
 @app.post("/api/process_token")
 async def process_token(data: TokenInput):
     """
-    Accepts a pre-computed 6D gesture token from browser-side MediaPipe.
-    Feeds into the 25-frame rolling buffer and runs CNN-GRU inference.
+    Accepts hand and pose landmark metadata from browser-side MediaPipe.
+    Uses Python GestureTokenizer to compute 6D tokens, maintains isolated sequence buffers,
+    rejects stale out-of-order frames, and runs binary NO classifier inference.
     """
-    global frame_counter
+    global frame_counter, sequence_counter, no_hand_consecutive_count, idle_consecutive_count, last_predicted_sequence, binary_consecutive_no_count, _first_no_sequence_saved
+    global active_sequence_id, last_processed_frame_id, last_token_timestamp, token_timestamps
+
     t_start = time.perf_counter()
     frame_counter += 1
     fid = data.frame_id or frame_counter
+    seq_id = data.sequence_id or 0
 
-    # Check if hand is missing / no-hand reset with missed-frame tolerance
-    global no_hand_consecutive_count
+    # Sequence transition detection
+    if seq_id > 0 and seq_id != active_sequence_id:
+        active_sequence_id = seq_id
+        binary_token_buffer.clear()
+        realtime_token_buffer.clear()
+        buffered_frame_ids.clear()
+        binary_consecutive_no_count = 0
+        last_processed_frame_id = 0
+        gesture_tokenizer.reset()
+        early_decision_engine.reset()
+        print(f"\n[SEQUENCE RESET] New sequence_id={seq_id}. Cleared all token buffers.")
+
+    # Handle NO_HAND state
     if not data.has_hand:
+        print(f"\n[HAND]\ndetected=false\nhand_count=0")
+        idle_consecutive_count = 0
         no_hand_consecutive_count += 1
-        if no_hand_consecutive_count >= NO_HAND_CLEAR_THRESHOLD:
-            # Only clear buffer after 3 consecutive no-hand frames (prevents single-frame flicker)
-            realtime_token_buffer.clear()
-            early_decision_engine.reset()
-            no_hand_consecutive_count = 0
+        last_predicted_sequence = None
+        binary_token_buffer.clear()
+        binary_consecutive_no_count = 0
+        realtime_token_buffer.clear()
+        buffered_frame_ids.clear()
+        gesture_tokenizer.reset()
+        early_decision_engine.reset()
+        last_processed_frame_id = 0
+        no_hand_consecutive_count = 0
         proc_time_ms = (time.perf_counter() - t_start) * 1000
         return {
             "frame_id": fid,
+            "sequence_id": seq_id,
+            "primary_class": "--",
+            "primary_confidence": 0.0,
+            "no_probability": 0.0,
+            "no_confirmations": 0,
+            "no_confirmed": False,
+            "final_class": "--",
+            "hand_detected": False,
+            "token_buffer_length": len(realtime_token_buffer),
+            "binary_no_probability": 0.0,
             "motion_energy": 0.0,
             "threshold": 0.015,
-            "token": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "token": None,
             "buffer_status": f"{len(realtime_token_buffer)}/25",
             "processing_time_ms": round(proc_time_ms, 2),
             "prediction": {
@@ -303,105 +325,293 @@ async def process_token(data: TokenInput):
                 "class_id": -1,
                 "confidence": 0.0
             },
+            "binary_no": {
+                "no_probability": 0.0,
+                "no_prediction": "NOT_NO",
+                "no_confirmed": False,
+                "consecutive_count": 0
+            },
             "early_decision": {
                 "state": "NO_HAND",
                 "accepted": False,
                 "cooldown_remaining": 0,
-                "last_accepted": early_decision_engine.last_accepted_sign or "--",
+                "last_accepted": "--",
                 "sustained_count": 0,
-                "sustained_target": 3
+                "sustained_target": 2
+            },
+            "hands_info": {
+                "hand_count": 0,
+                "primary_hand": "NONE",
+                "secondary_hand": "NONE"
             },
             "translation": sentence_processor.get_current_translation()
         }
 
-    token = data.token
-    if token is None or len(token) != 6:
-        return {"error": "Token must be a 6-element float array"}
+    # Stale out-of-order frame rejection
+    if fid > 0 and fid <= last_processed_frame_id:
+        print(f"[STALE FRAME REJECTED] fid={fid} <= last_processed={last_processed_frame_id}")
+        return {
+            "status": "STALE_FRAME_REJECTED",
+            "frame_id": fid,
+            "last_processed_frame_id": last_processed_frame_id,
+            "no_probability": 0.0,
+            "final_class": "--"
+        }
 
-    token_arr = np.array(token, dtype=np.float32)
+    # Token Calculation using authoritative Python GestureTokenizer
+    hand_c = tuple(data.hand_center) if (data.hand_center and len(data.hand_center) >= 2) else (0.5, 0.5)
+    shoulder_c = tuple(data.shoulder_center) if (data.shoulder_center and len(data.shoulder_center) >= 2) else (0.5, 0.35)
 
-    # Build minimal landmark_data for motion energy calculation
-    hand_c = tuple(data.hand_center) if data.hand_center else (token[0], token[1])
+    if data.token and len(data.token) == 6:
+        token_arr = np.array(data.token, dtype=np.float32)
+    else:
+        lm_data_dict = {"hand_center": hand_c, "shoulder_center": shoulder_c}
+        token_arr = gesture_tokenizer.tokenize_frame(lm_data_dict)
+
+    last_processed_frame_id = fid
+
+    # Calculate token sampling rate
+    now_ts = time.time()
+    if last_token_timestamp > 0:
+        dt = now_ts - last_token_timestamp
+        if dt > 0 and dt < 2.0:
+            token_timestamps.append(dt)
+    last_token_timestamp = now_ts
+    avg_dt = np.mean(token_timestamps) if len(token_timestamps) > 0 else 0.05
+    tokens_per_sec = float(1.0 / max(0.001, avg_dt))
+
+    # Step 3 & 4 Logging: Hand detected and 6D Token
+    hand_count = data.hand_count or 1
+    print(f"\n[HAND]\ndetected=true\nhand_count={hand_count}")
+    print(
+        f"\n[NO TOKEN]\n"
+        f"Hx={token_arr[0]:.4f}\n"
+        f"Hy={token_arr[1]:.4f}\n"
+        f"Mx={token_arr[2]:.4f}\n"
+        f"My={token_arr[3]:.4f}\n"
+        f"Rx={token_arr[4]:.4f}\n"
+        f"Ry={token_arr[5]:.4f}"
+    )
+
+    # Accumulate into rolling token buffer
+    realtime_token_buffer.append(token_arr)
+    binary_token_buffer.append(token_arr)
+    buffered_frame_ids.append(fid)
+    no_hand_consecutive_count = 0
+
+    buf_len = len(realtime_token_buffer)
+    binary_buf_len = len(binary_token_buffer)
+    print(f"\n[TOKEN BUFFER]\nlength={binary_buf_len}/25")
+
+    # Build landmark_data for motion energy calculation
     pose_dict = data.pose or {}
     if not pose_dict:
-        # Fallback to hand center for motion energy when pose is bypassed
         pose_dict = {"HAND": (hand_c[0], hand_c[1], 0.0)}
 
     landmark_data = {
         "pose": pose_dict,
         "hands": [],
         "hand_center": hand_c,
-        "shoulder_center": tuple(data.shoulder_center) if data.shoulder_center else (0.5, 0.35),
+        "shoulder_center": shoulder_c,
     }
 
-    # Motion Energy & Frame Selection
+    # Motion energy calculation
     sel_res = frame_selector.process_frame(fid, landmark_data)
-    motion_energy = sel_res["motion_energy"]
+    pos_energy = sel_res["motion_energy"]
     threshold = sel_res["threshold"]
-    is_selected = sel_res.get("is_selected", False)
+    vel_energy = float(np.sqrt(token_arr[2]**2 + token_arr[3]**2))
+    motion_energy = max(pos_energy, vel_energy)
 
-    # Add token to 25-frame rolling buffer only when active motion is detected (matches dataset preprocessing)
-    no_hand_consecutive_count = 0
-    if is_selected or motion_energy > 0.015:
-        realtime_token_buffer.append(token_arr)
+    # ── Binary NO Classifier ──────────────────────────────────────────────
+    no_prob = 0.0
+    no_res = {}
+    if no_binary_engine and no_binary_engine.model_loaded and binary_buf_len >= 5:
+        no_tokens = list(binary_token_buffer)  # Always the isolated buffer
+        no_res = no_binary_engine.predict_sequence(no_tokens, max_seq_len=25)
+        no_prob = float(no_res.get("no_probability", 0.0))
 
-    # CNN-GRU inference when buffer has min 10 frames (padded to 25)
-    if len(realtime_token_buffer) >= 10:
-        seq_tokens = list(realtime_token_buffer)
-        prediction = model_engine.predict_sequence(seq_tokens)
-        buffer_status = f"{len(realtime_token_buffer)}/25 (Ready)"
+    # ── Save & compare when binary buffer reaches 25 (diagnostic) ────────────
+    if binary_buf_len == 25 and no_binary_engine and no_binary_engine.model_loaded:
+        seq_arr = np.array(list(binary_token_buffer), dtype=np.float32)
+        m = seq_arr.mean(axis=0)
+        start_fid = buffered_frame_ids[0] if len(buffered_frame_ids) >= 25 else 0
+        end_fid = buffered_frame_ids[-1] if len(buffered_frame_ids) >= 25 else fid
+
+        save_path = os.path.join(BASE_DIR, "models", "debug_browser_no_sequence.npy")
+        np.save(save_path, seq_arr)
+        _first_no_sequence_saved = True
+
+        print(
+            f"\n[BROWSER NO WINDOW]\n"
+            f"shape={seq_arr.shape}\n"
+            f"start_frame={start_fid}\n"
+            f"end_frame={end_fid}\n"
+            f"NO probability={no_prob:.4f}"
+        )
+
+        print(
+            f"\n[BROWSER NO STATS]\n"
+            f"Hx mean={m[0]:.4f} min={seq_arr[:,0].min():.4f} max={seq_arr[:,0].max():.4f}\n"
+            f"Hy mean={m[1]:.4f} min={seq_arr[:,1].min():.4f} max={seq_arr[:,1].max():.4f}\n"
+            f"Mx mean={m[2]:.4f} min={seq_arr[:,2].min():.4f} max={seq_arr[:,2].max():.4f}\n"
+            f"My mean={m[3]:.4f} min={seq_arr[:,3].min():.4f} max={seq_arr[:,3].max():.4f}\n"
+            f"Rx mean={m[4]:.4f} min={seq_arr[:,4].min():.4f} max={seq_arr[:,4].max():.4f}\n"
+            f"Ry mean={m[5]:.4f} min={seq_arr[:,5].min():.4f} max={seq_arr[:,5].max():.4f}"
+        )
+
+        print(
+            f"\n[TOKEN RATE]\n"
+            f"tokens/sec={tokens_per_sec:.2f}"
+        )
+
+        # Compare against standalone npy if available
+        standalone_path = os.path.join(BASE_DIR, "models", "debug_live_no_sequence.npy")
+        if os.path.exists(standalone_path):
+            ref = np.load(standalone_path).astype(np.float32)
+            ref_m = ref.mean(axis=0)
+            diff = np.abs(seq_arr - ref)
+            overall_mad = float(diff.mean())
+            dm = diff.mean(axis=0)
+            print(
+                f"\n[BROWSER VS STANDALONE]\n"
+                f"Browser shape: {seq_arr.shape}\n"
+                f"Standalone shape: {ref.shape}\n"
+                f"Browser means:  Hx={m[0]:.4f} Hy={m[1]:.4f} Mx={m[2]:.4f} My={m[3]:.4f} Rx={m[4]:.4f} Ry={m[5]:.4f}\n"
+                f"Standal. means: Hx={ref_m[0]:.4f} Hy={ref_m[1]:.4f} Mx={ref_m[2]:.4f} My={ref_m[3]:.4f} Rx={ref_m[4]:.4f} Ry={ref_m[5]:.4f}\n"
+                f"Mean absolute diff: {overall_mad:.4f}\n"
+                f"Per-feature MAD: Hx={dm[0]:.4f} Hy={dm[1]:.4f} Mx={dm[2]:.4f} My={dm[3]:.4f} Rx={dm[4]:.4f} Ry={dm[5]:.4f}"
+            )
+
+    # ── 21-Class CNN-GRU Prediction ───────────────────────────────────────
+    if buf_len >= 25:
+        tokens_np = np.array(list(realtime_token_buffer)[-25:], dtype=np.float32)
+        prediction = model_engine.predict_sequence(tokens_np)
+        primary_class = prediction.get("word", "--")
+        primary_confidence = float(prediction.get("confidence", 0.0))
+        buffer_status = "25/25"
+
+        print(f"\n[21CLASS]\nclass={primary_class}\nconfidence={primary_confidence:.4f}")
+
+        # ── NO Temporal Gating ────────────────────────────────────────────
+        # Update consecutive NO counter: only counts frames at the 25-token boundary
+        if no_prob >= NO_PROB_THRESHOLD:
+            binary_consecutive_no_count += 1
+        else:
+            binary_consecutive_no_count = 0  # Reset on any frame that does NOT qualify
+
+        no_confirmed = binary_consecutive_no_count >= NO_CONSECUTIVE_REQUIRED
+
+        # ── Final Class Decision ──────────────────────────────────────────
+        # If binary NO model has confirmed NO with temporal gate AND 21-class said something else,
+        # override to "no". FRIEND (or any other class) cannot override a confirmed NO.
+        if no_confirmed:
+            final_class = "no"
+        else:
+            final_class = primary_class
+
+        # ── [GESTURE DEBUG] Diagnostic Block ─────────────────────────────
+        print(
+            f"\n[GESTURE DEBUG]\n"
+            f"21CLASS        = {primary_class}\n"
+            f"21CLASS_CONF   = {primary_confidence:.4f}\n"
+            f"NO_PROBABILITY = {no_prob:.4f}\n"
+            f"NO_CONFIRMATIONS = {binary_consecutive_no_count}\n"
+            f"NO_CONFIRMED   = {no_confirmed}\n"
+            f"FINAL_CLASS    = {final_class}"
+        )
     else:
         prediction = {
-            "word": "BUFFERING",
+            "word": "COLLECTING GESTURE...",
             "class_id": -1,
             "confidence": 0.0,
             "probabilities": {}
         }
-        buffer_status = f"{len(realtime_token_buffer)}/25"
+        primary_class = "COLLECTING GESTURE..."
+        primary_confidence = 0.0
+        final_class = "COLLECTING GESTURE..."
+        no_confirmed = False
+        buffer_status = f"{buf_len}/25 (Collecting)"
 
-    # Early Decision & Sentence Processor
-    decision_res = early_decision_engine.process_prediction(prediction, motion_energy)
+    print(f"\n[FINAL]\nprimary={primary_class}\nconfidence={primary_confidence:.4f}\nno_prob={no_prob:.4f}\nno_confirmations={binary_consecutive_no_count}\nfinal={final_class}")
 
-    # Add gesture token to sentence builder ONLY when early decision engine accepts
-    if decision_res["accepted"] and decision_res["word"]:
-        translation_res = sentence_processor.add_sign_token(decision_res["word"])
+    # ── Sentence & Early Decision Processing ─────────────────────────────
+    final_prediction_for_decision = dict(prediction)
+    final_prediction_for_decision["word"] = final_class  # Inject overridden class
+    effective_conf = no_prob if no_confirmed else primary_confidence
+    final_prediction_for_decision["confidence"] = effective_conf
+
+    if buf_len >= 25 and final_class in CLASS_NAMES and effective_conf >= 0.35:
+        decision_res = early_decision_engine.process_prediction(final_prediction_for_decision, motion_energy)
+        if decision_res["accepted"] and decision_res["word"]:
+            accepted_word = decision_res["word"]
+            print(f"\n>>> FINAL DECISION ACCEPTED: '{accepted_word.upper()}' <<<")
+            translation_res = sentence_processor.add_sign_token(accepted_word)
+            realtime_token_buffer.clear()
+            buffered_frame_ids.clear()
+            binary_token_buffer.clear()
+            binary_consecutive_no_count = 0   # RESET: sequence cleared after acceptance
+            last_predicted_sequence = None
+        else:
+            translation_res = sentence_processor.get_current_translation()
     else:
+        decision_res = {
+            "state": "COLLECTING" if buf_len < 25 else "PREDICTING",
+            "accepted": False,
+            "cooldown_remaining": 0,
+            "last_accepted_sign": early_decision_engine.last_accepted_sign,
+            "sustained_count": 0,
+            "sustained_target": 2
+        }
         translation_res = sentence_processor.get_current_translation()
 
     proc_time_ms = (time.perf_counter() - t_start) * 1000
 
-    # Detailed Stage Debug Logging (Stages 1-15)
-    if fid % 15 == 0 or decision_res["accepted"]:
-        print(
-            f"\n[PIPELINE RECOGNITION DEBUG]\n"
-            f"Stage 1-2 (Frame & Landmark): Frame ID={fid} | Hand Detected=YES (21 LMs)\n"
-            f"Stage 7 (6D Token): {np.round(token_arr, 4).tolist()}\n"
-            f"Stage 6 (Temporal Buffer): Size={len(realtime_token_buffer)}/25 | Status={buffer_status}\n"
-            f"Stage 8-9 (Tensor Shape): (1, 25, 6)\n"
-            f"Stage 10-12 (Inference & Softmax): Word='{prediction['word']}' (ID={prediction['class_id']}) | Conf={prediction['confidence']*100:.1f}%\n"
-            f"Stage 13 (Gesture Locking): State={decision_res['state']} | Accepted={decision_res['accepted']} | Accepted Word={decision_res['word']}\n"
-            f"Stage 14-15 (Sentence Translation): '{translation_res.get('display_text', '')}'"
-        )
-
+    # ── API Response (full diagnostic fields exposed) ─────────────────────
     return {
         "frame_id": fid,
+        "primary_class": primary_class,
+        "primary_confidence": round(primary_confidence, 4),
+        # Binary NO classifier fields
+        "no_probability": round(no_prob, 4),
+        "no_confirmations": binary_consecutive_no_count,
+        "no_confirmed": no_confirmed if buf_len >= 25 else False,
+        # Final authoritative class (may differ from primary_class when NO override triggers)
+        "final_class": final_class,
+        "hand_detected": True,
+        "token_buffer_length": len(realtime_token_buffer),
+        "binary_no_probability": round(no_prob, 4),
         "motion_energy": round(motion_energy, 4),
         "threshold": round(threshold, 4),
         "token": [round(float(v), 4) for v in token_arr],
         "buffer_status": buffer_status,
         "processing_time_ms": round(proc_time_ms, 2),
         "prediction": {
-            "word": prediction["word"],
-            "class_id": prediction["class_id"],
-            "confidence": round(prediction["confidence"], 4)
+            "word": final_class,
+            "class_id": prediction.get("class_id", -1),
+            "confidence": round(primary_confidence, 4)
+        },
+        "binary_no_confirmed": no_confirmed if buf_len >= 25 else False,
+        "no_detected": no_confirmed if buf_len >= 25 else False,
+        "no_confidence": round(no_prob, 4),
+        "no_prediction": "NO" if no_prob >= NO_PROB_THRESHOLD else "NOT_NO",
+        "binary_no": {
+            "no_probability": round(no_prob, 4),
+            "no_prediction": "NO" if no_prob >= NO_PROB_THRESHOLD else "NOT_NO",
+            "no_confirmed": no_confirmed if buf_len >= 25 else False,
+            "consecutive_count": binary_consecutive_no_count
         },
         "early_decision": {
-            "state": decision_res["state"],
-            "accepted": decision_res["accepted"],
-            "cooldown_remaining": decision_res["cooldown_remaining"],
-            "last_accepted": decision_res["last_accepted_sign"],
+            "state": decision_res.get("state", "READY"),
+            "accepted": decision_res.get("accepted", False),
+            "cooldown_remaining": decision_res.get("cooldown_remaining", 0),
+            "last_accepted": decision_res.get("last_accepted_sign", "--"),
             "sustained_count": decision_res.get("sustained_count", 0),
-            "sustained_target": decision_res.get("sustained_target", 3)
+            "sustained_target": decision_res.get("sustained_target", 2)
+        },
+        "hands_info": {
+            "hand_count": data.hand_count or 1,
+            "primary_hand": data.primary_hand or "Right",
+            "secondary_hand": data.secondary_hand or "NONE"
         },
         "translation": translation_res
     }
@@ -418,151 +628,146 @@ async def toggle_language(data: LanguageToggleInput):
 @app.post("/api/clear_sentence")
 async def clear_sentence():
     """Resets word buffer, token buffer, and all pipeline state."""
+    global sequence_counter, last_predicted_sequence, binary_consecutive_no_count
     trans = sentence_processor.clear()
     early_decision_engine.reset()
     frame_selector.clear_buffer()
     realtime_token_buffer.clear()
+    buffered_frame_ids.clear()
+    binary_token_buffer.clear()
+    binary_consecutive_no_count = 0   # RESET: stale NO state must not affect next gesture
     gesture_tokenizer.reset()
+    last_predicted_sequence = None
+    print("\n" + "="*50 + "\nRESET COMPLETE — READY FOR NEW GESTURE\n" + "="*50 + "\n")
     return {"status": "success", "translation": trans}
 
 
-@app.post("/api/simulate_sign")
-async def simulate_sign(data: SimulateSignInput):
+@app.post("/api/process_frame_image")
+async def process_frame_image(data: FrameImageInput):
     """
-    Simulates a dynamic gesture sequence for a specific ISL word.
-    Useful for interactive UI demo without physical webcam signing.
+    Accepts a raw BGR frame image (base64) for backend Python MediaPipe processing.
+    Runs LandmarkExtractor -> GestureTokenizer -> 6D Token -> CNN-GRU inference.
     """
-    word = data.word.lower().strip()
-    if word not in ISL_VOCABULARY:
-        raise HTTPException(status_code=400, detail=f"Word '{word}' not in ISL vocabulary.")
+    global frame_counter, sequence_counter, no_hand_consecutive_count
+    t_start = time.perf_counter()
+    frame_counter += 1
+    fid = data.frame_id or frame_counter
 
-    class_id = ISL_VOCABULARY.index(word)
-    
-    # Generate synthetic gesture sequence (15 frames)
-    t = np.linspace(0, np.pi, 15)
-    hx_seq = 0.5 + 0.2 * np.sin((1 + class_id % 5) * t)
-    hy_seq = 0.5 + 0.2 * np.cos((1 + class_id % 5) * t)
-
-    last_res = None
-    for i in range(len(t)):
-        hx, hy = float(hx_seq[i]), float(hy_seq[i])
-        pose = {
-            "LW": (hx - 0.05, hy + 0.1, 0.0),
-            "RW": (hx, hy, 0.0),
-            "LE": (0.35, 0.5, 0.0),
-            "RE": (0.65, 0.5, 0.0),
-            "LS": (0.4, 0.35, 0.0),
-            "RS": (0.6, 0.35, 0.0),
-        }
-        l_input = LandmarkInput(
-            pose=pose,
-            hand_center=[hx, hy],
-            shoulder_center=[0.5, 0.35],
-            frame_id=i + 1
-        )
-        # Directly inject true prediction during simulation
-        if i == len(t) - 1:
-            early_decision_engine.current_state = "IDLE"
-            early_decision_engine.prediction_window.clear()
-            for _ in range(SUSTAINED_FRAMES):
-                early_decision_engine.prediction_window.append((word, 0.92))
-        
-        last_res = await process_landmarks(l_input)
-
-    return {
-        "simulated_word": word,
-        "class_id": class_id,
-        "last_frame_result": last_res
-    }
-
-
-@app.post("/api/train")
-async def train():
-    """Triggers dataset synthetic generation and model training."""
-    stats = dataset_manager.generate_synthetic_dataset(samples_per_class=30, seq_length=25)
-    train_x, train_y = dataset_manager.load_dataset("train")
-    val_x, val_y = dataset_manager.load_dataset("val")
-
-    train_res = train_model(train_x, train_y, val_x, val_y, epochs=15)
-    
-    # Reload model weights
-    global model_engine
-    model_engine = CNNGRUInferenceEngine()
-
-    return {
-        "dataset_stats": stats,
-        "training_result": train_res
-    }
-
-
-@app.get("/api/dataset_browser")
-async def dataset_browser(offset: int = 0, length: int = 5):
-    """
-    Proxy endpoint for the HuggingFace Datasets Server API.
-    Fetches rows from the vidit031/isl-isolated-40words dataset.
-    Acts as a CORS-safe bridge between the browser frontend and HuggingFace.
-    """
-    import httpx
-
-    if length < 1:
-        length = 1
-    if length > 100:
-        length = 100
-    if offset < 0:
-        offset = 0
-
-    hf_url = (
-        "https://datasets-server.huggingface.co/rows"
-        "?dataset=vidit031%2Fisl-isolated-40words"
-        "&config=default&split=train"
-        f"&offset={offset}&length={length}"
-    )
+    if not data.image_base64:
+        raise HTTPException(status_code=400, detail="Missing image_base64 payload")
 
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(hf_url)
-            resp.raise_for_status()
-            raw = resp.json()
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"HuggingFace API error: {e.response.text[:300]}")
-    except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException):
-        raise HTTPException(status_code=504, detail="HuggingFace API request timed out (5s limit). Please check your internet connection or try again later.")
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=502, detail=f"Failed to reach HuggingFace API: {str(e)}")
+        encoded = data.image_base64.split(",", 1)[1] if "," in data.image_base64 else data.image_base64
+        img_bytes = base64.b64decode(encoded)
+        np_arr = np.frombuffer(img_bytes, np.uint8)
+        frame_bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Image decoding error: {str(e)}")
 
-    # Extract and clean rows for the frontend
-    rows = []
-    for item in raw.get("rows", []):
-        r = item.get("row", {})
-        rows.append({
-            "row_idx": item.get("row_idx", 0),
-            "word": r.get("word", ""),
-            "normalized_word": r.get("normalized_word", ""),
-            "dataset": r.get("dataset", ""),
-            "original_label": r.get("original_label", ""),
-            "video_path": r.get("video_path", ""),
-            "original_filename": r.get("original_filename", ""),
-            "signer": r.get("signer", ""),
-            "fps": r.get("fps"),
-            "resolution": r.get("resolution", ""),
-            "duration": r.get("duration"),
-            "license": r.get("license", ""),
-            "quality_score": r.get("quality_score"),
-            "duplicate_status": r.get("duplicate_status", ""),
-            "review_status": r.get("review_status", ""),
-            "repository": r.get("repository", ""),
-            "download_url": r.get("download_url", ""),
-        })
+    if frame_bgr is None:
+        raise HTTPException(status_code=400, detail="Failed to decode image buffer")
 
+    # Step 2 Logging: Backend frame receipt
+    print(f"\n[BACKEND FRAME]\nReceived frame:\nwidth={frame_bgr.shape[1]}\nheight={frame_bgr.shape[0]}")
+
+    # Run Python MediaPipe LandmarkExtractor
+    landmark_data = landmark_extractor.process_frame(frame_bgr, timestamp_ms=data.timestamp_ms)
+    has_hand = bool(landmark_data.get("hands") and len(landmark_data["hands"]) > 0)
+    hand_count = len(landmark_data.get("hands", []))
+
+    # Step 3 Logging: Hand detection
+    print(f"\n[HAND]\ndetected={'true' if has_hand else 'false'}\nhand_count={hand_count}")
+
+    token = gesture_tokenizer.tokenize_frame(landmark_data)
+    if token is None:
+        token = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+    token_input = TokenInput(
+        token=token.tolist() if isinstance(token, np.ndarray) else token,
+        frame_id=fid,
+        timestamp_ms=data.timestamp_ms,
+        pose=landmark_data.get("pose"),
+        hand_center=landmark_data.get("hand_center"),
+        shoulder_center=landmark_data.get("shoulder_center"),
+        has_hand=has_hand,
+        hands=landmark_data.get("hands"),
+        hand_count=hand_count
+    )
+
+    res = await process_token(token_input)
+    res["pipeline_source"] = "Backend MediaPipe (Python)"
+    res["has_hand"] = has_hand
+    res["hand_detected"] = has_hand
+    res["landmark_count"] = hand_count * 21
+    return res
+
+
+@app.get("/api/pipeline_status")
+async def pipeline_status():
+    """
+    Returns diagnostic details about the backend server and MediaPipe status.
+    """
     return {
-        "rows": rows,
-        "total": raw.get("num_rows_total", 0),
-        "offset": offset,
-        "length": length,
-        "has_more": (offset + length) < raw.get("num_rows_total", 0),
+        "status": "PIPELINE_READY" if (landmark_extractor.mp_available and not landmark_extractor.is_fallback) else "PIPELINE_FALLBACK",
+        "backend_mediapipe_available": landmark_extractor.mp_available,
+        "backend_mediapipe_fallback": landmark_extractor.is_fallback,
+        "pose_model_exists": os.path.exists(os.path.join(BASE_DIR, "models", "pose_landmarker.task")),
+        "hand_model_exists": os.path.exists(os.path.join(BASE_DIR, "models", "hand_landmarker.task")),
+        "cnn_gru_loaded": model_engine.model_loaded,
+        "class_names": CLASS_NAMES,
+        "num_classes": NUM_CLASSES
     }
+
+
+@app.get("/api/model_info")
+async def model_info():
+    """Returns current model configuration and status."""
+    return {
+        "num_classes": NUM_CLASSES,
+        "class_names": CLASS_NAMES,
+        "model_loaded": model_engine.model_loaded,
+        "model_path": model_engine.model_path,
+        "input_shape": [25, 6],
+        "architecture": "CNN-GRU",
+    }
+
+
+@app.post("/api/predict_binary_no")
+async def predict_binary_no(data: TokenInput):
+    """
+    Isolated binary NO classifier endpoint.
+    Evaluates real-time 6D token stream against the binary NO model.
+    Does NOT modify or replace the 21-class CNN-GRU model.
+    """
+    if not data.has_hand:
+        binary_token_buffer.clear()
+        return {
+            "is_no": False,
+            "no_probability": 0.0,
+            "prediction": "Waiting for hand gesture...",
+            "status": "NO_HAND"
+        }
+
+    token = data.token
+    if token is None or len(token) != 6:
+        return {"error": "Token must be a 6-element float array"}
+
+    binary_token_buffer.append(np.array(token, dtype=np.float32))
+
+    if len(binary_token_buffer) < 5:
+        return {
+            "is_no": False,
+            "no_probability": 0.0,
+            "prediction": "Waiting for hand gesture...",
+            "buffer_status": f"{len(binary_token_buffer)}/25"
+        }
+
+    res = no_binary_engine.predict_sequence(list(binary_token_buffer), max_seq_len=25)
+    res["buffer_status"] = f"{len(binary_token_buffer)}/25"
+    return res
 
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)
+

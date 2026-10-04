@@ -1,0 +1,191 @@
+{
+  "config": "default",
+  "split": "train",
+  "total_api_rows": 642,
+  "target_rows_found": {
+    "thank_you": 39,
+    "teacher": 17,
+    "sorry": 6,
+    "mother": 18,
+    "house": 1,
+    "water": 18,
+    "no": 17,
+    "help": 16,
+    "friend": 38,
+    "stop": 4,
+    "father": 16,
+    "food": 17,
+    "yes": 17,
+    "goodbye": 3,
+    "school": 37,
+    "sister": 17,
+    "brother": 3,
+    "please": 18,
+    "hello": 36
+  },
+  "missing_classes": [
+    "welcome",
+    "work"
+  ],
+  "download_stats": {
+    "thank_you": {
+      "existing": 50,
+      "downloaded": 0,
+      "skipped": 0,
+      "failed": 0,
+      "total": 50
+    },
+    "teacher": {
+      "existing": 17,
+      "downloaded": 0,
+      "skipped": 17,
+      "failed": 0,
+      "total": 17
+    },
+    "sorry": {
+      "existing": 9,
+      "downloaded": 0,
+      "skipped": 6,
+      "failed": 0,
+      "total": 9
+    },
+    "mother": {
+      "existing": 18,
+      "downloaded": 0,
+      "skipped": 18,
+      "failed": 0,
+      "total": 18
+    },
+    "house": {
+      "existing": 3,
+      "downloaded": 0,
+      "skipped": 1,
+      "failed": 0,
+      "total": 3
+    },
+    "water": {
+      "existing": 19,
+      "downloaded": 0,
+      "skipped": 18,
+      "failed": 0,
+      "total": 19
+    },
+    "no": {
+      "existing": 23,
+      "downloaded": 0,
+      "skipped": 17,
+      "failed": 0,
+      "total": 23
+    },
+    "help": {
+      "existing": 16,
+      "downloaded": 0,
+      "skipped": 16,
+      "failed": 0,
+      "total": 16
+    },
+    "friend": {
+      "existing": 38,
+      "downloaded": 0,
+      "skipped": 12,
+      "failed": 0,
+      "total": 38
+    },
+    "stop": {
+      "existing": 7,
+      "downloaded": 0,
+      "skipped": 4,
+      "failed": 0,
+      "total": 7
+    },
+    "father": {
+      "existing": 16,
+      "downloaded": 0,
+      "skipped": 16,
+      "failed": 0,
+      "total": 16
+    },
+    "food": {
+      "existing": 19,
+      "downloaded": 0,
+      "skipped": 17,
+      "failed": 0,
+      "total": 19
+    },
+    "yes": {
+      "existing": 17,
+      "downloaded": 0,
+      "skipped": 17,
+      "failed": 0,
+      "total": 17
+    },
+    "goodbye": {
+      "existing": 8,
+      "downloaded": 0,
+      "skipped": 3,
+      "failed": 0,
+      "total": 8
+    },
+    "school": {
+      "existing": 38,
+      "downloaded": 0,
+      "skipped": 12,
+      "failed": 0,
+      "total": 38
+    },
+    "sister": {
+      "existing": 17,
+      "downloaded": 0,
+      "skipped": 17,
+      "failed": 0,
+      "total": 17
+    },
+    "brother": {
+      "existing": 6,
+      "downloaded": 0,
+      "skipped": 3,
+      "failed": 0,
+      "total": 6
+    },
+    "please": {
+      "existing": 18,
+      "downloaded": 0,
+      "skipped": 18,
+      "failed": 0,
+      "total": 18
+    },
+    "hello": {
+      "existing": 50,
+      "downloaded": 0,
+      "skipped": 0,
+      "failed": 0,
+      "total": 50
+    }
+  },
+  "inventory": {
+    "hello": 50,
+    "thank_you": 50,
+    "welcome": 35,
+    "goodbye": 8,
+    "yes": 17,
+    "no": 23,
+    "please": 18,
+    "sorry": 9,
+    "help": 16,
+    "stop": 7,
+    "water": 19,
+    "food": 19,
+    "school": 38,
+    "teacher": 17,
+    "mother": 18,
+    "father": 16,
+    "sister": 17,
+    "brother": 6,
+    "friend": 38,
+    "house": 3,
+    "work": 3
+  },
+  "total_videos": 427,
+  "still_missing": [],
+  "low_count": []
+}

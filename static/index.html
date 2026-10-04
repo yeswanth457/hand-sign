@@ -27,9 +27,7 @@
                 <div class="status-pill active" id="systemStatus">
                     <span class="pulse-dot"></span> System Live
                 </div>
-                <button class="btn btn-secondary" id="btnTrainModel">
-                    <i class="fa-solid fa-brain"></i> Train Model
-                </button>
+
             </div>
         </header>
 
@@ -42,7 +40,7 @@
                     <h2><i class="fa-solid fa-camera"></i> Live Sign Capture</h2>
                     <div class="controls-row">
                         <button class="btn-sm" id="btnToggleWebcam"><i class="fa-solid fa-video"></i> Start Webcam</button>
-                        <button class="btn-sm btn-outline" id="btnSimulateDemo"><i class="fa-solid fa-play"></i> Run Demo</button>
+
                     </div>
                 </div>
 
@@ -63,7 +61,11 @@
                     </div>
                     <div class="debug-grid">
                         <div class="dbg-item">
-                            <span class="dbg-label">Camera:</span>
+                            <span class="dbg-label">Camera State:</span>
+                            <strong class="dbg-val val-inactive" id="dbgCameraState">CAMERA_OFF</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Stream:</span>
                             <strong class="dbg-val val-inactive" id="dbgCameraStream">STREAM INACTIVE</strong>
                         </div>
                         <div class="dbg-item">
@@ -83,16 +85,28 @@
                             <strong class="dbg-val" id="dbgCurrentTime">0.00s</strong>
                         </div>
                         <div class="dbg-item">
+                            <span class="dbg-label">Video Paused:</span>
+                            <strong class="dbg-val" id="dbgVideoPaused">true</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Video Track:</span>
+                            <strong class="dbg-val" id="dbgVideoTrack">NONE</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">Pipeline State:</span>
+                            <strong class="dbg-val" id="dbgPipelineState">PIPELINE_STARTING</strong>
+                        </div>
+                        <div class="dbg-item">
+                            <span class="dbg-label">MediaPipe:</span>
+                            <strong class="dbg-val" id="dbgDetectorStatus">NOT_STARTED</strong>
+                        </div>
+                        <div class="dbg-item">
                             <span class="dbg-label">Processing loop:</span>
                             <strong class="dbg-val val-stopped" id="dbgLoopStatus">STOPPED</strong>
                         </div>
                         <div class="dbg-item">
                             <span class="dbg-label">Frame:</span>
                             <strong class="dbg-val" id="dbgFrameId">0</strong>
-                        </div>
-                        <div class="dbg-item">
-                            <span class="dbg-label">Hand detector:</span>
-                            <strong class="dbg-val" id="dbgDetectorStatus">NOT RUNNING</strong>
                         </div>
                         <div class="dbg-item">
                             <span class="dbg-label">Hand detected:</span>
@@ -118,27 +132,27 @@
                     <div class="token-grid">
                         <div class="token-box">
                             <span class="t-label">Hx (Hand X)</span>
-                            <span class="t-val" id="tkHx">0.50</span>
+                            <span class="t-val" id="tkHx">--</span>
                         </div>
                         <div class="token-box">
                             <span class="t-label">Hy (Hand Y)</span>
-                            <span class="t-val" id="tkHy">0.50</span>
+                            <span class="t-val" id="tkHy">--</span>
                         </div>
                         <div class="token-box">
                             <span class="t-label">Mx (Motion X)</span>
-                            <span class="t-val" id="tkMx">0.00</span>
+                            <span class="t-val" id="tkMx">--</span>
                         </div>
                         <div class="token-box">
                             <span class="t-label">My (Motion Y)</span>
-                            <span class="t-val" id="tkMy">0.00</span>
+                            <span class="t-val" id="tkMy">--</span>
                         </div>
                         <div class="token-box">
                             <span class="t-label">Rx (Body X)</span>
-                            <span class="t-val" id="tkRx">0.00</span>
+                            <span class="t-val" id="tkRx">--</span>
                         </div>
                         <div class="token-box">
                             <span class="t-label">Ry (Body Y)</span>
-                            <span class="t-val" id="tkRy">0.00</span>
+                            <span class="t-val" id="tkRy">--</span>
                         </div>
                     </div>
                 </div>
@@ -166,12 +180,12 @@
                         </div>
                     </div>
                     <div class="main-sentence-text" id="translatedText">
-                        <em>Waiting for sign gesture input...</em>
+                        <em>WAITING FOR WEBCAM</em>
                     </div>
                     
                     <div class="word-buffer-tags" id="wordBufferContainer">
                         <span class="buffer-label">Word Buffer:</span>
-                        <!-- Dynamic word tags injected here -->
+                        <span class="buffer-empty" id="bufferEmpty">--</span>
                     </div>
                 </div>
 
@@ -211,6 +225,24 @@
                         <button class="sg-target-btn active" data-target="hello">HELLO</button>
                         <button class="sg-target-btn" data-target="thank_you">THANK YOU</button>
                         <button class="sg-target-btn" data-target="welcome">WELCOME</button>
+                        <button class="sg-target-btn" data-target="goodbye">GOODBYE</button>
+                        <button class="sg-target-btn" data-target="yes">YES</button>
+                        <button class="sg-target-btn" data-target="no">NO</button>
+                        <button class="sg-target-btn" data-target="please">PLEASE</button>
+                        <button class="sg-target-btn" data-target="sorry">SORRY</button>
+                        <button class="sg-target-btn" data-target="help">HELP</button>
+                        <button class="sg-target-btn" data-target="stop">STOP</button>
+                        <button class="sg-target-btn" data-target="water">WATER</button>
+                        <button class="sg-target-btn" data-target="food">FOOD</button>
+                        <button class="sg-target-btn" data-target="school">SCHOOL</button>
+                        <button class="sg-target-btn" data-target="teacher">TEACHER</button>
+                        <button class="sg-target-btn" data-target="mother">MOTHER</button>
+                        <button class="sg-target-btn" data-target="father">FATHER</button>
+                        <button class="sg-target-btn" data-target="sister">SISTER</button>
+                        <button class="sg-target-btn" data-target="brother">BROTHER</button>
+                        <button class="sg-target-btn" data-target="friend">FRIEND</button>
+                        <button class="sg-target-btn" data-target="house">HOUSE</button>
+                        <button class="sg-target-btn" data-target="work">WORK</button>
                         <button class="sg-target-btn sg-btn-reset" id="btnClearSgTest"><i class="fa-solid fa-rotate-right"></i> Clear Sign</button>
                     </div>
                     <div class="sg-result-card">
@@ -229,17 +261,10 @@
                     </div>
                 </div>
 
-                <!-- Interactive Sign Simulator Panel -->
+                <!-- 21 ISL Sign Classes Reference -->
                 <div class="simulator-panel">
-                    <h3><i class="fa-solid fa-hand-pointer"></i> Sign Simulator (50 ISL Words)</h3>
-                    <div class="sim-controls">
-                        <select id="selectVocab" class="vocab-select">
-                            <!-- Populated dynamically -->
-                        </select>
-                        <button class="btn btn-primary" id="btnSimulateSelected">
-                            <i class="fa-solid fa-play"></i> Simulate Sign
-                        </button>
-                    </div>
+                    <h3><i class="fa-solid fa-hand-pointer"></i> 21 ISL Sign Classes</h3>
+                    <p class="sg-instructions">Model Vocabulary: Hello, Thank You, Welcome, Goodbye, Yes, No, Please, Sorry, Help, Stop, Water, Food, School, Teacher, Mother, Father, Sister, Brother, Friend, House, Work</p>
                 </div>
 
             </section>
@@ -303,6 +328,6 @@
     <!-- MediaPipe Tasks Vision Web SDK for Browser-Side Hand & Pose Detection -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs" type="module"></script>
     <!-- App Scripts -->
-    <script src="/static/app.js" type="module"></script>
+    <script src="/static/app.js?v=DEBUG_GESTURE_1" type="module"></script>
 </body>
 </html>

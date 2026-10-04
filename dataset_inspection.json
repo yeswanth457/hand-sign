@@ -1,0 +1,293 @@
+{
+  "raw_counts": {
+    "hello": 30,
+    "thank_you": 30,
+    "welcome": 35,
+    "goodbye": 3,
+    "yes": 17,
+    "no": 17,
+    "please": 18,
+    "sorry": 6,
+    "help": 15,
+    "stop": 4,
+    "water": 19,
+    "food": 19,
+    "school": 38,
+    "teacher": 17,
+    "mother": 18,
+    "father": 16,
+    "sister": 17,
+    "brother": 3,
+    "friend": 38,
+    "house": 1,
+    "work": 0
+  },
+  "token_counts": {
+    "hello": 31,
+    "thank_you": 31,
+    "welcome": 35,
+    "goodbye": 3,
+    "yes": 17,
+    "no": 17,
+    "please": 18,
+    "sorry": 6,
+    "help": 15,
+    "stop": 4,
+    "water": 19,
+    "food": 19,
+    "school": 38,
+    "teacher": 17,
+    "mother": 18,
+    "father": 16,
+    "sister": 17,
+    "brother": 3,
+    "friend": 38,
+    "house": 1,
+    "work": 0
+  },
+  "raw_signers": {
+    "hello": [
+      "signer_01"
+    ],
+    "thank_you": [
+      "signer_01"
+    ],
+    "welcome": [
+      "1",
+      "signer_01"
+    ],
+    "goodbye": [
+      "hf_real"
+    ],
+    "yes": [
+      "hf_real"
+    ],
+    "no": [
+      "hf_real"
+    ],
+    "please": [
+      "hf_real"
+    ],
+    "sorry": [
+      "hf_real"
+    ],
+    "help": [
+      "hf_real"
+    ],
+    "stop": [
+      "hf_real"
+    ],
+    "water": [
+      "hf_real",
+      "signer_01"
+    ],
+    "food": [
+      "hf_real",
+      "signer_01"
+    ],
+    "school": [
+      "hf_real",
+      "signer_01"
+    ],
+    "teacher": [
+      "hf_real"
+    ],
+    "mother": [
+      "hf_real"
+    ],
+    "father": [
+      "hf_real"
+    ],
+    "sister": [
+      "hf_real"
+    ],
+    "brother": [
+      "hf_real"
+    ],
+    "friend": [
+      "hf_real"
+    ],
+    "house": [
+      "hf_real"
+    ]
+  },
+  "train_counts": {
+    "mother": 8,
+    "school": 5,
+    "brother": 8,
+    "friend": 8,
+    "work": 6,
+    "no": 6,
+    "thank_you": 8,
+    "goodbye": 7,
+    "teacher": 6,
+    "yes": 6,
+    "please": 8,
+    "water": 8,
+    "sorry": 9,
+    "help": 8,
+    "welcome": 8,
+    "food": 8,
+    "stop": 7,
+    "hello": 5,
+    "sister": 5,
+    "house": 6,
+    "father": 7
+  },
+  "val_counts": {
+    "yes": 3,
+    "house": 3,
+    "stop": 1,
+    "father": 1,
+    "friend": 2,
+    "sister": 3,
+    "work": 3,
+    "hello": 2,
+    "mother": 1,
+    "no": 1,
+    "goodbye": 2,
+    "school": 3,
+    "welcome": 1,
+    "teacher": 2,
+    "water": 1,
+    "thank_you": 2
+  },
+  "test_counts": {
+    "goodbye": 1,
+    "hello": 3,
+    "sister": 2,
+    "no": 3,
+    "stop": 2,
+    "school": 2,
+    "father": 2,
+    "help": 2,
+    "yes": 1,
+    "food": 2,
+    "work": 1,
+    "welcome": 1,
+    "teacher": 2,
+    "brother": 2,
+    "house": 1,
+    "please": 2,
+    "mother": 1,
+    "water": 1,
+    "sorry": 1
+  },
+  "baseline_accuracy": 0.425531914893617,
+  "baseline_per_class": {
+    "hello": {
+      "precision": 0.8,
+      "recall": 1.0,
+      "f1-score": 0.8888888888888888,
+      "support": 4.0
+    },
+    "thank_you": {
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1-score": 0.8571428571428571,
+      "support": 4.0
+    },
+    "welcome": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "goodbye": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    },
+    "yes": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "no": {
+      "precision": 0.2,
+      "recall": 0.5,
+      "f1-score": 0.2857142857142857,
+      "support": 2.0
+    },
+    "please": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "sorry": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    },
+    "help": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "stop": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    },
+    "water": {
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1-score": 0.5,
+      "support": 2.0
+    },
+    "food": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "school": {
+      "precision": 0.2857142857142857,
+      "recall": 0.4,
+      "f1-score": 0.3333333333333333,
+      "support": 5.0
+    },
+    "teacher": {
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1-score": 0.3333333333333333,
+      "support": 2.0
+    },
+    "mother": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "father": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "sister": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "brother": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 1.0
+    },
+    "friend": {
+      "precision": 0.3333333333333333,
+      "recall": 0.2,
+      "f1-score": 0.25,
+      "support": 5.0
+    }
+  }
+}

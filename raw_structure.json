@@ -1,0 +1,200 @@
+{
+  "hello": {
+    "total": 30,
+    "subdirs": [
+      "signer_01"
+    ],
+    "by_sub": {
+      "signer_01": 30
+    }
+  },
+  "thank_you": {
+    "total": 30,
+    "subdirs": [
+      "signer_01"
+    ],
+    "by_sub": {
+      "signer_01": 30
+    }
+  },
+  "welcome": {
+    "total": 35,
+    "subdirs": [
+      "1",
+      "signer_01"
+    ],
+    "by_sub": {
+      "1": 2,
+      "signer_01": 33
+    }
+  },
+  "goodbye": {
+    "total": 3,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 3
+    }
+  },
+  "yes": {
+    "total": 17,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 17
+    }
+  },
+  "no": {
+    "total": 17,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 17
+    }
+  },
+  "please": {
+    "total": 18,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 18
+    }
+  },
+  "sorry": {
+    "total": 6,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 6
+    }
+  },
+  "help": {
+    "total": 15,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 15
+    }
+  },
+  "stop": {
+    "total": 4,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 4
+    }
+  },
+  "water": {
+    "total": 19,
+    "subdirs": [
+      "1",
+      "hf_real",
+      "signer_01"
+    ],
+    "by_sub": {
+      "hf_real": 18,
+      "signer_01": 1
+    }
+  },
+  "food": {
+    "total": 19,
+    "subdirs": [
+      "1",
+      "hf_real",
+      "signer_01"
+    ],
+    "by_sub": {
+      "hf_real": 17,
+      "signer_01": 2
+    }
+  },
+  "school": {
+    "total": 38,
+    "subdirs": [
+      "1",
+      "hf_real",
+      "signer_01"
+    ],
+    "by_sub": {
+      "hf_real": 37,
+      "signer_01": 1
+    }
+  },
+  "teacher": {
+    "total": 17,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 17
+    }
+  },
+  "mother": {
+    "total": 18,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 18
+    }
+  },
+  "father": {
+    "total": 16,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 16
+    }
+  },
+  "sister": {
+    "total": 17,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 17
+    }
+  },
+  "brother": {
+    "total": 3,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 3
+    }
+  },
+  "friend": {
+    "total": 38,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 38
+    }
+  },
+  "house": {
+    "total": 1,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {
+      "hf_real": 1
+    }
+  },
+  "work": {
+    "total": 0,
+    "subdirs": [
+      "hf_real"
+    ],
+    "by_sub": {}
+  }
+}

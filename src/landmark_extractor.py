@@ -63,29 +63,71 @@ class LandmarkExtractor:
         else:
             self.is_fallback = True
 
+    def close(self):
+        """Safely closes MediaPipe landmarker instances to release C++ memory and threads."""
+        if hasattr(self, "pose_landmarker") and self.pose_landmarker:
+            try:
+                self.pose_landmarker.close()
+            except Exception:
+                pass
+            self.pose_landmarker = None
+        if hasattr(self, "hand_landmarker") and self.hand_landmarker:
+            try:
+                self.hand_landmarker.close()
+            except Exception:
+                pass
+            self.hand_landmarker = None
+
+    def extract(self, frame_bgr, timestamp_ms=None):
+        """
+        Backward-compatible public extraction method.
+        Delegates to process_frame().
+        """
+        return self.process_frame(frame_bgr, timestamp_ms=timestamp_ms)
+
     def process_frame(self, frame_bgr, timestamp_ms=None):
         """
         Processes a single BGR video frame in VIDEO tracking mode using monotonic timestamps.
         """
+        if frame_bgr is None or frame_bgr.size == 0 or frame_bgr.shape[0] == 0 or frame_bgr.shape[1] == 0:
+            return {
+                "pose": {"LS": (0.4, 0.35, 0.0), "RS": (0.6, 0.35, 0.0), "LW": (0.4, 0.65, 0.0), "RW": (0.6, 0.65, 0.0)},
+                "hands": [],
+                "hand_center": (0.5, 0.5),
+                "shoulder_center": (0.5, 0.35),
+                "is_fallback": True
+            }
+
         h, w, c = frame_bgr.shape
         rgb_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
 
         pose_res = None
         hands_res = None
 
-        if timestamp_ms is not None and timestamp_ms > self.frame_timestamp_ms:
+        if timestamp_ms is not None and int(timestamp_ms) > self.frame_timestamp_ms:
             current_ts = int(timestamp_ms)
-            self.frame_timestamp_ms = current_ts
         else:
             self.frame_timestamp_ms += 33
             current_ts = self.frame_timestamp_ms
+        self.frame_timestamp_ms = current_ts
 
-        if self.mp_available and self.pose_landmarker and self.hand_landmarker:
+        if self.mp_available:
             try:
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-                pose_res = self.pose_landmarker.detect_for_video(mp_image, current_ts)
-                hands_res = self.hand_landmarker.detect_for_video(mp_image, current_ts)
-            except Exception as e:
+                # Process hand landmarker first (critical for sign gesture tokens)
+                if self.hand_landmarker:
+                    try:
+                        hands_res = self.hand_landmarker.detect_for_video(mp_image, current_ts)
+                    except Exception:
+                        hands_res = None
+
+                # Process pose landmarker independently to prevent pose delays from blocking hands
+                if self.pose_landmarker:
+                    try:
+                        pose_res = self.pose_landmarker.detect_for_video(mp_image, current_ts)
+                    except Exception:
+                        pose_res = None
+            except Exception:
                 pass
 
         # Extract Pose Joints (Left/Right Wrist, Elbow, Shoulder)
@@ -145,12 +187,28 @@ class LandmarkExtractor:
                 pts = [(lm.x, lm.y, lm.z) for lm in hand_lms]
                 hands_list.append(pts)
 
-        # Dominant Hand Center Hx, Hy
-        if hands_list and len(hands_list[0]) > 0:
-            pts = np.array(hands_list[0])
-            hx, hy = np.mean(pts[:, 0]), np.mean(pts[:, 1])
+        # Dominant Hand Center Hx, Hy with stable temporal tracking
+        if hands_list and len(hands_list) > 0:
+            centers = []
+            for h_pts in hands_list:
+                pts = np.array(h_pts)
+                centers.append((float(np.mean(pts[:, 0])), float(np.mean(pts[:, 1]))))
+
+            if len(centers) == 1:
+                hx, hy = centers[0]
+            elif hasattr(self, "prev_hand_center") and self.prev_hand_center is not None:
+                px, py = self.prev_hand_center
+                dists = [(cx - px)**2 + (cy - py)**2 for cx, cy in centers]
+                best_idx = int(np.argmin(dists))
+                hx, hy = centers[best_idx]
+            else:
+                best_idx = int(np.argmin([c[1] for c in centers]))
+                hx, hy = centers[best_idx]
+
+            self.prev_hand_center = (hx, hy)
         else:
             hx, hy = pose_dict["RW"][0], pose_dict["RW"][1]
+            self.prev_hand_center = (hx, hy)
 
         # Shoulder Center Sx, Sy
         ls = pose_dict["LS"]

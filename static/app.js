@@ -55,6 +55,7 @@ let _lastHandDebugLog = 0;
 let _lastDetectError = null;
 let _detectCallCount = 0;
 let _detectErrorCount = 0;
+let _lastNoWebLog = 0;
 
 let latestDebugMetrics = {
     handsCount: 0,
@@ -145,20 +146,72 @@ const valConfidencePct = document.getElementById('valConfidencePct');
 const confidenceBarFill = document.getElementById('confidenceBarFill');
 const valThreshold = document.getElementById('valThreshold');
 
-// ─── State Machine Transition Helper (Phase 11) ─────────────────
+// ─── Camera State (separate from pipeline/gesture state) ────────
+let currentCameraState = 'CAMERA_OFF';
+let currentPipelineState = 'PIPELINE_STARTING';
+
+function setCameraState(newState, reason) {
+    currentCameraState = newState;
+    const el = document.getElementById('dbgCameraState');
+    if (el) {
+        el.textContent = newState;
+        el.className = 'dbg-val ' + (
+            newState === 'CAMERA_LIVE' ? 'val-active' :
+            newState === 'CAMERA_STARTING' ? 'val-warning' :
+            newState === 'CAMERA_ERROR' ? 'val-error' : 'val-inactive'
+        );
+    }
+    if (reason) console.log(`[Camera State] ${newState}: ${reason}`);
+}
+
+function setPipelineState(newState, reason) {
+    currentPipelineState = newState;
+    const el = document.getElementById('dbgPipelineState');
+    if (el) {
+        el.textContent = newState;
+        el.className = 'dbg-val ' + (
+            newState === 'PIPELINE_READY' ? 'val-active' :
+            newState === 'PIPELINE_ERROR' ? 'val-error' : 'val-warning'
+        );
+    }
+    if (reason) console.log(`[Pipeline State] ${newState}: ${reason}`);
+}
+
+// ─── Gesture/System State Machine Transition Helper (Phase 11) ──
 function updateSystemState(newState, reason) {
     currentSystemState = newState;
     if (decisionStateBadge) {
-        decisionStateBadge.textContent = newState;
         decisionStateBadge.className = 'decision-badge';
-        if (newState === 'CAMERA_OFF') decisionStateBadge.classList.add('state-camera-off');
-        else if (newState === 'CAMERA_STARTING') decisionStateBadge.classList.add('state-camera-starting');
-        else if (newState === 'CAMERA_ERROR') decisionStateBadge.classList.add('state-camera-error');
-        else if (newState === 'NO_HAND') decisionStateBadge.classList.add('state-no-hand');
-        else if (newState === 'COLLECTING') decisionStateBadge.classList.add('state-collecting');
-        else if (newState === 'READY') decisionStateBadge.classList.add('state-ready');
-        else if (newState === 'PREDICTING') decisionStateBadge.classList.add('state-predicting');
-        else if (newState === 'ACCEPTED') decisionStateBadge.classList.add('state-accepted');
+        if (newState === 'CAMERA_OFF') {
+            decisionStateBadge.textContent = 'CAMERA_OFF';
+            decisionStateBadge.classList.add('state-camera-off');
+        } else if (newState === 'CAMERA_STARTING') {
+            decisionStateBadge.textContent = 'CAMERA_STARTING';
+            decisionStateBadge.classList.add('state-camera-starting');
+        } else if (newState === 'CAMERA_ERROR') {
+            decisionStateBadge.textContent = 'CAMERA_ERROR';
+            decisionStateBadge.classList.add('state-camera-error');
+        } else if (newState === 'NO_HAND') {
+            decisionStateBadge.textContent = 'WAITING FOR HAND GESTURE';
+            decisionStateBadge.classList.add('state-no-hand');
+        } else if (newState === 'COLLECTING') {
+            decisionStateBadge.textContent = 'COLLECTING GESTURE...';
+            decisionStateBadge.classList.add('state-collecting');
+        } else if (newState === 'READY') {
+            decisionStateBadge.textContent = 'READY';
+            decisionStateBadge.classList.add('state-ready');
+        } else if (newState === 'PREDICTING') {
+            decisionStateBadge.textContent = 'PREDICTING';
+            decisionStateBadge.classList.add('state-predicting');
+        } else if (newState === 'ACCEPTED') {
+            decisionStateBadge.textContent = 'ACCEPTED';
+            decisionStateBadge.classList.add('state-accepted');
+        } else if (newState === 'COOLDOWN') {
+            decisionStateBadge.textContent = 'COOLDOWN';
+            decisionStateBadge.classList.add('state-cooldown');
+        } else {
+            decisionStateBadge.textContent = newState;
+        }
     }
 
     if (sgValState) {
@@ -167,29 +220,49 @@ function updateSystemState(newState, reason) {
     }
 
     if (reason) {
-        console.log(`[Pipeline State] ${newState}: ${reason}`);
+        console.log(`[Gesture State] ${newState}: ${reason}`);
     }
 }
 
 // ─── Init ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    setCameraState('CAMERA_OFF', 'Application initialized, camera idle.');
+    setPipelineState('PIPELINE_STARTING', 'Initializing MediaPipe...');
     updateSystemState('CAMERA_OFF', 'Application initialized, camera idle.');
+
+    // Initial clean UI state
+    if (valDetectedWord) valDetectedWord.textContent = '--';
+    if (valConfidencePct) valConfidencePct.textContent = '0%';
+    if (confidenceBarFill) confidenceBarFill.style.width = '0%';
+    if (valMotionEnergy) valMotionEnergy.textContent = '0.0000';
+    if (translatedText) translatedText.innerHTML = '<em>WAITING FOR WEBCAM</em>';
+    updateWordBuffer([]);
+    if (sgValSign) sgValSign.textContent = '--';
+    if (sgValConf) sgValConf.textContent = '0.0%';
+    if (sgValState) {
+        sgValState.textContent = 'CAMERA_OFF';
+        sgValState.className = 'sg-state-tag';
+    }
+
     loadVocabulary();
     initEventListeners();
     drawMotionGraph();
     initMediaPipe();
+
+    // Ensure backend sentence buffer is clear on page load
+    fetch('/api/clear_sentence', { method: 'POST' }).catch(() => {});
 });
 
 function initEventListeners() {
-    btnToggleWebcam.addEventListener('click', toggleWebcam);
-    btnSimulateDemo.addEventListener('click', () => simulateSign('water'));
-    btnSimulateSelected.addEventListener('click', () => {
-        const word = selectVocab.value;
+    if (btnToggleWebcam) btnToggleWebcam.addEventListener('click', toggleWebcam);
+    if (btnSimulateDemo) btnSimulateDemo.addEventListener('click', () => simulateSign('water'));
+    if (btnSimulateSelected) btnSimulateSelected.addEventListener('click', () => {
+        const word = selectVocab ? selectVocab.value : null;
         if (word) simulateSign(word);
     });
-    btnTrainModel.addEventListener('click', trainModel);
-    btnTTS.addEventListener('click', speakTranslation);
-    btnClear.addEventListener('click', clearSentence);
+    if (btnTrainModel) btnTrainModel.addEventListener('click', trainModel);
+    if (btnTTS) btnTTS.addEventListener('click', speakTranslation);
+    if (btnClear) btnClear.addEventListener('click', clearSentence);
 
     // Single Gesture Test buttons
     sgTargetButtons.forEach(btn => {
@@ -221,80 +294,89 @@ function resetSingleGestureTest() {
     console.log('[Single Gesture Mode] Test display reset.');
 }
 
-// ─── MediaPipe Browser-Side Initialization (Phase 6 Single-Hand) ─
+// ─── MediaPipe Browser-Side Initialization (non-blocking) ───────
 async function initMediaPipe() {
+    setPipelineState('PIPELINE_STARTING', 'Loading MediaPipe WASM + models...');
+    if (dbgDetectorStatus) dbgDetectorStatus.textContent = 'STARTING';
+
+    // Try local models first (/models/ served by FastAPI), then CDN fallback
+    const localHandModel = '/models/hand_landmarker.task';
+    const cdnHandModel = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+    const localPoseModel = '/models/pose_landmarker.task';
+    const cdnPoseModel = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+
     try {
         const vision = await FilesetResolver.forVisionTasks(
             "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
         );
 
-        // Configure SINGLE HAND mode: numHands = 1 with 0.40 confidence for reliable detection
-        handLandmarker = await HandLandmarker.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-                delegate: "GPU"
-            },
-            runningMode: "VIDEO",
-            numHands: 2,
-            minHandDetectionConfidence: 0.40,
-            minHandPresenceConfidence: 0.40,
-            minTrackingConfidence: 0.30
-        });
+        // Try GPU with local model, fall through on any failure
+        let handModel = localHandModel;
+        let poseModel = localPoseModel;
+        let delegate = 'GPU';
 
-        poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-                delegate: "GPU"
-            },
-            runningMode: "VIDEO",
-            numPoses: 1,
-            minPoseDetectionConfidence: 0.30,
-            minPosePresenceConfidence: 0.30,
-            minTrackingConfidence: 0.30
-        });
+        try {
+            handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                baseOptions: { modelAssetPath: handModel, delegate },
+                runningMode: 'VIDEO', numHands: 2,
+                minHandDetectionConfidence: 0.40, minHandPresenceConfidence: 0.40, minTrackingConfidence: 0.30
+            });
+        } catch (eLocalHand) {
+            console.warn('[MediaPipe] Local hand model failed, trying CDN:', eLocalHand.message);
+            handModel = cdnHandModel;
+            handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                baseOptions: { modelAssetPath: handModel, delegate },
+                runningMode: 'VIDEO', numHands: 2,
+                minHandDetectionConfidence: 0.40, minHandPresenceConfidence: 0.40, minTrackingConfidence: 0.30
+            });
+        }
+
+        try {
+            poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+                baseOptions: { modelAssetPath: poseModel, delegate },
+                runningMode: 'VIDEO', numPoses: 1,
+                minPoseDetectionConfidence: 0.30, minPosePresenceConfidence: 0.30, minTrackingConfidence: 0.30
+            });
+        } catch (eLocalPose) {
+            console.warn('[MediaPipe] Local pose model failed, trying CDN:', eLocalPose.message);
+            poseModel = cdnPoseModel;
+            poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+                baseOptions: { modelAssetPath: poseModel, delegate },
+                runningMode: 'VIDEO', numPoses: 1,
+                minPoseDetectionConfidence: 0.30, minPosePresenceConfidence: 0.30, minTrackingConfidence: 0.30
+            });
+        }
 
         mediaPipeReady = true;
-        if (dbgDetectorStatus) dbgDetectorStatus.textContent = 'READY (GPU)';
-        console.log("[MediaPipe] Browser-side Single-Hand + Pose landmarkers initialized (GPU delegate).");
-    } catch (e) {
-        console.warn("[MediaPipe] GPU delegate failed, falling back to CPU:", e.message);
+        setPipelineState('PIPELINE_READY', `Browser-side Hand+Pose initialized (${delegate}, hand=${handModel.includes('/models/') ? 'local' : 'CDN'})`);
+        if (dbgDetectorStatus) dbgDetectorStatus.textContent = `READY (${delegate})`;
+    } catch (eGpu) {
+        console.warn('[MediaPipe] GPU failed, trying CPU fallback:', eGpu.message);
         try {
             const vision = await FilesetResolver.forVisionTasks(
                 "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
             );
-
             handLandmarker = await HandLandmarker.createFromOptions(vision, {
-                baseOptions: {
-                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-                    delegate: "CPU"
-                },
-                runningMode: "VIDEO",
-                numHands: 2,
-                minHandDetectionConfidence: 0.40,
-                minHandPresenceConfidence: 0.40,
-                minTrackingConfidence: 0.30
+                baseOptions: { modelAssetPath: cdnHandModel, delegate: 'CPU' },
+                runningMode: 'VIDEO', numHands: 2,
+                minHandDetectionConfidence: 0.40, minHandPresenceConfidence: 0.40, minTrackingConfidence: 0.30
             });
-
             poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
-                baseOptions: {
-                    modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-                    delegate: "CPU"
-                },
-                runningMode: "VIDEO",
-                numPoses: 1,
-                minPoseDetectionConfidence: 0.30,
-                minPosePresenceConfidence: 0.30,
-                minTrackingConfidence: 0.30
+                baseOptions: { modelAssetPath: cdnPoseModel, delegate: 'CPU' },
+                runningMode: 'VIDEO', numPoses: 1,
+                minPoseDetectionConfidence: 0.30, minPosePresenceConfidence: 0.30, minTrackingConfidence: 0.30
             });
-
             mediaPipeReady = true;
+            setPipelineState('PIPELINE_READY', 'Browser-side Hand+Pose initialized (CPU, CDN)');
             if (dbgDetectorStatus) dbgDetectorStatus.textContent = 'READY (CPU)';
-            console.log("[MediaPipe] Browser-side Single-Hand landmarkers initialized (CPU delegate).");
-        } catch (e2) {
-            console.error("[MediaPipe] Failed to initialize:", e2);
+        } catch (eCpu) {
+            console.error('[MediaPipe] All initialization attempts failed:', eCpu);
             mediaPipeReady = false;
-            if (dbgDetectorStatus) dbgDetectorStatus.textContent = 'INIT_FAILED';
-            updateSystemState('CAMERA_ERROR', 'MediaPipe vision initialization failed');
+            setPipelineState('PIPELINE_ERROR', `MediaPipe init failed: ${eCpu.message}`);
+            if (dbgDetectorStatus) {
+                dbgDetectorStatus.textContent = `ERROR: ${eCpu.name || 'InitFailed'}`;
+                dbgDetectorStatus.className = 'dbg-val val-error';
+            }
         }
     }
 }
@@ -333,21 +415,38 @@ async function toggleWebcam() {
 async function startWebcam() {
     if (isWebcamRunning) return;
 
-    // 1. Check MediaPipe readiness
-    if (!mediaPipeReady) {
-        updateSystemState('CAMERA_STARTING', 'MediaPipe models still loading...');
-        let waited = 0;
-        while (!mediaPipeReady && waited < 6000) {
-            await new Promise(r => setTimeout(r, 250));
-            waited += 250;
-        }
-        if (!mediaPipeReady) {
-            updateSystemState('CAMERA_ERROR', 'MediaPipe failed to load in time');
-            alert('MediaPipe is still initializing. Please check network connection and try again.');
-            return;
-        }
+    // Reset live state before processing new frames
+    currentPrediction = { word: '--', confidence: 0.0 };
+    currentEarlyDecision = { state: 'CAMERA_STARTING' };
+    lastTranslationText = "";
+    motionHistory = new Array(50).fill(0);
+    thresholdHistory = new Array(50).fill(0.015);
+    drawMotionGraph();
+
+    if (valDetectedWord) valDetectedWord.textContent = '--';
+    if (valConfidencePct) valConfidencePct.textContent = '0%';
+    if (confidenceBarFill) confidenceBarFill.style.width = '0%';
+    if (valMotionEnergy) valMotionEnergy.textContent = '0.0000';
+
+    if (sgValSign) sgValSign.textContent = '--';
+    if (sgValConf) sgValConf.textContent = '0.0%';
+    if (sgValState) {
+        sgValState.textContent = 'STARTING';
+        sgValState.className = 'sg-state-tag';
     }
 
+    if (translatedText) {
+        translatedText.innerHTML = '<em>WAITING FOR HAND GESTURE</em>';
+    }
+    updateWordBuffer([]);
+    updateTokenDisplay(null, false);
+
+    // Reset backend server session buffer
+    try {
+        await fetch('/api/clear_sentence', { method: 'POST' });
+    } catch (_) {}
+
+    setCameraState('CAMERA_STARTING', 'Requesting camera device access...');
     updateSystemState('CAMERA_STARTING', 'Requesting camera device access...');
     btnToggleWebcam.disabled = true;
     btnToggleWebcam.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Starting...';
@@ -435,7 +534,11 @@ async function startWebcam() {
         btnToggleWebcam.style.background = '#ef4444';
         btnToggleWebcam.disabled = false;
 
-        updateSystemState('NO_HAND', `Webcam active (${videoEl.videoWidth}x${videoEl.videoHeight}). Waiting for hand gesture.`);
+        setCameraState('CAMERA_LIVE', `Webcam active (${videoEl.videoWidth}x${videoEl.videoHeight})`);
+        updateSystemState('NO_HAND', `Webcam active. Waiting for hand gesture.`);
+        if (translatedText) {
+            translatedText.innerHTML = '<em>WAITING FOR HAND GESTURE</em>';
+        }
         console.log(`[Webcam] Initialized successfully. Source: ${videoEl.videoWidth}x${videoEl.videoHeight}, readyState: ${videoEl.readyState}`);
 
         // 11. Launch continuous processing loop
@@ -455,6 +558,7 @@ async function startWebcam() {
             friendlyMsg = 'Camera is currently locked by another application.';
         }
 
+        setCameraState('CAMERA_ERROR', friendlyMsg);
         updateSystemState('CAMERA_ERROR', friendlyMsg);
         alert(`Camera Error: ${friendlyMsg}`);
     }
@@ -474,8 +578,36 @@ function stopWebcam() {
     btnToggleWebcam.disabled = false;
 
     ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    setCameraState('CAMERA_OFF', 'Webcam stopped by user.');
     updateSystemState('CAMERA_OFF', 'Webcam stopped by user.');
-    updateDebugHUDLiveMetrics(false, 0, 0, 0, false, 0);
+
+    // Clear live predictions & metrics immediately
+    currentPrediction = { word: '--', confidence: 0.0 };
+    currentEarlyDecision = { state: 'CAMERA_OFF' };
+    lastTranslationText = "";
+
+    if (valDetectedWord) valDetectedWord.textContent = '--';
+    if (valConfidencePct) valConfidencePct.textContent = '0%';
+    if (confidenceBarFill) confidenceBarFill.style.width = '0%';
+    if (valMotionEnergy) valMotionEnergy.textContent = '0.0000';
+
+    if (sgValSign) sgValSign.textContent = '--';
+    if (sgValConf) sgValConf.textContent = '0.0%';
+    if (sgValState) {
+        sgValState.textContent = 'CAMERA_OFF';
+        sgValState.className = 'sg-state-tag';
+    }
+
+    if (translatedText) {
+        translatedText.innerHTML = '<em>WAITING FOR WEBCAM</em>';
+    }
+    updateWordBuffer([]);
+
+    updateTokenDisplay(null, false);
+    updateDebugHUDLiveMetrics(false, 0, 0, null);
+
+    // Call backend to clear server-side session buffers
+    fetch('/api/clear_sentence', { method: 'POST' }).catch(() => {});
 }
 
 // ─── Main Frame Processing Loop ─────────────────────────────────
@@ -535,9 +667,17 @@ async function processWebcamLoop() {
             }
             mpHandInferenceMs = performance.now() - tHandStart;
 
-            // Pose inference bypassed for Hand Landmarker performance optimization
-            poseResults = null;
-            mpPoseInferenceMs = 0;
+            // Pose inference using PoseLandmarker (every poseRunInterval frames to maintain high FPS)
+            const tPoseStart = performance.now();
+            if (poseLandmarker && (frameId % poseRunInterval === 0 || !cachedPoseResults)) {
+                try {
+                    cachedPoseResults = poseLandmarker.detectForVideo(videoEl, videoTimestampMs);
+                } catch (e) {
+                    cachedPoseResults = null;
+                }
+            }
+            poseResults = cachedPoseResults;
+            mpPoseInferenceMs = performance.now() - tPoseStart;
 
             // Phase 6: Build landmark data with STRICT single-hand filtering (21 landmarks)
             const tTokenStart = performance.now();
@@ -639,10 +779,12 @@ async function processWebcamLoop() {
                     const vh = videoEl.videoHeight;
                     const cw = canvasEl.width;
                     const ch = canvasEl.height;
+                    const w0Z = (w0 && w0.length >= 3 && w0[2] !== undefined && w0[2] !== null) ? `, ${w0[2].toFixed(4)}` : '';
+                    const i8Z = (i8 && i8.length >= 3 && i8[2] !== undefined && i8[2] !== null) ? `, ${i8[2].toFixed(4)}` : '';
                     console.log(
                         `[LANDMARK COORD VERIFICATION]\n` +
-                        `WRIST #0: MP (${w0[0].toFixed(4)}, ${w0[1].toFixed(4)}) | Video: ${vw}x${vh} | Canvas: ${cw}x${ch} | Draw: (${(w0[0] * cw).toFixed(1)}, ${(w0[1] * ch).toFixed(1)})\n` +
-                        `INDEX TIP #8: MP (${i8[0].toFixed(4)}, ${i8[1].toFixed(4)}) | Video: ${vw}x${vh} | Canvas: ${cw}x${ch} | Draw: (${(i8[0] * cw).toFixed(1)}, ${(i8[1] * ch).toFixed(1)})`
+                        `WRIST #0: MP (${w0[0].toFixed(4)}, ${w0[1].toFixed(4)}${w0Z}) | Video: ${vw}x${vh} | Canvas: ${cw}x${ch} | Draw: (${(w0[0] * cw).toFixed(1)}, ${(w0[1] * ch).toFixed(1)})\n` +
+                        `INDEX TIP #8: MP (${i8[0].toFixed(4)}, ${i8[1].toFixed(4)}${i8Z}) | Video: ${vw}x${vh} | Canvas: ${cw}x${ch} | Draw: (${(i8[0] * cw).toFixed(1)}, ${(i8[1] * ch).toFixed(1)})`
                     );
                 }
             }
@@ -666,38 +808,80 @@ async function processWebcamLoop() {
 // ─── Live Debug HUD DOM Updaters (Phase 3) ────────────────────────
 function updateDebugHUDLiveMetrics(hasHand, handCount, lmCount, landmarkData = null) {
     const streamActive = !!(mediaStream && mediaStream.active);
+    const videoTrack = mediaStream && mediaStream.getVideoTracks().length > 0 ? mediaStream.getVideoTracks()[0] : null;
+    const trackState = videoTrack ? videoTrack.readyState.toUpperCase() : 'NONE';
+
+    if (dbgCameraState) {
+        dbgCameraState.textContent = currentCameraState;
+        dbgCameraState.className = 'dbg-val ' + (
+            currentCameraState === 'CAMERA_LIVE' ? 'val-active' :
+            currentCameraState === 'CAMERA_STARTING' ? 'val-warning' :
+            currentCameraState === 'CAMERA_ERROR' ? 'val-error' : 'val-inactive'
+        );
+    }
 
     if (dbgCameraStream) {
         dbgCameraStream.textContent = streamActive ? 'STREAM ACTIVE' : 'STREAM INACTIVE';
         dbgCameraStream.className = 'dbg-val ' + (streamActive ? 'val-active' : 'val-inactive');
     }
+
     if (dbgReadyState) {
         dbgReadyState.textContent = videoEl ? videoEl.readyState : '0';
     }
+
     if (dbgDimensions) {
         dbgDimensions.textContent = videoEl && videoEl.videoWidth > 0
             ? `${videoEl.videoWidth} x ${videoEl.videoHeight}`
             : '0 x 0';
     }
+
     const dbgCanvasDimensions = document.getElementById('dbgCanvasDimensions');
     if (dbgCanvasDimensions) {
         dbgCanvasDimensions.textContent = canvasEl && canvasEl.width > 0
             ? `${canvasEl.width} x ${canvasEl.height}`
             : '0 x 0';
     }
+
     if (dbgCurrentTime) {
         dbgCurrentTime.textContent = videoEl ? `${videoEl.currentTime.toFixed(2)}s` : '0.00s';
     }
+
+    if (dbgVideoPaused) {
+        dbgVideoPaused.textContent = videoEl ? String(videoEl.paused) : 'true';
+    }
+
+    if (dbgVideoTrack) {
+        dbgVideoTrack.textContent = trackState;
+    }
+
+    if (dbgPipelineState) {
+        dbgPipelineState.textContent = currentPipelineState;
+        dbgPipelineState.className = 'dbg-val ' + (
+            currentPipelineState === 'PIPELINE_READY' ? 'val-active' :
+            currentPipelineState === 'PIPELINE_ERROR' ? 'val-error' : 'val-warning'
+        );
+    }
+
     if (dbgLoopStatus) {
         dbgLoopStatus.textContent = isWebcamRunning ? 'RUNNING' : 'STOPPED';
         dbgLoopStatus.className = 'dbg-val ' + (isWebcamRunning ? 'val-running' : 'val-stopped');
     }
+
     if (dbgFrameId) {
         dbgFrameId.textContent = frameId;
     }
+
     if (dbgDetectorStatus) {
-        dbgDetectorStatus.textContent = mediaPipeReady ? 'RUNNING' : 'NOT RUNNING';
-        dbgDetectorStatus.className = 'dbg-val ' + (mediaPipeReady ? 'val-active' : 'val-inactive');
+        if (mediaPipeReady) {
+            dbgDetectorStatus.textContent = handLandmarker ? 'READY (Browser MP)' : 'READY';
+            dbgDetectorStatus.className = 'dbg-val val-active';
+        } else if (currentPipelineState === 'PIPELINE_ERROR') {
+            dbgDetectorStatus.textContent = _lastDetectError ? `ERROR (${_lastDetectError.name || 'InitFailed'})` : 'ERROR';
+            dbgDetectorStatus.className = 'dbg-val val-error';
+        } else {
+            dbgDetectorStatus.textContent = 'STARTING';
+            dbgDetectorStatus.className = 'dbg-val val-warning';
+        }
     }
     if (dbgHandDetected) {
         if (!hasHand) {
@@ -776,22 +960,18 @@ function calculateHandCenter(handPoints) {
     return [sumX / handPoints.length, sumY / handPoints.length];
 }
 
-// ─── Build Landmark Data (Two-Hand Detection & Left/Right Tracking) ───
+// ─── Build Landmark Data (Hand Tracking & Selection matching Python LandmarkExtractor) ───
 function buildLandmarkData(handResults, poseResults) {
     const data = {
         pose: {},
         hands: [],
-        left_hand: null,
-        right_hand: null,
-        left_hand_center: null,
-        right_hand_center: null,
         hand_center: [0.5, 0.5],
         shoulder_center: [0.5, 0.35],
         hand_count: 0,
         is_fallback: false
     };
 
-    // Extract pose landmarks (LW, RW, LE, RE, LS, RS)
+    // Extract pose landmarks (LS #11, RS #12)
     if (poseResults && poseResults.landmarks && poseResults.landmarks.length > 0) {
         const lms = poseResults.landmarks[0];
         if (lms.length > 16) {
@@ -810,81 +990,52 @@ function buildLandmarkData(handResults, poseResults) {
         }
     }
 
-    // Process up to 2 hands using MediaPipe handedness
-    let rawLeft = null;
-    let rawRight = null;
-
+    // Extract all raw hand landmark arrays (ignoring unstable MediaPipe handedness labels)
+    const detectedHandsList = [];
     if (handResults && handResults.landmarks && handResults.landmarks.length > 0) {
-        const detectedHands = handResults.landmarks;
-        const handednesses = handResults.handednesses || [];
-
-        detectedHands.forEach((hand, idx) => {
-            if (!hand || hand.length !== 21) return;
-            const pts = hand.map(lm => [lm.x, lm.y, lm.z]);
-            const handednessMeta = handednesses[idx] && handednesses[idx][0] ? handednesses[idx][0] : null;
-            const label = handednessMeta ? handednessMeta.categoryName : null;
-
-            if (label === 'Left') {
-                rawLeft = pts;
-            } else if (label === 'Right') {
-                rawRight = pts;
-            } else {
-                // If handedness is unspecified, assign first to left or right based on X position
-                if (!rawLeft && !rawRight) {
-                    rawRight = pts;
-                } else if (!rawLeft) {
-                    rawLeft = pts;
-                } else if (!rawRight) {
-                    rawRight = pts;
-                }
+        handResults.landmarks.forEach((hand) => {
+            if (hand && hand.length === 21) {
+                const pts = hand.map(lm => [lm.x, lm.y, lm.z]);
+                detectedHandsList.push(pts);
             }
         });
     }
 
-    // Smooth Left Hand
-    if (rawLeft) {
-        smoothedLeftHand = smoothSingleHandPoints(rawLeft, smoothedLeftHand);
-        missedLeftFramesCount = 0;
-    } else {
-        missedLeftFramesCount++;
-        if (missedLeftFramesCount > MAX_MISSED_HAND_FRAMES) {
-            smoothedLeftHand = null;
+    data.hands = detectedHandsList;
+    data.hand_count = detectedHandsList.length;
+
+    // Track hand center matching Python LandmarkExtractor:
+    // If 1 hand -> use that hand's center
+    // If >1 hands -> choose hand closest to prevHandCenter (if set), else top-most hand (lowest Y)
+    if (detectedHandsList.length > 0) {
+        const centers = detectedHandsList.map(h => calculateHandCenter(h));
+        let selectedCenter = null;
+        if (centers.length === 1) {
+            selectedCenter = centers[0];
+        } else if (prevHandCenter !== null) {
+            const px = prevHandCenter[0], py = prevHandCenter[1];
+            let bestIdx = 0;
+            let minDistSq = Infinity;
+            centers.forEach((c, idx) => {
+                const dSq = (c[0] - px) ** 2 + (c[1] - py) ** 2;
+                if (dSq < minDistSq) {
+                    minDistSq = dSq;
+                    bestIdx = idx;
+                }
+            });
+            selectedCenter = centers[bestIdx];
+        } else {
+            let bestIdx = 0;
+            let minY = Infinity;
+            centers.forEach((c, idx) => {
+                if (c[1] < minY) {
+                    minY = c[1];
+                    bestIdx = idx;
+                }
+            });
+            selectedCenter = centers[bestIdx];
         }
-    }
-
-    // Smooth Right Hand
-    if (rawRight) {
-        smoothedRightHand = smoothSingleHandPoints(rawRight, smoothedRightHand);
-        missedRightFramesCount = 0;
-    } else {
-        missedRightFramesCount++;
-        if (missedRightFramesCount > MAX_MISSED_HAND_FRAMES) {
-            smoothedRightHand = null;
-        }
-    }
-
-    // Assemble hands array (Hand 0 = Left if present, Hand 1 = Right if present)
-    if (smoothedLeftHand) {
-        data.hands.push(smoothedLeftHand);
-        data.left_hand = smoothedLeftHand;
-        data.left_hand_center = calculateHandCenter(smoothedLeftHand);
-    }
-    if (smoothedRightHand) {
-        data.hands.push(smoothedRightHand);
-        data.right_hand = smoothedRightHand;
-        data.right_hand_center = calculateHandCenter(smoothedRightHand);
-    }
-
-    data.hand_count = data.hands.length;
-
-    // Primary dominant hand center for 6D CNN-GRU model (preserves uncorrupted gesture trajectory matching dataset training)
-    if (data.left_hand_center && data.right_hand_center) {
-        // When both hands are active, select primary active hand matching mirrored dataset training
-        data.hand_center = data.left_hand_center;
-    } else if (data.left_hand_center) {
-        data.hand_center = data.left_hand_center;
-    } else if (data.right_hand_center) {
-        data.hand_center = data.right_hand_center;
+        data.hand_center = selectedCenter;
     }
 
     return data;
@@ -892,22 +1043,41 @@ function buildLandmarkData(handResults, poseResults) {
 
 // ─── 6D Token Computation (Browser-Side) ─────────────────────────
 let prevHandCenter = null;
+let currentSequenceId = 1;
+
+function resetTokenizerState() {
+    prevHandCenter = null;
+    currentSequenceId++;
+}
 
 function compute6DToken(landmarkData) {
     const hasHand = landmarkData && landmarkData.hands && landmarkData.hands.length > 0;
     if (!hasHand) {
-        prevHandCenter = null;
-        return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        resetTokenizerState();
+        return null; // Return null when no hand detected
     }
 
-    const [hx, hy] = landmarkData.hand_center || [0.5, 0.5];
-    const [sx, sy] = landmarkData.shoulder_center || [0.5, 0.35];
+    const hx = (landmarkData.hand_center && landmarkData.hand_center[0] !== undefined) ? landmarkData.hand_center[0] : 0.5;
+    const hy = (landmarkData.hand_center && landmarkData.hand_center[1] !== undefined) ? landmarkData.hand_center[1] : 0.5;
 
-    // Hand velocity delta
+    const sx = (landmarkData.shoulder_center && landmarkData.shoulder_center[0] !== undefined) ? landmarkData.shoulder_center[0] : 0.5;
+    const sy = (landmarkData.shoulder_center && landmarkData.shoulder_center[1] !== undefined) ? landmarkData.shoulder_center[1] : 0.35;
+
+    // Hand velocity delta calculation (resets on first frame of gesture to avoid artificial jump)
     let mx = 0.0, my = 0.0;
     if (prevHandCenter !== null) {
-        mx = hx - prevHandCenter[0];
-        my = hy - prevHandCenter[1];
+        const jumpDist = Math.hypot(hx - prevHandCenter[0], hy - prevHandCenter[1]);
+        if (jumpDist > 0.20) {
+            mx = 0.0;
+            my = 0.0;
+        } else {
+            mx = hx - prevHandCenter[0];
+            my = hy - prevHandCenter[1];
+        }
+    } else {
+        // First valid hand frame after reset — initialize position without motion jump
+        mx = 0.0;
+        my = 0.0;
     }
     prevHandCenter = [hx, hy];
 
@@ -915,15 +1085,37 @@ function compute6DToken(landmarkData) {
     const rx = hx - sx;
     const ry = hy - sy;
 
-    return [hx, hy, mx, my, rx, ry];
+    const token = [hx, hy, mx, my, rx, ry];
+    updateTokenDisplay(token, true);
+    return token;
+}
+
+function updateTokenDisplay(token, hasHand) {
+    if (!hasHand || !token || token.length < 6) {
+        if (tkHx) tkHx.textContent = '--';
+        if (tkHy) tkHy.textContent = '--';
+        if (tkMx) tkMx.textContent = '--';
+        if (tkMy) tkMy.textContent = '--';
+        if (tkRx) tkRx.textContent = '--';
+        if (tkRy) tkRy.textContent = '--';
+        return;
+    }
+    if (tkHx) tkHx.textContent = Number(token[0]).toFixed(2);
+    if (tkHy) tkHy.textContent = Number(token[1]).toFixed(2);
+    if (tkMx) tkMx.textContent = Number(token[2]).toFixed(2);
+    if (tkMy) tkMy.textContent = Number(token[3]).toFixed(2);
+    if (tkRx) tkRx.textContent = Number(token[4]).toFixed(2);
+    if (tkRy) tkRy.textContent = Number(token[5]).toFixed(2);
 }
 
 // ─── Send Token to Backend ───────────────────────────────────────
 let lastTokenSentTimestamp = 0;
 let lastSentHadHand = false;
-const TOKEN_SEND_INTERVAL_MS = 66; // Cap token processing to ~15 FPS to prevent backend flooding
+let _lastWebFrameLog = 0;
+const TOKEN_SEND_INTERVAL_MS = 50; // ~20 FPS target for optimal backend synchronization
 
 async function sendTokenToBackend(landmarkData, currentFrameId) {
+    // Single in-flight request guard: serialize token requests to prevent overlap
     if (isProcessingToken) {
         droppedFramesCount++;
         return;
@@ -932,13 +1124,12 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
     const hasHand = landmarkData && landmarkData.hands && landmarkData.hands.length > 0;
     const now = performance.now();
 
-    // If no hand is present and the backend was already notified, do not continuously send empty POSTs
+    // Handle gesture transition / hand reset
     if (!hasHand) {
         if (!lastSentHadHand) {
-            return; // Backend already reset to NO_HAND; suppress continuous requests
+            return; // Backend already notified of NO_HAND state
         }
     } else {
-        // Enforce 15 FPS cadence (~66ms) when tracking hands to prevent overwhelming the server
         if (now - lastTokenSentTimestamp < TOKEN_SEND_INTERVAL_MS) {
             return;
         }
@@ -949,6 +1140,11 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
     isProcessingToken = true;
     const token = compute6DToken(landmarkData);
     const captureTime = now;
+
+    if (now - _lastWebFrameLog >= 1000) {
+        _lastWebFrameLog = now;
+        console.log(`[WEB FRAME] Sending frame to /api/process_token (frame_id=${currentFrameId}, seq_id=${currentSequenceId}, hasHand=${hasHand})`);
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
@@ -961,11 +1157,14 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
             body: JSON.stringify({
                 token: token,
                 frame_id: currentFrameId,
+                sequence_id: currentSequenceId,
                 timestamp_ms: captureTime,
                 pose: landmarkData.pose,
                 hand_center: landmarkData.hand_center,
                 shoulder_center: landmarkData.shoulder_center,
-                has_hand: hasHand
+                has_hand: hasHand,
+                hand_count: landmarkData.hand_count || (hasHand ? 1 : 0),
+                primary_hand: "TrackedHand"
             })
         });
         clearTimeout(timeoutId);
@@ -987,6 +1186,10 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
                 sustained_target: 3,
                 last_accepted: currentEarlyDecision.last_accepted || "--"
             };
+            // Clear stale prediction display on NO_HAND
+            valDetectedWord.textContent = '--';
+            valConfidencePct.textContent = '0%';
+            confidenceBarFill.style.width = '0%';
         }
 
         updateUI(data, hasHand);
@@ -1112,6 +1315,48 @@ function drawRealLandmarks(landmarkData) {
 
 // ─── Update UI Widgets (Phase 10 & 11) ────────────────────────────
 function updateUI(data, hasHand) {
+    // ── [GESTURE DEBUG] Mirror backend diagnostic block in browser console ──
+    // Only log when a full 25-token prediction is available (buffer_status === "25/25")
+    if (data.buffer_status === '25/25') {
+        const _now = performance.now();
+        if (_now - _lastNoWebLog >= 500) {
+            _lastNoWebLog = _now;
+            console.log(
+                `\n[GESTURE DEBUG]\n` +
+                `21CLASS        = ${data.primary_class}\n` +
+                `21CLASS_CONF   = ${(data.primary_confidence || 0).toFixed(4)}\n` +
+                `NO_PROBABILITY = ${(data.no_probability !== undefined ? data.no_probability : (data.binary_no ? data.binary_no.no_probability : 0)).toFixed(4)}\n` +
+                `NO_CONFIRMATIONS = ${data.no_confirmations !== undefined ? data.no_confirmations : (data.binary_no ? data.binary_no.consecutive_count : 0)}\n` +
+                `NO_CONFIRMED   = ${data.no_confirmed !== undefined ? data.no_confirmed : (data.binary_no ? data.binary_no.no_confirmed : false)}\n` +
+                `FINAL_CLASS    = ${data.final_class}`
+            );
+            // Also log token coordinates for NO-token coordinate verification
+            if (data.token && data.token.length >= 6) {
+                console.log(
+                    `[NO TOKEN]\n` +
+                    `Hx=${data.token[0].toFixed(4)}\n` +
+                    `Hy=${data.token[1].toFixed(4)}\n` +
+                    `Mx=${data.token[2].toFixed(4)}\n` +
+                    `My=${data.token[3].toFixed(4)}\n` +
+                    `Rx=${data.token[4].toFixed(4)}\n` +
+                    `Ry=${data.token[5].toFixed(4)}`
+                );
+            }
+        }
+    } else if (data.binary_no) {
+        // Still log binary_no for partial buffers at lower rate
+        const _now = performance.now();
+        if (_now - _lastNoWebLog >= 1000) {
+            _lastNoWebLog = _now;
+            console.log(
+                `[NO WEB] prob=${data.binary_no.no_probability.toFixed(4)} | ` +
+                `pred=${data.binary_no.no_prediction} | ` +
+                `confirmed=${data.binary_no.no_confirmed} | ` +
+                `count=${data.binary_no.consecutive_count}`
+            );
+        }
+    }
+
     // Motion Energy & Threshold
     if (data.motion_energy !== undefined) {
         valMotionEnergy.textContent = data.motion_energy.toFixed(4);
@@ -1126,40 +1371,48 @@ function updateUI(data, hasHand) {
         drawMotionGraph();
     }
 
-    // 6D Token Values
-    if (data.token && data.token.length >= 6) {
-        tkHx.textContent = data.token[0].toFixed(2);
-        tkHy.textContent = data.token[1].toFixed(2);
-        tkMx.textContent = data.token[2].toFixed(2);
-        tkMy.textContent = data.token[3].toFixed(2);
-        tkRx.textContent = data.token[4].toFixed(2);
-        tkRy.textContent = data.token[5].toFixed(2);
-    }
+    // 6D Token Values (Real values from backend / tokenizer)
+    updateTokenDisplay(data.token, hasHand);
 
     // Active Word Extraction for Immediate UI Synchronization
-    const activeWordClean = (data.prediction && data.prediction.word && data.prediction.word !== 'BUFFERING' && data.prediction.word !== '--' && (data.prediction.confidence || 0) >= 0.3)
+    const activeWordClean = (data.prediction && data.prediction.word && data.prediction.word !== 'BUFFERING' && data.prediction.word !== 'COLLECTING GESTURE...' && data.prediction.word !== '--' && (data.prediction.confidence || 0) >= 0.40)
         ? data.prediction.word.replace('_', ' ').toUpperCase()
         : null;
 
-    // Prediction Confidence Bar & Word
-    if (data.prediction) {
-        currentPrediction = data.prediction;
-        const conf = data.prediction.confidence || 0;
+    // Prediction Confidence Bar & Word (Step 7: directly display backend final_class and confidence)
+    if (data.prediction || data.final_class) {
+        const rawWord = data.final_class || (data.prediction ? data.prediction.word : '--');
+        const isNoFinal = (rawWord === 'no' || data.no_confirmed);
+        const conf = isNoFinal
+            ? (data.no_probability !== undefined ? data.no_probability : (data.binary_no ? data.binary_no.no_probability : 0.90))
+            : ((data.primary_confidence !== undefined) ? data.primary_confidence : ((data.prediction && data.prediction.confidence) || 0));
         const confPct = Math.round(conf * 100);
-        valConfidencePct.textContent = `${confPct}%`;
-        confidenceBarFill.style.width = `${confPct}%`;
+        currentPrediction = { word: rawWord, confidence: conf };
 
-        // Gate displayed sign: only display sign name if confidence >= 70% or accepted by early decision
-        const isConfident = hasHand && (conf >= 0.70 || (data.early_decision && data.early_decision.accepted));
-        const rawWord = data.prediction.word;
-        const isValidWord = rawWord && rawWord !== 'BUFFERING' && rawWord !== '--';
-        const displayWord = isConfident && isValidWord ? rawWord.replace('_', ' ').toUpperCase() : '--';
+        let displayWord = '--';
+        if (!hasHand) {
+            displayWord = '--';
+            valConfidencePct.textContent = '0%';
+            confidenceBarFill.style.width = '0%';
+        } else if (rawWord === 'COLLECTING GESTURE...') {
+            displayWord = 'COLLECTING GESTURE...';
+            valConfidencePct.textContent = '0%';
+            confidenceBarFill.style.width = '0%';
+        } else if (rawWord && rawWord !== '--' && rawWord !== 'BUFFERING' && rawWord !== 'WAITING FOR CLEAR GESTURE') {
+            displayWord = rawWord.replace('_', ' ').toUpperCase();
+            valConfidencePct.textContent = `${confPct}%`;
+            confidenceBarFill.style.width = `${confPct}%`;
+        } else {
+            displayWord = '--';
+            valConfidencePct.textContent = `${confPct}%`;
+            confidenceBarFill.style.width = `${confPct}%`;
+        }
 
         valDetectedWord.textContent = displayWord;
 
         // Update Single Gesture Test Card (Phase 10)
         if (sgValSign) sgValSign.textContent = displayWord;
-        if (sgValConf) sgValConf.textContent = `${confPct}%`;
+        if (sgValConf) sgValConf.textContent = hasHand ? `${confPct}%` : '0.0%';
     }
 
     // Early Decision State Transitions (Phase 11)
@@ -1167,12 +1420,18 @@ function updateUI(data, hasHand) {
         currentEarlyDecision = data.early_decision;
         let determinedState = data.early_decision.state;
 
-        if (!hasHand) {
+        if (!isWebcamRunning || currentCameraState === 'CAMERA_OFF') {
+            determinedState = 'CAMERA_OFF';
+        } else if (!hasHand) {
             determinedState = 'NO_HAND';
         } else if (data.early_decision.accepted || determinedState === 'LOCKED' || determinedState === 'CONFIRMED') {
             determinedState = 'ACCEPTED';
-        } else if (data.buffer_status && !data.buffer_status.includes('Ready')) {
+        } else if (data.early_decision.state === 'COOLDOWN' || (data.buffer_status && data.buffer_status.includes('Cooldown'))) {
+            determinedState = 'COOLDOWN';
+        } else if (data.prediction && data.prediction.word === 'COLLECTING GESTURE...') {
             determinedState = 'COLLECTING';
+        } else if (data.buffer_status && data.buffer_status.includes('Idle')) {
+            determinedState = 'READY';
         } else if (data.prediction && data.prediction.confidence > 0.3) {
             determinedState = 'PREDICTING';
         } else {
@@ -1186,31 +1445,43 @@ function updateUI(data, hasHand) {
     if (data.translation) {
         let text = data.translation.display_text;
 
-        // Remove placeholder text immediately if a valid prediction exists
+        // Determine placeholder text when no confirmed sentence exists yet
         if (!text || text.trim() === '') {
-            if (activeWordClean) {
-                text = activeWordClean.charAt(0) + activeWordClean.slice(1).toLowerCase() + '.';
+            if (!isWebcamRunning || currentCameraState === 'CAMERA_OFF') {
+                text = '<em>WAITING FOR WEBCAM</em>';
+            } else if (!hasHand) {
+                text = '<em>WAITING FOR HAND GESTURE</em>';
+            } else if (data.prediction && data.prediction.word === 'COLLECTING GESTURE...') {
+                text = '<em>COLLECTING GESTURE...</em>';
             } else {
-                text = '<em>Waiting for sign gesture input...</em>';
+                text = '<em>WAITING FOR HAND GESTURE</em>';
             }
         }
 
         translatedText.innerHTML = text;
         lastTranslationText = text;
 
-        // Synchronize Word Buffer
+        // Synchronize Word Buffer (strictly confirmed words only)
         const rawWords = (data.translation.raw_words && data.translation.raw_words.length > 0)
             ? data.translation.raw_words
-            : (activeWordClean ? [activeWordClean] : []);
+            : [];
         updateWordBuffer(rawWords);
     }
 }
 
+
 function updateWordBuffer(words) {
     if (!wordBufferContainer) return;
-    const label = wordBufferContainer.querySelector('.buffer-label');
-    wordBufferContainer.innerHTML = '';
-    if (label) wordBufferContainer.appendChild(label);
+    wordBufferContainer.innerHTML = '<span class="buffer-label">Word Buffer:</span>';
+
+    if (!words || words.length === 0) {
+        const emptyTag = document.createElement('span');
+        emptyTag.className = 'buffer-empty';
+        emptyTag.id = 'bufferEmpty';
+        emptyTag.textContent = '--';
+        wordBufferContainer.appendChild(emptyTag);
+        return;
+    }
 
     words.forEach(w => {
         const tag = document.createElement('span');
@@ -1269,8 +1540,11 @@ window.setLanguage = async function setLanguage(lang) {
             body: JSON.stringify({ language: lang })
         });
         const data = await res.json();
-        if (data.translation) {
-            translatedText.innerHTML = data.translation.display_text || '<em>Waiting for sign gesture input...</em>';
+        if (data.translation && data.translation.display_text && data.translation.display_text.trim() !== '') {
+            translatedText.innerHTML = data.translation.display_text;
+            lastTranslationText = data.translation.display_text;
+        } else {
+            translatedText.innerHTML = isWebcamRunning ? '<em>WAITING FOR HAND GESTURE</em>' : '<em>WAITING FOR WEBCAM</em>';
         }
     } catch (e) {
         console.error('Toggle language error:', e);
@@ -1282,7 +1556,8 @@ async function clearSentence() {
     try {
         const res = await fetch('/api/clear_sentence', { method: 'POST' });
         const data = await res.json();
-        translatedText.innerHTML = '<em>Waiting for sign gesture input...</em>';
+        translatedText.innerHTML = isWebcamRunning ? '<em>WAITING FOR HAND GESTURE</em>' : '<em>WAITING FOR WEBCAM</em>';
+        lastTranslationText = "";
         updateWordBuffer([]);
     } catch (e) {
         console.error('Clear sentence error:', e);

@@ -1,0 +1,250 @@
+[
+  {
+    "class": "brother",
+    "gloss": "andrew (his brother peter)",
+    "key": "1000",
+    "parquet_idx": 0,
+    "json": {
+      "duration_sec": 4.14,
+      "fps": 50.0,
+      "height": 1080,
+      "language": {
+        "BCP-47": "ins-IN",
+        "ISO639-3": "ins",
+        "name": "Indian Sign Language",
+        "nameLocal": "Indian Sign Language"
+      },
+      "license": "Creative Commons - Attribution-ShareAlike [CC BY-SA]",
+      "project": "Indian Sign Language Bible (ISLV) Dictionary",
+      "source": "Bridge Connectivity Solutions Pvt. Ltd.",
+      "total_frames": 206,
+      "transcript": {
+        "language": {
+          "BCP-47": "en",
+          "ISO639-3": "eng",
+          "name": "English",
+          "nameLocal": "Indian Sign Language"
+        },
+        "text": "andrew (his brother peter)"
+      },
+      "width": 1920
+    }
+  },
+  {
+    "class": "house",
+    "gloss": "house & home",
+    "key": "1265",
+    "parquet_idx": 1,
+    "json": {
+      "duration_sec": 2.26,
+      "fps": 50.0,
+      "height": 1080,
+      "language": {
+        "BCP-47": "ins-IN",
+        "ISO639-3": "ins",
+        "name": "Indian Sign Language",
+        "nameLocal": "Indian Sign Language"
+      },
+      "license": "Creative Commons - Attribution-ShareAlike [CC BY-SA]",
+      "project": "Indian Sign Language Bible (ISLV) Dictionary",
+      "source": "Bridge Connectivity Solutions Pvt. Ltd.",
+      "total_frames": 112,
+      "transcript": {
+        "language": {
+          "BCP-47": "en",
+          "ISO639-3": "eng",
+          "name": "English",
+          "nameLocal": "Indian Sign Language"
+        },
+        "text": "house & home"
+      },
+      "width": 1920
+    }
+  },
+  {
+    "class": "goodbye",
+    "gloss": "farewell (2)",
+    "key": "156",
+    "parquet_idx": 2,
+    "json": {
+      "duration_sec": 2.42,
+      "fps": 50.0,
+      "height": 1080,
+      "language": {
+        "BCP-47": "ins-IN",
+        "ISO639-3": "ins",
+        "name": "Indian Sign Language",
+        "nameLocal": "Indian Sign Language"
+      },
+      "license": "Creative Commons - Attribution-ShareAlike [CC BY-SA]",
+      "project": "Indian Sign Language Bible (ISLV) Dictionary",
+      "source": "Bridge Connectivity Solutions Pvt. Ltd.",
+      "total_frames": 121,
+      "transcript": {
+        "language": {
+          "BCP-47": "en",
+          "ISO639-3": "eng",
+          "name": "English",
+          "nameLocal": "Indian Sign Language"
+        },
+        "text": "farewell (2)"
+      },
+      "width": 1920
+    }
+  },
+  {
+    "class": "stop",
+    "gloss": "stop",
+    "key": "2059",
+    "parquet_idx": 4,
+    "json": {
+      "duration_sec": 2.04,
+      "fps": 50.0,
+      "height": 1080.0,
+      "language": {
+        "BCP-47": "ins-IN",
+        "ISO639-3": "ins",
+        "name": "Indian Sign Language",
+        "nameLocal": "Indian Sign Language"
+      },
+      "license": "Creative Commons - Attribution-ShareAlike [CC BY-SA]",
+      "project": "Indian Sign Language Bible (ISLV) Dictionary",
+      "source": "Bridge Connectivity Solutions Pvt. Ltd.",
+      "total_frames": 102.0,
+      "transcript": {
+        "language": {
+          "BCP-47": "en",
+          "ISO639-3": "eng",
+          "name": "English",
+          "nameLocal": "Indian Sign Language"
+        },
+        "text": "stop"
+      },
+      "width": 1920.0
+    }
+  },
+  {
+    "class": "goodbye",
+    "gloss": "goodbye",
+    "key": "2086",
+    "parquet_idx": 4,
+    "json": {
+      "duration_sec": 4.24,
+      "fps": 50.0,
+      "height": 1080.0,
+      "language": {
+        "BCP-47": "ins-IN",
+        "ISO639-3": "ins",
+        "name": "Indian Sign Language",
+        "nameLocal": "Indian Sign Language"
+      },
+      "license": "Creative Commons - Attribution-ShareAlike [CC BY-SA]",
+      "project": "Indian Sign Language Bible (ISLV) Dictionary",
+      "source": "Bridge Connectivity Solutions Pvt. Ltd.",
+      "total_frames": 212.0,
+      "transcript": {
+        "language": {
+          "BCP-47": "en",
+          "ISO639-3": "eng",
+          "name": "English",
+          "nameLocal": "Indian Sign Language"
+        },
+        "text": "goodbye"
+      },
+      "width": 1920.0
+    }
+  },
+  {
+    "class": "house",
+    "gloss": "home & house",
+    "key": "2098",
+    "parquet_idx": 4,
+    "json": {
+      "duration_sec": 2.26,
+      "fps": 50.0,
+      "height": 1080.0,
+      "language": {
+        "BCP-47": "ins-IN",
+        "ISO639-3": "ins",
+        "name": "Indian Sign Language",
+        "nameLocal": "Indian Sign Language"
+      },
+      "license": "Creative Commons - Attribution-ShareAlike [CC BY-SA]",
+      "project": "Indian Sign Language Bible (ISLV) Dictionary",
+      "source": "Bridge Connectivity Solutions Pvt. Ltd.",
+      "total_frames": 112.0,
+      "transcript": {
+        "language": {
+          "BCP-47": "en",
+          "ISO639-3": "eng",
+          "name": "English",
+          "nameLocal": "Indian Sign Language"
+        },
+        "text": "home & house"
+      },
+      "width": 1920.0
+    }
+  },
+  {
+    "class": "goodbye",
+    "gloss": "farewell (1)",
+    "key": "253",
+    "parquet_idx": 6,
+    "json": {
+      "duration_sec": 2.72,
+      "fps": 50.0,
+      "height": 1080.0,
+      "language": {
+        "BCP-47": "ins-IN",
+        "ISO639-3": "ins",
+        "name": "Indian Sign Language",
+        "nameLocal": "Indian Sign Language"
+      },
+      "license": "Creative Commons - Attribution-ShareAlike [CC BY-SA]",
+      "project": "Indian Sign Language Bible (ISLV) Dictionary",
+      "source": "Bridge Connectivity Solutions Pvt. Ltd.",
+      "total_frames": 136.0,
+      "transcript": {
+        "language": {
+          "BCP-47": "en",
+          "ISO639-3": "eng",
+          "name": "English",
+          "nameLocal": "Indian Sign Language"
+        },
+        "text": "farewell (1)"
+      },
+      "width": 1920.0
+    }
+  },
+  {
+    "class": "brother",
+    "gloss": "brother",
+    "key": "2650",
+    "parquet_idx": 7,
+    "json": {
+      "duration_sec": 2.28,
+      "fps": 50.0,
+      "height": 1080,
+      "language": {
+        "BCP-47": "ins-IN",
+        "ISO639-3": "ins",
+        "name": "Indian Sign Language",
+        "nameLocal": "Indian Sign Language"
+      },
+      "license": "Creative Commons - Attribution-ShareAlike [CC BY-SA]",
+      "project": "Indian Sign Language Bible (ISLV) Dictionary",
+      "source": "Bridge Connectivity Solutions Pvt. Ltd.",
+      "total_frames": 113,
+      "transcript": {
+        "language": {
+          "BCP-47": "en",
+          "ISO639-3": "eng",
+          "name": "English",
+          "nameLocal": "Indian Sign Language"
+        },
+        "text": "brother"
+      },
+      "width": 1920
+    }
+  }
+]

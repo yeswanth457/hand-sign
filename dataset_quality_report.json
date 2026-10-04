@@ -1,0 +1,170 @@
+[
+  {
+    "class": "hello",
+    "total_videos": 30,
+    "valid_videos": 30,
+    "valid_sequences": 31,
+    "signers": 1,
+    "status": "READY"
+  },
+  {
+    "class": "thank_you",
+    "total_videos": 30,
+    "valid_videos": 30,
+    "valid_sequences": 31,
+    "signers": 1,
+    "status": "READY"
+  },
+  {
+    "class": "welcome",
+    "total_videos": 35,
+    "valid_videos": 35,
+    "valid_sequences": 35,
+    "signers": 1,
+    "status": "READY"
+  },
+  {
+    "class": "goodbye",
+    "total_videos": 3,
+    "valid_videos": 3,
+    "valid_sequences": 3,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "yes",
+    "total_videos": 17,
+    "valid_videos": 17,
+    "valid_sequences": 17,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "no",
+    "total_videos": 17,
+    "valid_videos": 17,
+    "valid_sequences": 17,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "please",
+    "total_videos": 18,
+    "valid_videos": 18,
+    "valid_sequences": 18,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "sorry",
+    "total_videos": 6,
+    "valid_videos": 6,
+    "valid_sequences": 6,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "help",
+    "total_videos": 15,
+    "valid_videos": 15,
+    "valid_sequences": 15,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "stop",
+    "total_videos": 4,
+    "valid_videos": 4,
+    "valid_sequences": 4,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "water",
+    "total_videos": 19,
+    "valid_videos": 19,
+    "valid_sequences": 19,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "food",
+    "total_videos": 19,
+    "valid_videos": 19,
+    "valid_sequences": 19,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "school",
+    "total_videos": 1,
+    "valid_videos": 1,
+    "valid_sequences": 1,
+    "signers": 2,
+    "status": "READY"
+  },
+  {
+    "class": "teacher",
+    "total_videos": 0,
+    "valid_videos": 0,
+    "valid_sequences": 0,
+    "signers": 0,
+    "status": "MISSING FROM DATASET"
+  },
+  {
+    "class": "mother",
+    "total_videos": 0,
+    "valid_videos": 0,
+    "valid_sequences": 0,
+    "signers": 0,
+    "status": "MISSING FROM DATASET"
+  },
+  {
+    "class": "father",
+    "total_videos": 0,
+    "valid_videos": 0,
+    "valid_sequences": 0,
+    "signers": 0,
+    "status": "MISSING FROM DATASET"
+  },
+  {
+    "class": "sister",
+    "total_videos": 0,
+    "valid_videos": 0,
+    "valid_sequences": 0,
+    "signers": 0,
+    "status": "MISSING FROM DATASET"
+  },
+  {
+    "class": "brother",
+    "total_videos": 0,
+    "valid_videos": 0,
+    "valid_sequences": 0,
+    "signers": 0,
+    "status": "MISSING FROM DATASET"
+  },
+  {
+    "class": "friend",
+    "total_videos": 0,
+    "valid_videos": 0,
+    "valid_sequences": 0,
+    "signers": 0,
+    "status": "MISSING FROM DATASET"
+  },
+  {
+    "class": "house",
+    "total_videos": 0,
+    "valid_videos": 0,
+    "valid_sequences": 0,
+    "signers": 0,
+    "status": "MISSING FROM DATASET"
+  },
+  {
+    "class": "work",
+    "total_videos": 0,
+    "valid_videos": 0,
+    "valid_sequences": 0,
+    "signers": 0,
+    "status": "MISSING FROM DATASET"
+  }
+]

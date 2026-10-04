@@ -1,0 +1,269 @@
+{
+  "summary": {
+    "total_classes": 21,
+    "classes_below_20_videos": [
+      "goodbye",
+      "yes",
+      "no",
+      "please",
+      "sorry",
+      "help",
+      "stop",
+      "water",
+      "food",
+      "teacher",
+      "mother",
+      "father",
+      "sister",
+      "brother",
+      "house",
+      "work"
+    ],
+    "classes_below_30_videos": [
+      "goodbye",
+      "yes",
+      "no",
+      "please",
+      "sorry",
+      "help",
+      "stop",
+      "water",
+      "food",
+      "teacher",
+      "mother",
+      "father",
+      "sister",
+      "brother",
+      "house",
+      "work"
+    ],
+    "classes_insufficient_signers_less_than_3": [
+      "hello",
+      "thank_you",
+      "welcome",
+      "work"
+    ],
+    "classes_dominated_by_single_signer_gte_80pct": [
+      "hello",
+      "thank_you",
+      "welcome",
+      "work"
+    ],
+    "count_classes_below_20": 16,
+    "count_classes_below_30": 16,
+    "count_classes_insufficient_signers": 4,
+    "count_classes_single_signer_dominated": 4
+  },
+  "class_breakdown": [
+    {
+      "class": "hello",
+      "total_videos": 30,
+      "valid_tokens": 30,
+      "unique_signers": 1,
+      "source_groups": 1,
+      "top_signer": "Webcam_Signer_01",
+      "top_signer_percentage": 100.0,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "thank_you",
+      "total_videos": 30,
+      "valid_tokens": 30,
+      "unique_signers": 1,
+      "source_groups": 1,
+      "top_signer": "Webcam_Signer_01",
+      "top_signer_percentage": 100.0,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "welcome",
+      "total_videos": 35,
+      "valid_tokens": 35,
+      "unique_signers": 1,
+      "source_groups": 1,
+      "top_signer": "Webcam_Signer_01",
+      "top_signer_percentage": 100.0,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "goodbye",
+      "total_videos": 8,
+      "valid_tokens": 8,
+      "unique_signers": 4,
+      "source_groups": 3,
+      "top_signer": "BridgeConn_Studio_Signer",
+      "top_signer_percentage": 37.5,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "yes",
+      "total_videos": 17,
+      "valid_tokens": 17,
+      "unique_signers": 15,
+      "source_groups": 1,
+      "top_signer": "ISL500_session105",
+      "top_signer_percentage": 11.8,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "no",
+      "total_videos": 17,
+      "valid_tokens": 17,
+      "unique_signers": 17,
+      "source_groups": 1,
+      "top_signer": "CISLR_CXEDTo1PXCg",
+      "top_signer_percentage": 5.9,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "please",
+      "total_videos": 18,
+      "valid_tokens": 18,
+      "unique_signers": 18,
+      "source_groups": 1,
+      "top_signer": "CISLR_iGDJKo1-w5k",
+      "top_signer_percentage": 5.6,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "sorry",
+      "total_videos": 9,
+      "valid_tokens": 9,
+      "unique_signers": 6,
+      "source_groups": 2,
+      "top_signer": "DataGov_Studio_Signer",
+      "top_signer_percentage": 33.3,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "help",
+      "total_videos": 15,
+      "valid_tokens": 15,
+      "unique_signers": 14,
+      "source_groups": 1,
+      "top_signer": "ISL500_session105",
+      "top_signer_percentage": 13.3,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "stop",
+      "total_videos": 7,
+      "valid_tokens": 7,
+      "unique_signers": 5,
+      "source_groups": 3,
+      "top_signer": "DataGov_Studio_Signer",
+      "top_signer_percentage": 28.6,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "water",
+      "total_videos": 19,
+      "valid_tokens": 19,
+      "unique_signers": 19,
+      "source_groups": 2,
+      "top_signer": "CISLR_5FSC6Og1RBQ",
+      "top_signer_percentage": 5.3,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "food",
+      "total_videos": 19,
+      "valid_tokens": 19,
+      "unique_signers": 18,
+      "source_groups": 2,
+      "top_signer": "Webcam_Signer_01",
+      "top_signer_percentage": 10.5,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "school",
+      "total_videos": 38,
+      "valid_tokens": 38,
+      "unique_signers": 38,
+      "source_groups": 2,
+      "top_signer": "CISLR_OvDIlDiFmnU",
+      "top_signer_percentage": 2.6,
+      "status": "PASS_VOLUME_ONLY"
+    },
+    {
+      "class": "teacher",
+      "total_videos": 17,
+      "valid_tokens": 17,
+      "unique_signers": 16,
+      "source_groups": 1,
+      "top_signer": "ISL500_session101",
+      "top_signer_percentage": 11.8,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "mother",
+      "total_videos": 18,
+      "valid_tokens": 18,
+      "unique_signers": 18,
+      "source_groups": 1,
+      "top_signer": "CISLR_0t5NaJwemgI",
+      "top_signer_percentage": 5.6,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "father",
+      "total_videos": 16,
+      "valid_tokens": 16,
+      "unique_signers": 16,
+      "source_groups": 1,
+      "top_signer": "CISLR_Gm2HCSz7Jqg",
+      "top_signer_percentage": 6.2,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "sister",
+      "total_videos": 17,
+      "valid_tokens": 17,
+      "unique_signers": 15,
+      "source_groups": 1,
+      "top_signer": "ISL500_session120",
+      "top_signer_percentage": 11.8,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "brother",
+      "total_videos": 7,
+      "valid_tokens": 7,
+      "unique_signers": 5,
+      "source_groups": 3,
+      "top_signer": "BridgeConn_Studio_Signer",
+      "top_signer_percentage": 28.6,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "friend",
+      "total_videos": 38,
+      "valid_tokens": 38,
+      "unique_signers": 37,
+      "source_groups": 1,
+      "top_signer": "ISL500_session104",
+      "top_signer_percentage": 5.3,
+      "status": "PASS_VOLUME_ONLY"
+    },
+    {
+      "class": "house",
+      "total_videos": 3,
+      "valid_tokens": 3,
+      "unique_signers": 3,
+      "source_groups": 3,
+      "top_signer": "BridgeConn_Studio_Signer",
+      "top_signer_percentage": 33.3,
+      "status": "DEFICIENT"
+    },
+    {
+      "class": "work",
+      "total_videos": 3,
+      "valid_tokens": 3,
+      "unique_signers": 1,
+      "source_groups": 1,
+      "top_signer": "DataGov_Studio_Signer",
+      "top_signer_percentage": 100.0,
+      "status": "DEFICIENT"
+    }
+  ]
+}
