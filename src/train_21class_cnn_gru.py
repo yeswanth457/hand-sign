@@ -157,9 +157,9 @@ def execute_pipeline():
     total_train = len(train_y)
 
     # Standard balanced class weighting: total_samples / (num_classes * class_count)
-    class_weights = total_train / (NUM_CLASSES * train_counts)
-    # Clip extreme weights to avoid numerical instability
-    class_weights = np.clip(class_weights, 0.2, 5.0)
+    # Smoothed balanced class weighting: sqrt(total_samples / (num_classes * class_count))
+    class_weights = np.sqrt(total_train / (NUM_CLASSES * train_counts))
+    class_weights = np.clip(class_weights, 0.6, 2.5)
 
     print(f"\nCalculated Class Weights (from Training Set ONLY):")
     for cid, cname in enumerate(CLASS_NAMES):
@@ -194,7 +194,7 @@ def execute_pipeline():
     epochs = 50
     best_val_acc = 0.0
     best_epoch = 0
-    patience = 15
+    patience = 20
     patience_counter = 0
     history = []
 

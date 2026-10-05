@@ -390,13 +390,16 @@ async function loadVocabulary() {
         clearTimeout(timeoutId);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        selectVocab.innerHTML = '';
-        data.vocabulary.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.english;
-            opt.textContent = `${item.id + 1}. ${item.display_english} → ${item.tamil}`;
-            selectVocab.appendChild(opt);
-        });
+        if (selectVocab && data && Array.isArray(data.vocabulary)) {
+            selectVocab.innerHTML = '';
+            data.vocabulary.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.english;
+                opt.textContent = `${item.id + 1}. ${item.display_english} → ${item.tamil}`;
+                selectVocab.appendChild(opt);
+            });
+        }
+        console.log(`[VOCABULARY] Successfully loaded ${data?.vocabulary?.length || 0} vocabulary items.`);
     } catch (e) {
         clearTimeout(timeoutId);
         console.error('Failed to load vocabulary:', e);
@@ -990,13 +993,21 @@ function buildLandmarkData(handResults, poseResults) {
         }
     }
 
-    // Extract all raw hand landmark arrays (ignoring unstable MediaPipe handedness labels)
+    // Stable Hand Tracking State (Phase 9 & 10)
     const detectedHandsList = [];
+    const detectedHandMeta = [];
     if (handResults && handResults.landmarks && handResults.landmarks.length > 0) {
-        handResults.landmarks.forEach((hand) => {
+        handResults.landmarks.forEach((hand, idx) => {
             if (hand && hand.length === 21) {
                 const pts = hand.map(lm => [lm.x, lm.y, lm.z]);
                 detectedHandsList.push(pts);
+                let label = 'Right';
+                let score = 1.0;
+                if (handResults.handedness && handResults.handedness[idx] && handResults.handedness[idx][0]) {
+                    label = handResults.handedness[idx][0].categoryName || ('Hand_' + idx);
+                    score = handResults.handedness[idx][0].score || 1.0;
+                }
+                detectedHandMeta.push({ label, score });
             }
         });
     }
@@ -1004,27 +1015,64 @@ function buildLandmarkData(handResults, poseResults) {
     data.hands = detectedHandsList;
     data.hand_count = detectedHandsList.length;
 
-    // Track hand center matching Python LandmarkExtractor:
-    // If 1 hand -> use that hand's center
-    // If >1 hands -> choose hand closest to prevHandCenter (if set), else top-most hand (lowest Y)
     if (detectedHandsList.length > 0) {
         const centers = detectedHandsList.map(h => calculateHandCenter(h));
-        let selectedCenter = null;
-        if (centers.length === 1) {
-            selectedCenter = centers[0];
-        } else if (prevHandCenter !== null) {
-            const px = prevHandCenter[0], py = prevHandCenter[1];
+        let selectedIdx = 0;
+        let selectedReason = "single_hand";
+
+        if (detectedHandsList.length === 1) {
+            selectedIdx = 0;
+            const newLabel = detectedHandMeta[0].label;
+            if (currentTrackedHandLabel !== null && currentTrackedHandLabel !== newLabel && trackedHandLostStreak >= MAX_MISSED_HAND_FRAMES) {
+                console.log(`HAND_SELECTION_CHANGED\nold_hand=${currentTrackedHandLabel}\nnew_hand=${newLabel}\nreason=single_hand_detected`);
+            }
+            currentTrackedHandLabel = newLabel;
+            currentTrackedHandCenter = centers[0];
+            trackedHandLostStreak = 0;
+        } else if (currentTrackedHandCenter !== null) {
+            // Multi-hand: preserve tracking continuity of the already-selected hand!
+            const px = currentTrackedHandCenter[0], py = currentTrackedHandCenter[1];
             let bestIdx = 0;
             let minDistSq = Infinity;
-            centers.forEach((c, idx) => {
-                const dSq = (c[0] - px) ** 2 + (c[1] - py) ** 2;
-                if (dSq < minDistSq) {
-                    minDistSq = dSq;
-                    bestIdx = idx;
-                }
-            });
-            selectedCenter = centers[bestIdx];
+
+            // 1. Try matching by label first if within reasonable spatial window
+            let labelMatched = false;
+            if (currentTrackedHandLabel) {
+                centers.forEach((c, idx) => {
+                    if (detectedHandMeta[idx].label === currentTrackedHandLabel) {
+                        const dSq = (c[0] - px) ** 2 + (c[1] - py) ** 2;
+                        if (dSq < 0.15) {
+                            bestIdx = idx;
+                            minDistSq = dSq;
+                            labelMatched = true;
+                            selectedReason = "label_match_continuity";
+                        }
+                    }
+                });
+            }
+
+            // 2. If no label match within window, find closest center
+            if (!labelMatched) {
+                centers.forEach((c, idx) => {
+                    const dSq = (c[0] - px) ** 2 + (c[1] - py) ** 2;
+                    if (dSq < minDistSq) {
+                        minDistSq = dSq;
+                        bestIdx = idx;
+                    }
+                });
+                selectedReason = "spatial_closest";
+            }
+
+            const newLabel = detectedHandMeta[bestIdx].label;
+            if (currentTrackedHandLabel !== null && currentTrackedHandLabel !== newLabel) {
+                console.log(`HAND_SELECTION_CHANGED\nold_hand=${currentTrackedHandLabel}\nnew_hand=${newLabel}\nreason=${selectedReason}`);
+            }
+            currentTrackedHandLabel = newLabel;
+            currentTrackedHandCenter = centers[bestIdx];
+            trackedHandLostStreak = 0;
+            selectedIdx = bestIdx;
         } else {
+            // First multi-hand detection with no prior tracked hand: pick top-most (lowest Y) hand
             let bestIdx = 0;
             let minY = Infinity;
             centers.forEach((c, idx) => {
@@ -1033,29 +1081,55 @@ function buildLandmarkData(handResults, poseResults) {
                     bestIdx = idx;
                 }
             });
-            selectedCenter = centers[bestIdx];
+            selectedIdx = bestIdx;
+            currentTrackedHandLabel = detectedHandMeta[bestIdx].label;
+            currentTrackedHandCenter = centers[bestIdx];
+            trackedHandLostStreak = 0;
+            selectedReason = "initial_topmost_hand";
         }
-        data.hand_center = selectedCenter;
+
+        data.hand_center = currentTrackedHandCenter;
+        data.selected_hand = currentTrackedHandLabel;
+        data.selected_hand_index = selectedIdx;
+        data.selected_hand_confidence = detectedHandMeta[selectedIdx] ? detectedHandMeta[selectedIdx].score : 1.0;
+    } else {
+        trackedHandLostStreak++;
+        data.selected_hand = "NONE";
+        data.selected_hand_confidence = 0.0;
     }
 
     return data;
 }
 
 // ─── 6D Token Computation (Browser-Side) ─────────────────────────
+let currentTrackedHandLabel = null;
+let currentTrackedHandCenter = null;
+let trackedHandLostStreak = 0;
 let prevHandCenter = null;
-let currentSequenceId = 1;
+let currentSequenceId = Date.now();
+let consecutiveNoHandFrames = 0;
+const CONSECUTIVE_NO_HAND_FOR_RESET = 4; // Require 4 consecutive frames (~100-150ms) of no-hand before sequence reset
 
 function resetTokenizerState() {
     prevHandCenter = null;
-    currentSequenceId++;
+    currentTrackedHandLabel = null;
+    currentTrackedHandCenter = null;
+    trackedHandLostStreak = 0;
+    currentSequenceId = Date.now();
+    consecutiveNoHandFrames = 0;
 }
 
 function compute6DToken(landmarkData) {
     const hasHand = landmarkData && landmarkData.hands && landmarkData.hands.length > 0;
     if (!hasHand) {
-        resetTokenizerState();
+        consecutiveNoHandFrames++;
+        if (consecutiveNoHandFrames >= CONSECUTIVE_NO_HAND_FOR_RESET) {
+            resetTokenizerState();
+        }
         return null; // Return null when no hand detected
     }
+
+    consecutiveNoHandFrames = 0;
 
     const hx = (landmarkData.hand_center && landmarkData.hand_center[0] !== undefined) ? landmarkData.hand_center[0] : 0.5;
     const hy = (landmarkData.hand_center && landmarkData.hand_center[1] !== undefined) ? landmarkData.hand_center[1] : 0.5;
@@ -1067,7 +1141,7 @@ function compute6DToken(landmarkData) {
     let mx = 0.0, my = 0.0;
     if (prevHandCenter !== null) {
         const jumpDist = Math.hypot(hx - prevHandCenter[0], hy - prevHandCenter[1]);
-        if (jumpDist > 0.20) {
+        if (jumpDist > 0.25) {
             mx = 0.0;
             my = 0.0;
         } else {
@@ -1086,6 +1160,14 @@ function compute6DToken(landmarkData) {
     const ry = hy - sy;
 
     const token = [hx, hy, mx, my, rx, ry];
+
+    // Section 11 Token Integrity Validation
+    const isFinite = token.every(v => Number.isFinite(v));
+    const rangeValid = Math.abs(hx) <= 2.0 && Math.abs(hy) <= 2.0 && Math.abs(rx) <= 2.0 && Math.abs(ry) <= 2.0;
+    if (!isFinite || !rangeValid) {
+        console.warn(`[TOKEN VALIDATION WARNING] isFinite=${isFinite}, rangeValid=${rangeValid}, token=`, token);
+    }
+
     updateTokenDisplay(token, true);
     return token;
 }
@@ -1164,7 +1246,12 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
                 shoulder_center: landmarkData.shoulder_center,
                 has_hand: hasHand,
                 hand_count: landmarkData.hand_count || (hasHand ? 1 : 0),
-                primary_hand: "TrackedHand"
+                primary_hand: landmarkData.selected_hand || "Right",
+                selected_hand: landmarkData.selected_hand || "Right",
+                selected_hand_index: landmarkData.selected_hand_index !== undefined ? landmarkData.selected_hand_index : 0,
+                selected_hand_confidence: landmarkData.selected_hand_confidence || 1.0,
+                camera_fps: webcamFps || 30.0,
+                token_fps: Math.round(1000 / TOKEN_SEND_INTERVAL_MS)
             })
         });
         clearTimeout(timeoutId);
@@ -1442,29 +1529,51 @@ function updateUI(data, hasHand) {
     }
 
     // Translation Output & Word Buffer Synchronization
-    if (data.translation) {
-        let text = data.translation.display_text;
+    if (data.translation || data.final_class) {
+        let text = (data.translation && data.translation.display_text && data.translation.display_text.trim() !== '')
+            ? data.translation.display_text
+            : '';
 
-        // Determine placeholder text when no confirmed sentence exists yet
+        const activeSign = data.final_class || (data.prediction ? data.prediction.word : null);
+
+        // If no confirmed sentence string yet, format active sign according to language mode
         if (!text || text.trim() === '') {
             if (!isWebcamRunning || currentCameraState === 'CAMERA_OFF') {
                 text = '<em>WAITING FOR WEBCAM</em>';
             } else if (!hasHand) {
                 text = '<em>WAITING FOR HAND GESTURE</em>';
-            } else if (data.prediction && data.prediction.word === 'COLLECTING GESTURE...') {
+            } else if (activeSign === 'COLLECTING GESTURE...' || activeSign === 'BUFFERING') {
                 text = '<em>COLLECTING GESTURE...</em>';
+            } else if (activeSign && activeSign !== '--' && activeSign !== 'WAITING FOR CLEAR GESTURE') {
+                if (currentLanguage === 'tamil') {
+                    if (activeSign === 'water') text = 'தண்ணீர்';
+                    else if (activeSign === 'no') text = 'இல்லை';
+                    else if (activeSign === 'please') text = 'தயவுசெய்து (Thayavuseythu)';
+                    else if (activeSign === 'school') text = 'பள்ளி (Palli)';
+                    else text = (data.translation && data.translation.tamil) ? data.translation.tamil : activeSign;
+                } else {
+                    if (activeSign === 'water') text = 'Water (தண்ணீர்)';
+                    else if (activeSign === 'no') text = 'No (இல்லை)';
+                    else if (activeSign === 'please') text = 'Please.';
+                    else if (activeSign === 'school') text = 'School';
+                    else text = activeSign.charAt(0).toUpperCase() + activeSign.slice(1).replace('_', ' ') + '.';
+                }
             } else {
                 text = '<em>WAITING FOR HAND GESTURE</em>';
             }
         }
 
+        if (text === 'School.') text = 'School';
         translatedText.innerHTML = text;
         lastTranslationText = text;
 
-        // Synchronize Word Buffer (strictly confirmed words only)
-        const rawWords = (data.translation.raw_words && data.translation.raw_words.length > 0)
+        // Synchronize Word Buffer (confirmed words or active confirmed sign)
+        let rawWords = (data.translation && data.translation.raw_words && data.translation.raw_words.length > 0)
             ? data.translation.raw_words
             : [];
+        if (rawWords.length === 0 && activeSign && activeSign !== 'COLLECTING GESTURE...' && activeSign !== 'BUFFERING' && activeSign !== '--' && activeSign !== 'WAITING FOR CLEAR GESTURE' && hasHand) {
+            rawWords = [activeSign];
+        }
         updateWordBuffer(rawWords);
     }
 }

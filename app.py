@@ -5,6 +5,11 @@ Exactly 21 ISL sign classes. No simulation, no mock predictions.
 """
 
 import os
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 import json
 import base64
 import time
@@ -32,6 +37,18 @@ from src.no_binary_model import NOBinaryInferenceEngine
 from src.early_decision import EarlyDecisionEngine
 from src.sentence_processor import LocalSentenceProcessor
 from src.build_real_split import resample_tokens
+
+def safe_print(*args, **kwargs):
+    try:
+        print(*args, **kwargs)
+    except UnicodeEncodeError:
+        try:
+            msg = " ".join(str(a) for a in args)
+            sys.stdout.buffer.write(msg.encode('utf-8', errors='replace') + b'\n')
+            sys.stdout.buffer.flush()
+        except Exception:
+            safe_args = [str(a).encode('ascii', errors='backslashreplace').decode('ascii') for a in args]
+            print(*safe_args, **kwargs)
 
 app = FastAPI(
     title="RT-STAMP-SLR ISL Translator",
@@ -86,6 +103,12 @@ active_sequence_id = 0
 last_processed_frame_id = 0
 last_token_timestamp = 0.0
 token_timestamps = deque(maxlen=20)
+cnn_call_count = 0
+
+# Hand Tracking & Switching
+last_selected_hand = None
+hand_switch_count = 0
+hand_switch_frames = []
 
 
 # Pydantic Schemas
@@ -113,6 +136,11 @@ class TokenInput(BaseModel):
     hand_count: Optional[int] = 0
     primary_hand: Optional[str] = "NONE"
     secondary_hand: Optional[str] = "NONE"
+    selected_hand: Optional[str] = "Right"
+    selected_hand_index: Optional[int] = 0
+    selected_hand_confidence: Optional[float] = 1.0
+    camera_fps: Optional[float] = 30.0
+    token_fps: Optional[float] = 20.0
 
 
 
@@ -269,39 +297,68 @@ async def process_token(data: TokenInput):
     rejects stale out-of-order frames, and runs binary NO classifier inference.
     """
     global frame_counter, sequence_counter, no_hand_consecutive_count, idle_consecutive_count, last_predicted_sequence, binary_consecutive_no_count, _first_no_sequence_saved
-    global active_sequence_id, last_processed_frame_id, last_token_timestamp, token_timestamps
+    global active_sequence_id, last_processed_frame_id, last_token_timestamp, token_timestamps, cnn_call_count
+    global last_selected_hand, hand_switch_count, hand_switch_frames
 
     t_start = time.perf_counter()
     frame_counter += 1
     fid = data.frame_id or frame_counter
     seq_id = data.sequence_id or 0
 
-    # Sequence transition detection
-    if seq_id > 0 and seq_id != active_sequence_id:
+    # Section 12 & 14: Sequence transition detection & Stale rejection
+    is_client_reloaded = (active_sequence_id - seq_id) > 1000
+    if seq_id > 0 and (active_sequence_id == 0 or seq_id > active_sequence_id or is_client_reloaded):
         active_sequence_id = seq_id
         binary_token_buffer.clear()
         realtime_token_buffer.clear()
         buffered_frame_ids.clear()
         binary_consecutive_no_count = 0
         last_processed_frame_id = 0
+        last_selected_hand = None
+        hand_switch_count = 0
+        hand_switch_frames = []
         gesture_tokenizer.reset()
         early_decision_engine.reset()
-        print(f"\n[SEQUENCE RESET] New sequence_id={seq_id}. Cleared all token buffers.")
+        sentence_processor.clear()
+        safe_print(
+            f"\nTOKEN_SEQUENCE_ID={seq_id}\n"
+            f"BACKEND_SEQUENCE_ID={active_sequence_id}\n"
+            f"STALE_TOKEN_REJECTED=NO\n"
+            f"SEQUENCE_RESET_REASON=NEW_SEQUENCE\n"
+            f"[SEQUENCE RESET] New sequence_id={seq_id}. Cleared all token buffers."
+        )
+    elif seq_id > 0 and seq_id < active_sequence_id:
+        safe_print(
+            f"\nTOKEN_SEQUENCE_ID={seq_id}\n"
+            f"BACKEND_SEQUENCE_ID={active_sequence_id}\n"
+            f"STALE_TOKEN_REJECTED=YES\n"
+            f"SEQUENCE_RESET_REASON=STALE_SEQUENCE"
+        )
+        return {
+            "status": "STALE_TOKEN_REJECTED",
+            "frame_id": fid,
+            "sequence_id": seq_id,
+            "active_sequence_id": active_sequence_id,
+            "no_probability": 0.0,
+            "final_class": "--",
+            "hand_detected": data.has_hand
+        }
 
     # Handle NO_HAND state
     if not data.has_hand:
-        print(f"\n[HAND]\ndetected=false\nhand_count=0")
+        safe_print(f"\n[HAND]\ndetected=false\nhand_count=0 (streak={no_hand_consecutive_count + 1}/{NO_HAND_CLEAR_THRESHOLD})")
         idle_consecutive_count = 0
         no_hand_consecutive_count += 1
-        last_predicted_sequence = None
-        binary_token_buffer.clear()
-        binary_consecutive_no_count = 0
-        realtime_token_buffer.clear()
-        buffered_frame_ids.clear()
-        gesture_tokenizer.reset()
-        early_decision_engine.reset()
-        last_processed_frame_id = 0
-        no_hand_consecutive_count = 0
+        if no_hand_consecutive_count >= NO_HAND_CLEAR_THRESHOLD:
+            safe_print(f"SEQUENCE_RESET_REASON=HAND_LOST")
+            last_predicted_sequence = None
+            binary_token_buffer.clear()
+            binary_consecutive_no_count = 0
+            realtime_token_buffer.clear()
+            buffered_frame_ids.clear()
+            gesture_tokenizer.reset()
+            early_decision_engine.reset()
+            last_processed_frame_id = 0
         proc_time_ms = (time.perf_counter() - t_start) * 1000
         return {
             "frame_id": fid,
@@ -349,7 +406,7 @@ async def process_token(data: TokenInput):
 
     # Stale out-of-order frame rejection
     if fid > 0 and fid <= last_processed_frame_id:
-        print(f"[STALE FRAME REJECTED] fid={fid} <= last_processed={last_processed_frame_id}")
+        safe_print(f"[STALE FRAME REJECTED] fid={fid} <= last_processed={last_processed_frame_id}")
         return {
             "status": "STALE_FRAME_REJECTED",
             "frame_id": fid,
@@ -380,18 +437,16 @@ async def process_token(data: TokenInput):
     avg_dt = np.mean(token_timestamps) if len(token_timestamps) > 0 else 0.05
     tokens_per_sec = float(1.0 / max(0.001, avg_dt))
 
-    # Step 3 & 4 Logging: Hand detected and 6D Token
+    # Section 3 & 8: Detailed Live Sequence Diagnostic and Hand Switching
     hand_count = data.hand_count or 1
-    print(f"\n[HAND]\ndetected=true\nhand_count={hand_count}")
-    print(
-        f"\n[NO TOKEN]\n"
-        f"Hx={token_arr[0]:.4f}\n"
-        f"Hy={token_arr[1]:.4f}\n"
-        f"Mx={token_arr[2]:.4f}\n"
-        f"My={token_arr[3]:.4f}\n"
-        f"Rx={token_arr[4]:.4f}\n"
-        f"Ry={token_arr[5]:.4f}"
-    )
+    sel_hand = data.selected_hand or data.primary_hand or "Right"
+    sel_conf = float(data.selected_hand_confidence) if data.selected_hand_confidence is not None else 1.0
+    sel_idx = getattr(data, "selected_hand_index", 0) or 0
+
+    if last_selected_hand is not None and last_selected_hand != sel_hand:
+        hand_switch_count += 1
+        hand_switch_frames.append(fid)
+    last_selected_hand = sel_hand
 
     # Accumulate into rolling token buffer
     realtime_token_buffer.append(token_arr)
@@ -401,7 +456,31 @@ async def process_token(data: TokenInput):
 
     buf_len = len(realtime_token_buffer)
     binary_buf_len = len(binary_token_buffer)
-    print(f"\n[TOKEN BUFFER]\nlength={binary_buf_len}/25")
+
+    safe_print(
+        f"\nLIVE_SEQUENCE_START\n"
+        f"sequence_id={seq_id}\n"
+        f"RAW_HAND_COUNT={hand_count}\n"
+        f"SELECTED_HAND={sel_hand}\n"
+        f"SELECTED_HAND_INDEX={sel_idx}\n"
+        f"SELECTED_HAND_CONFIDENCE={sel_conf:.4f}\n"
+        f"HAND_SWITCH_COUNT={hand_switch_count}\n"
+        f"HAND_SWITCH_FRAME={hand_switch_frames}\n"
+        f"landmark_count={21 * hand_count}\n"
+        f"token_available=True\n"
+        f"token_shape=(6,)\n"
+        f"token_count={buf_len}"
+    )
+
+    safe_print(
+        f"\n[TOKEN]\n"
+        f"Hx={token_arr[0]:.4f}\n"
+        f"Hy={token_arr[1]:.4f}\n"
+        f"Mx={token_arr[2]:.4f}\n"
+        f"My={token_arr[3]:.4f}\n"
+        f"Rx={token_arr[4]:.4f}\n"
+        f"Ry={token_arr[5]:.4f}"
+    )
 
     # Build landmark_data for motion energy calculation
     pose_dict = data.pose or {}
@@ -426,99 +505,88 @@ async def process_token(data: TokenInput):
     no_prob = 0.0
     no_res = {}
     if no_binary_engine and no_binary_engine.model_loaded and binary_buf_len >= 5:
-        no_tokens = list(binary_token_buffer)  # Always the isolated buffer
+        no_tokens = list(binary_token_buffer)
         no_res = no_binary_engine.predict_sequence(no_tokens, max_seq_len=25)
         no_prob = float(no_res.get("no_probability", 0.0))
 
-    # ── Save & compare when binary buffer reaches 25 (diagnostic) ────────────
-    if binary_buf_len == 25 and no_binary_engine and no_binary_engine.model_loaded:
-        seq_arr = np.array(list(binary_token_buffer), dtype=np.float32)
-        m = seq_arr.mean(axis=0)
-        start_fid = buffered_frame_ids[0] if len(buffered_frame_ids) >= 25 else 0
-        end_fid = buffered_frame_ids[-1] if len(buffered_frame_ids) >= 25 else fid
-
-        save_path = os.path.join(BASE_DIR, "models", "debug_browser_no_sequence.npy")
-        np.save(save_path, seq_arr)
-        _first_no_sequence_saved = True
-
-        print(
-            f"\n[BROWSER NO WINDOW]\n"
-            f"shape={seq_arr.shape}\n"
-            f"start_frame={start_fid}\n"
-            f"end_frame={end_fid}\n"
-            f"NO probability={no_prob:.4f}"
-        )
-
-        print(
-            f"\n[BROWSER NO STATS]\n"
-            f"Hx mean={m[0]:.4f} min={seq_arr[:,0].min():.4f} max={seq_arr[:,0].max():.4f}\n"
-            f"Hy mean={m[1]:.4f} min={seq_arr[:,1].min():.4f} max={seq_arr[:,1].max():.4f}\n"
-            f"Mx mean={m[2]:.4f} min={seq_arr[:,2].min():.4f} max={seq_arr[:,2].max():.4f}\n"
-            f"My mean={m[3]:.4f} min={seq_arr[:,3].min():.4f} max={seq_arr[:,3].max():.4f}\n"
-            f"Rx mean={m[4]:.4f} min={seq_arr[:,4].min():.4f} max={seq_arr[:,4].max():.4f}\n"
-            f"Ry mean={m[5]:.4f} min={seq_arr[:,5].min():.4f} max={seq_arr[:,5].max():.4f}"
-        )
-
-        print(
-            f"\n[TOKEN RATE]\n"
-            f"tokens/sec={tokens_per_sec:.2f}"
-        )
-
-        # Compare against standalone npy if available
-        standalone_path = os.path.join(BASE_DIR, "models", "debug_live_no_sequence.npy")
-        if os.path.exists(standalone_path):
-            ref = np.load(standalone_path).astype(np.float32)
-            ref_m = ref.mean(axis=0)
-            diff = np.abs(seq_arr - ref)
-            overall_mad = float(diff.mean())
-            dm = diff.mean(axis=0)
-            print(
-                f"\n[BROWSER VS STANDALONE]\n"
-                f"Browser shape: {seq_arr.shape}\n"
-                f"Standalone shape: {ref.shape}\n"
-                f"Browser means:  Hx={m[0]:.4f} Hy={m[1]:.4f} Mx={m[2]:.4f} My={m[3]:.4f} Rx={m[4]:.4f} Ry={m[5]:.4f}\n"
-                f"Standal. means: Hx={ref_m[0]:.4f} Hy={ref_m[1]:.4f} Mx={ref_m[2]:.4f} My={ref_m[3]:.4f} Rx={ref_m[4]:.4f} Ry={ref_m[5]:.4f}\n"
-                f"Mean absolute diff: {overall_mad:.4f}\n"
-                f"Per-feature MAD: Hx={dm[0]:.4f} Hy={dm[1]:.4f} Mx={dm[2]:.4f} My={dm[3]:.4f} Rx={dm[4]:.4f} Ry={dm[5]:.4f}"
-            )
-
     # ── 21-Class CNN-GRU Prediction ───────────────────────────────────────
+    sorted_probs = []
     if buf_len >= 25:
+        cnn_call_count += 1
         tokens_np = np.array(list(realtime_token_buffer)[-25:], dtype=np.float32)
+        assert tokens_np.shape == (25, 6), f"Expected (25, 6), got {tokens_np.shape}"
+        buffer_status = "25/25"
+
         prediction = model_engine.predict_sequence(tokens_np)
         primary_class = prediction.get("word", "--")
         primary_confidence = float(prediction.get("confidence", 0.0))
-        buffer_status = "25/25"
+        probs = prediction.get("probabilities", {})
+        sorted_probs = sorted(probs.items(), key=lambda x: x[1], reverse=True)[:5]
 
-        print(f"\n[21CLASS]\nclass={primary_class}\nconfidence={primary_confidence:.4f}")
+        # Section 3 & 15: CNN Diagnostic Block
+        safe_print(
+            f"\nCNN_INPUT_SHAPE=(25,6)\n"
+            f"CNN_RAW_CLASS={primary_class}\n"
+            f"CNN_RAW_CLASS_INDEX={CLASS_TO_INDEX.get(primary_class, -1)}\n"
+            f"CNN_RAW_CONFIDENCE={primary_confidence:.4f}"
+        )
+        for i, (c_name, c_conf) in enumerate(sorted_probs, 1):
+            safe_print(f"CNN_TOP{i}={c_name}\nCNN_TOP{i}_CONF={c_conf:.4f}")
 
         # ── NO Temporal Gating ────────────────────────────────────────────
-        # Update consecutive NO counter: only counts frames at the 25-token boundary
         if no_prob >= NO_PROB_THRESHOLD:
             binary_consecutive_no_count += 1
         else:
-            binary_consecutive_no_count = 0  # Reset on any frame that does NOT qualify
+            binary_consecutive_no_count = 0
 
         no_confirmed = binary_consecutive_no_count >= NO_CONSECUTIVE_REQUIRED
 
         # ── Final Class Decision ──────────────────────────────────────────
-        # If binary NO model has confirmed NO with temporal gate AND 21-class said something else,
-        # override to "no". FRIEND (or any other class) cannot override a confirmed NO.
-        if no_confirmed:
+        is_chin_level = float(tokens_np[:, 5].mean()) < 0.0
+        water_prob = probs.get("water", 0.0)
+        water_cand = (primary_class == "water") or (water_prob > 0.25)
+        school_prob = probs.get("school", 0.0)
+        school_cand = (primary_class == "school") or (school_prob > 0.25)
+        if no_confirmed and not is_chin_level and not water_cand and not school_cand:
             final_class = "no"
         else:
             final_class = primary_class
 
-        # ── [GESTURE DEBUG] Diagnostic Block ─────────────────────────────
-        print(
-            f"\n[GESTURE DEBUG]\n"
-            f"21CLASS        = {primary_class}\n"
-            f"21CLASS_CONF   = {primary_confidence:.4f}\n"
-            f"NO_PROBABILITY = {no_prob:.4f}\n"
-            f"NO_CONFIRMATIONS = {binary_consecutive_no_count}\n"
-            f"NO_CONFIRMED   = {no_confirmed}\n"
-            f"FINAL_CLASS    = {final_class}"
-        )
+        # Section 5: Capture Real School Sequence
+        if primary_class == "school" or school_cand:
+            try:
+                school_save_npy = os.path.join(BASE_DIR, "models", "debug_live_school_sequence.npy")
+                school_save_txt = os.path.join(BASE_DIR, "models", "debug_live_school_sequence.txt")
+                np.save(school_save_npy, tokens_np)
+                with open(school_save_txt, "w", encoding="utf-8") as f:
+                    for row in tokens_np:
+                        f.write(" ".join(f"{v:.6f}" for v in row) + "\n")
+                safe_print(
+                    f"\nLIVE_SCHOOL_SEQUENCE_SAVED=YES\n"
+                    f"LIVE_SCHOOL_SEQUENCE_SHAPE=(25,6)"
+                )
+            except Exception as e_save:
+                safe_print(f"[Warning] Failed to save debug school sequence: {e_save}")
+
+        # Section 3 & 4: Automatically capture real failed school sequence if classified as water
+        if primary_class == "water" or final_class == "water":
+            try:
+                fail_save_npy = os.path.join(BASE_DIR, "models", "debug_failed_school_as_water.npy")
+                fail_save_txt = os.path.join(BASE_DIR, "models", "debug_failed_school_as_water.txt")
+                np.save(fail_save_npy, tokens_np)
+                with open(fail_save_txt, "w", encoding="utf-8") as f:
+                    for row in tokens_np:
+                        f.write(" ".join(f"{v:.6f}" for v in row) + "\n")
+                safe_print(
+                    f"\nFAILED_SCHOOL_SEQUENCE_CAPTURED=YES\n"
+                    f"FAILED_SCHOOL_SEQUENCE_SHAPE=(25,6)\n"
+                    f"LIVE_FAILED_SCHOOL_RAW_CNN_CLASS={primary_class}\n"
+                    f"LIVE_FAILED_SCHOOL_RAW_CNN_CONFIDENCE={primary_confidence:.4f}"
+                )
+                for i, (c_name, c_conf) in enumerate(sorted_probs[:5], 1):
+                    safe_print(f"TOP{i}={c_name}: {c_conf:.4f}")
+            except Exception as e_fail:
+                safe_print(f"[Warning] Failed to save debug failed school sequence: {e_fail}")
     else:
         prediction = {
             "word": "COLLECTING GESTURE...",
@@ -532,11 +600,9 @@ async def process_token(data: TokenInput):
         no_confirmed = False
         buffer_status = f"{buf_len}/25 (Collecting)"
 
-    print(f"\n[FINAL]\nprimary={primary_class}\nconfidence={primary_confidence:.4f}\nno_prob={no_prob:.4f}\nno_confirmations={binary_consecutive_no_count}\nfinal={final_class}")
-
     # ── Sentence & Early Decision Processing ─────────────────────────────
     final_prediction_for_decision = dict(prediction)
-    final_prediction_for_decision["word"] = final_class  # Inject overridden class
+    final_prediction_for_decision["word"] = final_class
     effective_conf = no_prob if no_confirmed else primary_confidence
     final_prediction_for_decision["confidence"] = effective_conf
 
@@ -549,7 +615,7 @@ async def process_token(data: TokenInput):
             realtime_token_buffer.clear()
             buffered_frame_ids.clear()
             binary_token_buffer.clear()
-            binary_consecutive_no_count = 0   # RESET: sequence cleared after acceptance
+            binary_consecutive_no_count = 0
             last_predicted_sequence = None
         else:
             translation_res = sentence_processor.get_current_translation()
@@ -563,6 +629,40 @@ async def process_token(data: TokenInput):
             "sustained_target": 2
         }
         translation_res = sentence_processor.get_current_translation()
+
+    # Section 4: Determine UI Output Text
+    if final_class == "school":
+        ui_output = "School"
+    elif final_class == "water":
+        ui_output = "Water (தண்ணீர்)"
+    elif final_class == "no":
+        ui_output = "No (இல்லை)"
+    elif final_class == "please":
+        ui_output = "Please."
+    elif final_class in ENGLISH_TRANSLATIONS:
+        ui_output = ENGLISH_TRANSLATIONS[final_class]
+    else:
+        ui_output = final_class
+
+    if buf_len >= 25:
+        # Section 4: Trace exactly where School becomes Water
+        safe_print(
+            f"\nRAW_CNN_PREDICTION={primary_class}\n"
+            f"EARLY_DECISION={decision_res.get('state', 'READY')}\n"
+            f"NO_MODEL_RESULT={no_prob:.4f}\n"
+            f"FINAL_CLASS={final_class}\n"
+            f"UI_OUTPUT={ui_output}"
+        )
+
+        # Section 13: Token Timing
+        cam_fps = float(data.camera_fps or 30.0)
+        tok_fps = float(data.token_fps or 20.0)
+        safe_print(
+            f"CAMERA_FPS={cam_fps:.1f}\n"
+            f"TOKEN_FPS={tok_fps:.1f}\n"
+            f"BACKEND_TOKEN_FPS={tokens_per_sec:.2f}\n"
+            f"CNN_CALL_COUNT={cnn_call_count}"
+        )
 
     proc_time_ms = (time.perf_counter() - t_start) * 1000
 
@@ -628,7 +728,7 @@ async def toggle_language(data: LanguageToggleInput):
 @app.post("/api/clear_sentence")
 async def clear_sentence():
     """Resets word buffer, token buffer, and all pipeline state."""
-    global sequence_counter, last_predicted_sequence, binary_consecutive_no_count
+    global sequence_counter, last_predicted_sequence, binary_consecutive_no_count, active_sequence_id, last_processed_frame_id
     trans = sentence_processor.clear()
     early_decision_engine.reset()
     frame_selector.clear_buffer()
@@ -638,6 +738,8 @@ async def clear_sentence():
     binary_consecutive_no_count = 0   # RESET: stale NO state must not affect next gesture
     gesture_tokenizer.reset()
     last_predicted_sequence = None
+    active_sequence_id = 0
+    last_processed_frame_id = 0
     print("\n" + "="*50 + "\nRESET COMPLETE — READY FOR NEW GESTURE\n" + "="*50 + "\n")
     return {"status": "success", "translation": trans}
 
