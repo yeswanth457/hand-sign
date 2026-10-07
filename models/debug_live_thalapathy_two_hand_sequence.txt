@@ -1,0 +1,8 @@
+sequence_shape=(11, 12)
+feature_dimension=12
+hand_count_per_frame=2
+left_hand_availability=True
+right_hand_availability=True
+active_hands=Left+Right
+prediction=thalapathy
+confidence=0.8368

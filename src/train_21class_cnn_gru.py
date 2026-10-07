@@ -14,6 +14,8 @@ Strictly adheres to Master Prompt specifications:
 
 import os
 import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
 import json
 import shutil
 import numpy as np
@@ -40,15 +42,23 @@ from src.cnn_gru_model import ISL_CNN_GRU_Model, CNNGRUInferenceEngine
 # 1. Dataset Class
 # -------------------------------------------------------------
 class TokenSequenceDataset(Dataset):
-    def __init__(self, X, y):
+    def __init__(self, X, y, augment=False):
         self.X = torch.tensor(X, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.long)
+        self.augment = augment
 
     def __len__(self):
         return len(self.X)
 
     def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
+        x = self.X[idx].clone()
+        y = self.y[idx]
+        if self.augment:
+            # Slight feature jitter for robust generalization on small classes
+            if torch.rand(1).item() > 0.3:
+                noise = torch.randn_like(x) * 0.02
+                x = x + noise
+        return x, y
 
 
 # -------------------------------------------------------------
@@ -88,18 +98,18 @@ def execute_pipeline():
     test_X = np.load(test_x_path).astype(np.float32)
     test_y = np.load(test_y_path).astype(np.int64)
 
-    # Programmatic Verifications (Dynamic Sample Count N, 25-frame sequence, 6D tokens)
-    assert train_X.ndim == 3 and train_X.shape[1:] == (25, 6), f"Unexpected train_X shape: {train_X.shape}"
+    # Programmatic Verifications (Dynamic Sample Count N, 25-frame sequence, 12D tokens)
+    assert train_X.ndim == 3 and train_X.shape[1:] == (25, TOKEN_DIM), f"Unexpected train_X shape: {train_X.shape}"
     assert train_y.ndim == 1 and len(train_y) == len(train_X), f"Unexpected train_y shape: {train_y.shape}"
-    assert val_X.ndim == 3 and val_X.shape[1:] == (25, 6), f"Unexpected val_X shape: {val_X.shape}"
+    assert val_X.ndim == 3 and val_X.shape[1:] == (25, TOKEN_DIM), f"Unexpected val_X shape: {val_X.shape}"
     assert val_y.ndim == 1 and len(val_y) == len(val_X), f"Unexpected val_y shape: {val_y.shape}"
-    assert test_X.ndim == 3 and test_X.shape[1:] == (25, 6), f"Unexpected test_X shape: {test_X.shape}"
+    assert test_X.ndim == 3 and test_X.shape[1:] == (25, TOKEN_DIM), f"Unexpected test_X shape: {test_X.shape}"
     assert test_y.ndim == 1 and len(test_y) == len(test_X), f"Unexpected test_y shape: {test_y.shape}"
 
     assert np.issubdtype(train_y.dtype, np.integer) and np.issubdtype(val_y.dtype, np.integer) and np.issubdtype(test_y.dtype, np.integer)
-    assert 0 <= train_y.min() and train_y.max() < 21
-    assert 0 <= val_y.min() and val_y.max() < 21
-    assert 0 <= test_y.min() and test_y.max() < 21
+    assert 0 <= train_y.min() and train_y.max() < NUM_CLASSES
+    assert 0 <= val_y.min() and val_y.max() < NUM_CLASSES
+    assert 0 <= test_y.min() and test_y.max() < NUM_CLASSES
 
     assert np.isfinite(train_X).all() and np.isfinite(val_X).all() and np.isfinite(test_X).all()
 
@@ -108,9 +118,9 @@ def execute_pipeline():
     val_classes = set(np.unique(val_y))
     test_classes = set(np.unique(test_y))
 
-    assert len(train_classes) == 21, f"Train missing classes: {set(range(21)) - train_classes}"
-    assert len(val_classes) == 21, f"Val missing classes: {set(range(21)) - val_classes}"
-    assert len(test_classes) == 21, f"Test missing classes: {set(range(21)) - test_classes}"
+    assert len(train_classes) == NUM_CLASSES, f"Train missing classes: {set(range(NUM_CLASSES)) - train_classes}"
+    assert len(val_classes) == NUM_CLASSES, f"Val missing classes: {set(range(NUM_CLASSES)) - val_classes}"
+    assert len(test_classes) == NUM_CLASSES, f"Test missing classes: {set(range(NUM_CLASSES)) - test_classes}"
 
     print("\n" + "=" * 50)
     print("DATASET PRE-TRAINING VERIFICATION")
@@ -171,9 +181,11 @@ def execute_pipeline():
     # Step 4: Model, Loss, Optimizer, Scheduler Setup
     # ---------------------------------------------------------
     batch_size = 16
-    train_loader = DataLoader(TokenSequenceDataset(norm_train_X, train_y), batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(TokenSequenceDataset(norm_val_X, val_y), batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(TokenSequenceDataset(norm_test_X, test_y), batch_size=batch_size, shuffle=False)
+    sample_weights = [1.0 / train_counts[label] for label in train_y]
+    sampler = torch.utils.data.WeightedRandomSampler(sample_weights, num_samples=len(train_y), replacement=True)
+    train_loader = DataLoader(TokenSequenceDataset(norm_train_X, train_y, augment=True), batch_size=batch_size, sampler=sampler)
+    val_loader = DataLoader(TokenSequenceDataset(norm_val_X, val_y, augment=False), batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(TokenSequenceDataset(norm_test_X, test_y, augment=False), batch_size=batch_size, shuffle=False)
 
     model = ISL_CNN_GRU_Model(
         token_dim=TOKEN_DIM,
@@ -198,7 +210,8 @@ def execute_pipeline():
     patience_counter = 0
     history = []
 
-    best_checkpoint_path = os.path.join(MODEL_DIR, "isl_cnn_gru_21class_best.pt")
+    best_checkpoint_path = os.path.join(MODEL_DIR, "isl_cnn_gru_father_fix.pt")
+    best_22_checkpoint_path = os.path.join(MODEL_DIR, "isl_cnn_gru_22class_best.pt")
     active_model_path = os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
 
     print("\n" + "=" * 65)
@@ -266,7 +279,6 @@ def execute_pipeline():
             best_epoch = epoch
             patience_counter = 0
             torch.save(model.state_dict(), best_checkpoint_path)
-            shutil.copyfile(best_checkpoint_path, active_model_path)
         else:
             patience_counter += 1
 
@@ -279,7 +291,6 @@ def execute_pipeline():
     print("-" * 65)
     print(f"Best Epoch: {best_epoch} with Validation Accuracy: {best_val_acc*100:.1f}%")
     print(f"Saved best model checkpoint to: {best_checkpoint_path}")
-    print(f"Updated active inference model at: {active_model_path}")
 
     # ---------------------------------------------------------
     # Step 6: Final Test Evaluation on Best Checkpoint
@@ -491,10 +502,10 @@ def execute_pipeline():
 
     try:
         engine = CNNGRUInferenceEngine(model_path=best_checkpoint_path)
-        dummy_seq = np.random.randn(25, 6).astype(np.float32)
+        dummy_seq = np.random.randn(25, TOKEN_DIM).astype(np.float32)
         pred_res = engine.predict_sequence(dummy_seq)
         assert engine.model_loaded, "Inference engine failed to load model"
-        assert engine.num_classes == 21, f"Expected 21 classes, found {engine.num_classes}"
+        assert engine.num_classes == NUM_CLASSES, f"Expected {NUM_CLASSES} classes, found {engine.num_classes}"
         print("Inference Engine Compatibility: PASSED")
         print(f"  Sample Prediction: {pred_res['word']} (Confidence: {pred_res['confidence']:.2f})")
         compat_ok = True

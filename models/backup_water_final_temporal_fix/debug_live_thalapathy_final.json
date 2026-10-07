@@ -1,0 +1,66 @@
+{
+  "frame_ids": [
+    316,
+    320,
+    326,
+    328,
+    332,
+    336,
+    340,
+    344,
+    348,
+    352,
+    356,
+    358,
+    362,
+    366,
+    371,
+    375,
+    380,
+    384,
+    389,
+    393,
+    398,
+    402,
+    407,
+    411,
+    416,
+    420,
+    424,
+    428,
+    432,
+    436,
+    441,
+    446,
+    450,
+    455
+  ],
+  "sequence_id": 1791315844722,
+  "token_dimension": 12,
+  "left_detected": false,
+  "right_detected": true,
+  "active_hands": "Right",
+  "no_probability": 0.0004,
+  "prediction_22class": "thalapathy",
+  "confidence_22class": 0.5891,
+  "top3_predictions": [
+    [
+      "thalapathy",
+      0.5891
+    ],
+    [
+      "friend",
+      0.2422
+    ],
+    [
+      "school",
+      0.1449
+    ]
+  ],
+  "final_class": "thalapathy",
+  "buffer_length": 34,
+  "model_input_shape": [
+    25,
+    12
+  ]
+}

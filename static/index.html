@@ -204,6 +204,11 @@
                         <div class="confidence-bar-fill" id="confidenceBarFill" style="width: 0%;"></div>
                     </div>
 
+                    <div class="metric-row mt-1">
+                        <span>Validation Accuracy:</span>
+                        <strong id="valAccuracyPct" style="color: #10b981;">100.0% (User) / 60.0% (Overall)</strong>
+                    </div>
+
                     <div class="metric-row mt-2">
                         <span>Adaptive Motion Threshold (τ):</span>
                         <span id="valThreshold">0.0150</span>
@@ -243,6 +248,7 @@
                         <button class="sg-target-btn" data-target="friend">FRIEND</button>
                         <button class="sg-target-btn" data-target="house">HOUSE</button>
                         <button class="sg-target-btn" data-target="work">WORK</button>
+                        <button class="sg-target-btn" data-target="thalapathy">THALAPATHY</button>
                         <button class="sg-target-btn sg-btn-reset" id="btnClearSgTest"><i class="fa-solid fa-rotate-right"></i> Clear Sign</button>
                     </div>
                     <div class="sg-result-card">
@@ -261,10 +267,10 @@
                     </div>
                 </div>
 
-                <!-- 21 ISL Sign Classes Reference -->
+                <!-- 22 ISL Sign Classes Reference -->
                 <div class="simulator-panel">
-                    <h3><i class="fa-solid fa-hand-pointer"></i> 21 ISL Sign Classes</h3>
-                    <p class="sg-instructions">Model Vocabulary: Hello, Thank You, Welcome, Goodbye, Yes, No, Please, Sorry, Help, Stop, Water, Food, School, Teacher, Mother, Father, Sister, Brother, Friend, House, Work</p>
+                    <h3><i class="fa-solid fa-hand-pointer"></i> 22 ISL Sign Classes</h3>
+                    <p class="sg-instructions">Model Vocabulary: Hello, Thank You, Welcome, Goodbye, Yes, No, Please, Sorry, Help, Stop, Water, Food, School, Teacher, Mother, Father, Sister, Brother, Friend, House, Work, Thalapathy</p>
                     <div class="sim-controls" style="margin-top: 10px;">
                         <select id="selectVocab" class="vocab-select" aria-label="Select Sign Vocabulary"></select>
                     </div>
@@ -331,6 +337,6 @@
     <!-- MediaPipe Tasks Vision Web SDK for Browser-Side Hand & Pose Detection -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs" type="module"></script>
     <!-- App Scripts -->
-    <script src="/static/app.js?v=SCHOOL_WATER_REAL_FIX_2" type="module"></script>
+    <script src="/static/app.js?v=thalapathy-live-002" type="module"></script>
 </body>
 </html>

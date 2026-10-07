@@ -28,7 +28,7 @@ os.makedirs(os.path.join(DATASET_DIR, "test"), exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 # ═══════════════════════════════════════════════════════════════════
-# EXACTLY 21-CLASS ISL VOCABULARY
+# EXACTLY 22-CLASS ISL VOCABULARY
 # ═══════════════════════════════════════════════════════════════════
 CLASS_NAMES = [
     "hello",       # 0
@@ -52,13 +52,15 @@ CLASS_NAMES = [
     "friend",      # 18
     "house",       # 19
     "work",        # 20
+    "thalapathy",  # 21
 ]
 
+CLASS_INDEX_THALAPATHY = 21
 CLASS_TO_INDEX = {name: i for i, name in enumerate(CLASS_NAMES)}
-NUM_CLASSES = len(CLASS_NAMES)  # Exactly 21 classes
+NUM_CLASSES = len(CLASS_NAMES)  # Exactly 22 classes
 INDEX_TO_CLASS = {i: name for i, name in enumerate(CLASS_NAMES)}
 
-# Active vocabulary is the 21-class set
+# Active vocabulary is the 22-class set
 ACTIVE_VOCABULARY = CLASS_NAMES
 ACTIVE_VOCAB_SIZE = NUM_CLASSES
 ACTIVE_WORD_TO_ID = CLASS_TO_INDEX
@@ -70,8 +72,21 @@ VOCAB_SIZE = NUM_CLASSES
 WORD_TO_ID = CLASS_TO_INDEX
 ID_TO_WORD = INDEX_TO_CLASS
 
-_best_model_path = os.path.join(MODEL_DIR, "isl_cnn_gru_21class_best.pt")
-MODEL_PATH = _best_model_path if os.path.exists(_best_model_path) else os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
+_father_fix_path = os.path.join(MODEL_DIR, "isl_cnn_gru_father_fix.pt")
+_brother_updated_path = os.path.join(MODEL_DIR, "isl_cnn_gru_22class_brother_updated.pt")
+_best_22_path = os.path.join(MODEL_DIR, "isl_cnn_gru_22class_best.pt")
+_best_21_path = os.path.join(MODEL_DIR, "isl_cnn_gru_21class_best.pt")
+_default_path = os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
+if os.path.exists(_father_fix_path):
+    MODEL_PATH = _father_fix_path
+elif os.path.exists(_brother_updated_path):
+    MODEL_PATH = _brother_updated_path
+elif os.path.exists(_best_22_path):
+    MODEL_PATH = _best_22_path
+elif os.path.exists(_best_21_path):
+    MODEL_PATH = _best_21_path
+else:
+    MODEL_PATH = _default_path
 
 # Pipeline hyperparameters
 FRAME_WIDTH = 640
@@ -84,7 +99,8 @@ IDLE_ENERGY_THRESHOLD = 0.008  # Energy threshold to declare idle state (calibra
 SIGNING_MOTION_THRESHOLD = 0.012  # Minimum motion energy required to initiate/continue gesture collection
 
 # Tokenizer Parameters
-TOKEN_DIM = 6        # [Hx, Hy, Mx, My, Rx, Ry]
+TOKEN_DIM = 12       # [LHx, LHy, LMx, LMy, LRx, LRy, RHx, RHy, RMx, RMy, RRx, RRy] (Left Hand + Right Hand)
+HAND_FEATURE_DIM = 6 # 6 features per hand: [Hx, Hy, Mx, My, Rx, Ry]
 
 # Model Architecture Hyperparameters
 D_MODEL = 64
@@ -103,32 +119,33 @@ NO_RANGE_TOLERANCE = 0.20        # Configurable percentile range expansion toler
 NO_DETECTOR_THRESHOLD = 0.65     # Recommended similarity score threshold for NO gesture
 
 # ═══════════════════════════════════════════════════════════════════
-# TRANSLATION MAPPINGS (21 classes)
+# TRANSLATION MAPPINGS (22 classes)
 # ═══════════════════════════════════════════════════════════════════
 
 # English translations for each sign class
 ENGLISH_TRANSLATIONS = {
-    "hello":     "Hello.",
-    "thank_you": "Thank you.",
-    "welcome":   "Welcome.",
-    "goodbye":   "Goodbye.",
-    "yes":       "Yes.",
-    "no":        "No (இல்லை)",
-    "please":    "Please.",
-    "sorry":     "Sorry.",
-    "help":      "Help.",
-    "stop":      "Stop.",
-    "water":     "Water (தண்ணீர்)",
-    "food":      "Food.",
-    "school":    "School",
-    "teacher":   "Teacher.",
-    "mother":    "Mother.",
-    "father":    "Father.",
-    "sister":    "Sister.",
-    "brother":   "Brother.",
-    "friend":    "Friend.",
-    "house":     "House.",
-    "work":      "Work.",
+    "hello":      "Hello.",
+    "thank_you":  "Thank you.",
+    "welcome":    "Welcome.",
+    "goodbye":    "Goodbye.",
+    "yes":        "Yes.",
+    "no":         "No (இல்லை)",
+    "please":     "Please.",
+    "sorry":      "Sorry.",
+    "help":       "Help.",
+    "stop":       "Stop.",
+    "water":      "Water (தண்ணீர்)",
+    "food":       "Food.",
+    "school":     "School",
+    "teacher":    "Teacher.",
+    "mother":     "Mother.",
+    "father":     "Father.",
+    "sister":     "Sister.",
+    "brother":    "Brother.",
+    "friend":     "Friend.",
+    "house":      "House.",
+    "work":       "Work.",
+    "thalapathy": "Thalapathy.",
 }
 
 # Dynamic Sentence Grammar & Translation Setup
@@ -141,27 +158,28 @@ ISL_GRAMMAR_RULES = {
 
 # Tamil translations for each sign class
 TAMIL_VOCAB_MAP = {
-    "hello":     "வணக்கம் (Vanakkam)",
-    "thank_you": "நன்றி (Nandri)",
-    "welcome":   "நல்வரவு (Nalvaravu)",
-    "goodbye":   "சென்று வருகிறேன் (Sentru varugiren)",
-    "yes":       "ஆம் (Aam)",
-    "no":        "இல்லை",
-    "please":    "தயவுசெய்து (Thayavuseythu)",
-    "sorry":     "மன்னிக்கவும் (Mannikkavum)",
-    "help":      "உதவி (Uthavi)",
-    "stop":      "நில் (Nil)",
-    "water":     "தண்ணீர்",
-    "food":      "உணவு (Unavu)",
-    "school":    "பள்ளி (Palli)",
-    "teacher":   "ஆசிரியர் (Aasiriyar)",
-    "mother":    "அம்மா (Amma)",
-    "father":    "அப்பா (Appa)",
-    "sister":    "சகோதரி (Sagodhari)",
-    "brother":   "சகோதரன் (Sagodharan)",
-    "friend":    "நண்பன் (Nanban)",
-    "house":     "வீடு (Veedu)",
-    "work":      "வேலை (Velai)",
+    "hello":      "வணக்கம் (Vanakkam)",
+    "thank_you":  "நன்றி (Nandri)",
+    "welcome":    "நல்வரவு (Nalvaravu)",
+    "goodbye":    "சென்று வருகிறேன் (Sentru varugiren)",
+    "yes":        "ஆம் (Aam)",
+    "no":         "இல்லை",
+    "please":     "தயவுசெய்து (Thayavuseythu)",
+    "sorry":      "மன்னிக்கவும் (Mannikkavum)",
+    "help":       "உதவி (Uthavi)",
+    "stop":       "நில் (Nil)",
+    "water":      "தண்ணீர்",
+    "food":       "உணவு (Unavu)",
+    "school":     "பள்ளி (Palli)",
+    "teacher":    "ஆசிரியர் (Aasiriyar)",
+    "mother":     "அம்மா (Amma)",
+    "father":     "அப்பா (Appa)",
+    "sister":     "சகோதரி (Sagodhari)",
+    "brother":    "சகோதரன் (Sagodharan)",
+    "friend":     "நண்பன் (Nanban)",
+    "house":      "வீடு (Veedu)",
+    "work":       "வேலை (Velai)",
+    "thalapathy": "தளபதி (Thalapathy)",
 }
 
 # Tamil sentence-level translations
@@ -190,5 +208,7 @@ TAMIL_SENTENCE_MAP = {
     "Friend.":          "நண்பன் (Nanban)",
     "House.":           "வீடு (Veedu)",
     "Work.":            "வேலை (Velai)",
+    "Thalapathy.":      "தளபதி (Thalapathy)",
+    "Thalapathy":       "தளபதி (Thalapathy)",
 }
 

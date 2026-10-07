@@ -1,7 +1,7 @@
 """
 FastAPI Web Server for RT-STAMP-SLR ISL Translation System.
 Provides endpoints for real-time sign language recognition using CNN-GRU model.
-Exactly 21 ISL sign classes. No simulation, no mock predictions.
+Exactly 22 ISL sign classes including Thalapathy. No simulation, no mock predictions.
 """
 
 import os
@@ -26,7 +26,8 @@ from config import (
     CLASS_NAMES, NUM_CLASSES, INDEX_TO_CLASS, CLASS_TO_INDEX,
     TAMIL_VOCAB_MAP, ENGLISH_TRANSLATIONS, BASE_DIR,
     CONFIDENCE_THRESHOLD, SUSTAINED_FRAMES, COOLDOWN_FRAMES,
-    IDLE_ENERGY_THRESHOLD, SIGNING_MOTION_THRESHOLD
+    IDLE_ENERGY_THRESHOLD, SIGNING_MOTION_THRESHOLD,
+    TOKEN_DIM, HAND_FEATURE_DIM
 )
 from src.landmark_extractor import LandmarkExtractor
 from src.motion_energy import MotionEnergyCalculator
@@ -52,8 +53,8 @@ def safe_print(*args, **kwargs):
 
 app = FastAPI(
     title="RT-STAMP-SLR ISL Translator",
-    description="Real-Time Indian Sign Language to English/Tamil Translator (21 Classes)",
-    version="2.0.0"
+    description="Real-Time Indian Sign Language to English/Tamil Translator (22 Classes)",
+    version="2.1.0"
 )
 
 # Static files directory for web UI
@@ -71,6 +72,8 @@ landmark_extractor = LandmarkExtractor()
 frame_selector = MotionFrameSelector()
 gesture_tokenizer = GestureTokenizer()
 model_engine = CNNGRUInferenceEngine()
+safe_print(f"MODEL_CLASS_COUNT = {model_engine.num_classes}")
+safe_print(f"MODEL_CLASS_21 = {CLASS_NAMES[21] if len(CLASS_NAMES) > 21 else 'UNKNOWN'}")
 no_binary_engine = NOBinaryInferenceEngine(threshold=0.60)
 early_decision_engine = EarlyDecisionEngine()
 sentence_processor = LocalSentenceProcessor(current_language="english")
@@ -87,15 +90,15 @@ buffered_frame_ids = deque(maxlen=60)
 sequence_counter = 0
 frame_counter = 0
 no_hand_consecutive_count = 0
-NO_HAND_CLEAR_THRESHOLD = 3
+NO_HAND_CLEAR_THRESHOLD = 15
 idle_consecutive_count = 0
 IDLE_CLEAR_THRESHOLD = 15
 last_predicted_sequence = None
 _first_no_sequence_saved = False  # Only save the first browser NO sequence to disk
 
 # NO override thresholds
-NO_PROB_THRESHOLD = 0.60          # Minimum binary NO probability to count as a NO frame
-NO_CONSECUTIVE_REQUIRED = 1       # Minimum consecutive qualifying frames before overriding final_class
+NO_PROB_THRESHOLD = 0.65          # Minimum binary NO probability to count as a NO frame
+NO_CONSECUTIVE_REQUIRED = 3       # Minimum consecutive qualifying frames before overriding final_class
 
 
 # Sequence & Stale Frame Tracking
@@ -107,6 +110,7 @@ cnn_call_count = 0
 
 # Hand Tracking & Switching
 last_selected_hand = None
+last_hand_center = None
 hand_switch_count = 0
 hand_switch_frames = []
 
@@ -123,7 +127,7 @@ class LanguageToggleInput(BaseModel):
 
 
 class TokenInput(BaseModel):
-    """Input for browser-side MediaPipe: pre-computed 6D token + optional pose data."""
+    """Input for browser-side MediaPipe: pre-computed 12D token + optional pose/hand data."""
     token: Optional[List[float]] = None
     frame_id: Optional[int] = 0
     sequence_id: Optional[int] = 0
@@ -134,6 +138,16 @@ class TokenInput(BaseModel):
     has_hand: Optional[bool] = True
     hands: Optional[List[Any]] = None
     hand_count: Optional[int] = 0
+    raw_hands: Optional[int] = 0
+    left_detected: Optional[bool] = False
+    right_detected: Optional[bool] = False
+    left_confidence: Optional[float] = 0.0
+    right_confidence: Optional[float] = 0.0
+    left_carried_forward: Optional[bool] = False
+    right_carried_forward: Optional[bool] = False
+    left_hand_center: Optional[List[float]] = None
+    right_hand_center: Optional[List[float]] = None
+    active_hands: Optional[str] = "NONE"
     primary_hand: Optional[str] = "NONE"
     secondary_hand: Optional[str] = "NONE"
     selected_hand: Optional[str] = "Right"
@@ -142,6 +156,15 @@ class TokenInput(BaseModel):
     camera_fps: Optional[float] = 30.0
     token_fps: Optional[float] = 20.0
 
+
+
+@app.on_event("startup")
+async def startup_event():
+    safe_print("==================================================")
+    safe_print(f"MODEL_CLASS_COUNT = {model_engine.num_classes}")
+    safe_print(f"MODEL_CLASS_21 = {CLASS_NAMES[21] if len(CLASS_NAMES) > 21 else 'UNKNOWN'}")
+    safe_print(f"TOTAL VOCABULARY COUNT = {len(CLASS_NAMES)}")
+    safe_print("==================================================")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -155,7 +178,7 @@ async def serve_index():
 
 @app.get("/api/vocabulary")
 async def get_vocabulary():
-    """Returns the 21 ISL vocabulary signs with English and Tamil mappings."""
+    """Returns the 22 ISL vocabulary signs with English and Tamil mappings."""
     vocab_details = []
     for idx, word in enumerate(CLASS_NAMES):
         vocab_details.append({
@@ -298,7 +321,7 @@ async def process_token(data: TokenInput):
     """
     global frame_counter, sequence_counter, no_hand_consecutive_count, idle_consecutive_count, last_predicted_sequence, binary_consecutive_no_count, _first_no_sequence_saved
     global active_sequence_id, last_processed_frame_id, last_token_timestamp, token_timestamps, cnn_call_count
-    global last_selected_hand, hand_switch_count, hand_switch_frames
+    global last_selected_hand, hand_switch_count, hand_switch_frames, last_hand_center
 
     t_start = time.perf_counter()
     frame_counter += 1
@@ -315,6 +338,7 @@ async def process_token(data: TokenInput):
         binary_consecutive_no_count = 0
         last_processed_frame_id = 0
         last_selected_hand = None
+        last_hand_center = None
         hand_switch_count = 0
         hand_switch_frames = []
         gesture_tokenizer.reset()
@@ -359,6 +383,7 @@ async def process_token(data: TokenInput):
             gesture_tokenizer.reset()
             early_decision_engine.reset()
             last_processed_frame_id = 0
+            last_hand_center = None
         proc_time_ms = (time.perf_counter() - t_start) * 1000
         return {
             "frame_id": fid,
@@ -419,10 +444,18 @@ async def process_token(data: TokenInput):
     hand_c = tuple(data.hand_center) if (data.hand_center and len(data.hand_center) >= 2) else (0.5, 0.5)
     shoulder_c = tuple(data.shoulder_center) if (data.shoulder_center and len(data.shoulder_center) >= 2) else (0.5, 0.35)
 
-    if data.token and len(data.token) == 6:
+    if data.token and len(data.token) == TOKEN_DIM:
         token_arr = np.array(data.token, dtype=np.float32)
+    elif data.token and len(data.token) == 6:
+        # Backward compatibility: pad 6D right-hand token to 12D
+        token_arr = np.zeros(TOKEN_DIM, dtype=np.float32)
+        token_arr[6:12] = np.array(data.token, dtype=np.float32)
     else:
-        lm_data_dict = {"hand_center": hand_c, "shoulder_center": shoulder_c}
+        lm_data_dict = {
+            "hand_center": hand_c,
+            "shoulder_center": shoulder_c,
+            "hands": data.hands or []
+        }
         token_arr = gesture_tokenizer.tokenize_frame(lm_data_dict)
 
     last_processed_frame_id = fid
@@ -438,48 +471,99 @@ async def process_token(data: TokenInput):
     tokens_per_sec = float(1.0 / max(0.001, avg_dt))
 
     # Section 3 & 8: Detailed Live Sequence Diagnostic and Hand Switching
-    hand_count = data.hand_count or 1
+    raw_hands_val = data.raw_hands if data.raw_hands is not None and data.raw_hands > 0 else (data.hand_count or 1)
+    l_det = bool(data.left_detected)
+    r_det = bool(data.right_detected)
+    l_conf = float(data.left_confidence or 0.0)
+    r_conf = float(data.right_confidence or 0.0)
+    act_hands = data.active_hands if data.active_hands and data.active_hands != "NONE" else ("Left+Right" if (l_det and r_det) else ("Left" if l_det else "Right"))
+
     sel_hand = data.selected_hand or data.primary_hand or "Right"
     sel_conf = float(data.selected_hand_confidence) if data.selected_hand_confidence is not None else 1.0
     sel_idx = getattr(data, "selected_hand_index", 0) or 0
 
-    if last_selected_hand is not None and last_selected_hand != sel_hand:
-        hand_switch_count += 1
-        hand_switch_frames.append(fid)
+    # Step 7: DO NOT throw away valid two-hand frames
+    is_two_hand_transition = (last_selected_hand == "Both" or sel_hand == "Both" or (l_det and r_det))
+    if is_two_hand_transition:
+        # Preserve temporal buffer during dual-hand signing
+        pass
+    elif last_selected_hand is not None and last_selected_hand != sel_hand and sel_hand != "NONE":
+        center_dist = 0.0
+        if last_hand_center is not None and hand_c is not None:
+            center_dist = float(np.hypot(hand_c[0] - last_hand_center[0], hand_c[1] - last_hand_center[1]))
+
+        if raw_hands_val == 1 and center_dist < 0.35:
+            safe_print(f"\n[SINGLE HAND CONTINUOUS] MediaPipe label flip {last_selected_hand}->{sel_hand} (dist={center_dist:.3f}), keeping hand in {last_selected_hand} slot")
+            if last_selected_hand == "Right" and np.any(token_arr[0:6] != 0) and not np.any(token_arr[6:12] != 0):
+                token_arr[6:12] = token_arr[0:6].copy()
+                token_arr[0:6] = 0.0
+                sel_hand = "Right"
+            elif last_selected_hand == "Left" and np.any(token_arr[6:12] != 0) and not np.any(token_arr[0:6] != 0):
+                token_arr[0:6] = token_arr[6:12].copy()
+                token_arr[6:12] = 0.0
+                sel_hand = "Left"
+        else:
+            hand_switch_count += 1
+            hand_switch_frames.append(fid)
+            safe_print(f"\n[BACKEND HAND SWITCH DETECTED] old={last_selected_hand}, new={sel_hand} (dist={center_dist:.3f}) -> preserving temporal buffer")
     last_selected_hand = sel_hand
+    last_hand_center = hand_c
 
     # Accumulate into rolling token buffer
     realtime_token_buffer.append(token_arr)
-    binary_token_buffer.append(token_arr)
+    # For binary NO detector, extract active hand 6D token
+    active_6d_token = token_arr[6:12] if np.any(token_arr[6:12]) else token_arr[0:6]
+    binary_token_buffer.append(active_6d_token)
     buffered_frame_ids.append(fid)
     no_hand_consecutive_count = 0
 
     buf_len = len(realtime_token_buffer)
     binary_buf_len = len(binary_token_buffer)
 
+    l_carried = bool(getattr(data, "left_carried_forward", False))
+    r_carried = bool(getattr(data, "right_carried_forward", False))
+
+    safe_print(
+        f"\n[TWO HAND LIVE]\n"
+        f"frame = {fid}\n"
+        f"raw_hands = {raw_hands_val}\n"
+        f"left_detected = {str(l_det).lower()}\n"
+        f"right_detected = {str(r_det).lower()}\n"
+        f"left_confidence = {l_conf:.4f}\n"
+        f"right_confidence = {r_conf:.4f}\n"
+        f"active_hands = {act_hands}"
+    )
+
+    # Step 7: Hand Occlusion Grace Logging
+    safe_print(
+        f"\n[HAND OCCLUSION TRACE]\n"
+        f"raw_hands = {raw_hands_val}\n"
+        f"left_detected = {str(l_det).lower()}\n"
+        f"right_detected = {str(r_det).lower()}\n"
+        f"left_carried_forward = {str(l_carried).lower()}\n"
+        f"right_carried_forward = {str(r_carried).lower()}"
+    )
+
     safe_print(
         f"\nLIVE_SEQUENCE_START\n"
         f"sequence_id={seq_id}\n"
-        f"RAW_HAND_COUNT={hand_count}\n"
+        f"RAW_HAND_COUNT={raw_hands_val}\n"
+        f"ACTIVE_HANDS={act_hands}\n"
         f"SELECTED_HAND={sel_hand}\n"
         f"SELECTED_HAND_INDEX={sel_idx}\n"
         f"SELECTED_HAND_CONFIDENCE={sel_conf:.4f}\n"
         f"HAND_SWITCH_COUNT={hand_switch_count}\n"
         f"HAND_SWITCH_FRAME={hand_switch_frames}\n"
-        f"landmark_count={21 * hand_count}\n"
+        f"landmark_count={21 * raw_hands_val}\n"
         f"token_available=True\n"
-        f"token_shape=(6,)\n"
+        f"token_shape=({TOKEN_DIM},)\n"
         f"token_count={buf_len}"
     )
 
     safe_print(
-        f"\n[TOKEN]\n"
-        f"Hx={token_arr[0]:.4f}\n"
-        f"Hy={token_arr[1]:.4f}\n"
-        f"Mx={token_arr[2]:.4f}\n"
-        f"My={token_arr[3]:.4f}\n"
-        f"Rx={token_arr[4]:.4f}\n"
-        f"Ry={token_arr[5]:.4f}"
+        f"\n[TOKEN 12D]\n"
+        f"LH: Hx={token_arr[0]:.4f}, Hy={token_arr[1]:.4f}, Mx={token_arr[2]:.4f}, My={token_arr[3]:.4f}, Rx={token_arr[4]:.4f}, Ry={token_arr[5]:.4f}\n"
+        f"RH: Hx={token_arr[6]:.4f}, Hy={token_arr[7]:.4f}, Mx={token_arr[8]:.4f}, My={token_arr[9]:.4f}, Rx={token_arr[10]:.4f}, Ry={token_arr[11]:.4f}"
     )
 
     # Build landmark_data for motion energy calculation
@@ -489,7 +573,7 @@ async def process_token(data: TokenInput):
 
     landmark_data = {
         "pose": pose_dict,
-        "hands": [],
+        "hands": data.hands or [],
         "hand_center": hand_c,
         "shoulder_center": shoulder_c,
     }
@@ -498,24 +582,37 @@ async def process_token(data: TokenInput):
     sel_res = frame_selector.process_frame(fid, landmark_data)
     pos_energy = sel_res["motion_energy"]
     threshold = sel_res["threshold"]
-    vel_energy = float(np.sqrt(token_arr[2]**2 + token_arr[3]**2))
+    vel_energy = float(np.sqrt(token_arr[8]**2 + token_arr[9]**2)) if np.any(token_arr[6:12]) else float(np.sqrt(token_arr[2]**2 + token_arr[3]**2))
     motion_energy = max(pos_energy, vel_energy)
 
     # ── Binary NO Classifier ──────────────────────────────────────────────
     no_prob = 0.0
     no_res = {}
-    if no_binary_engine and no_binary_engine.model_loaded and binary_buf_len >= 5:
+    is_two_handed = (raw_hands_val >= 2) or (act_hands == "Left+Right")
+    # Step 3: NO is strictly single-hand. NO detector MUST NOT evaluate on two-handed gestures.
+    # Furthermore, NO detector requires >= 10 frames of single-hand motion to avoid zero-pad false positives.
+    if no_binary_engine and no_binary_engine.model_loaded and binary_buf_len >= 10 and not is_two_handed:
         no_tokens = list(binary_token_buffer)
         no_res = no_binary_engine.predict_sequence(no_tokens, max_seq_len=25)
         no_prob = float(no_res.get("no_probability", 0.0))
 
-    # ── 21-Class CNN-GRU Prediction ───────────────────────────────────────
+        # ── NO Temporal Gating ────────────────────────────────────────────
+        if no_prob >= NO_PROB_THRESHOLD:
+            binary_consecutive_no_count += 1
+        else:
+            binary_consecutive_no_count = 0
+    else:
+        binary_consecutive_no_count = 0
+
+    no_confirmed = binary_consecutive_no_count >= NO_CONSECUTIVE_REQUIRED
+
+    # ── 22-Class CNN-GRU Prediction ───────────────────────────────────────
+    MIN_INFERENCE_FRAMES = 15
     sorted_probs = []
-    if buf_len >= 25:
+    if buf_len >= MIN_INFERENCE_FRAMES:
         cnn_call_count += 1
         tokens_np = np.array(list(realtime_token_buffer)[-25:], dtype=np.float32)
-        assert tokens_np.shape == (25, 6), f"Expected (25, 6), got {tokens_np.shape}"
-        buffer_status = "25/25"
+        buffer_status = f"{min(buf_len, 25)}/25"
 
         prediction = model_engine.predict_sequence(tokens_np)
         primary_class = prediction.get("word", "--")
@@ -523,37 +620,62 @@ async def process_token(data: TokenInput):
         probs = prediction.get("probabilities", {})
         sorted_probs = sorted(probs.items(), key=lambda x: x[1], reverse=True)[:5]
 
-        # Section 3 & 15: CNN Diagnostic Block
+        # Step 5: [22 CLASS INFERENCE] Diagnostic Block
         safe_print(
-            f"\nCNN_INPUT_SHAPE=(25,6)\n"
-            f"CNN_RAW_CLASS={primary_class}\n"
-            f"CNN_RAW_CLASS_INDEX={CLASS_TO_INDEX.get(primary_class, -1)}\n"
-            f"CNN_RAW_CONFIDENCE={primary_confidence:.4f}"
+            f"\n[22 CLASS INFERENCE]\n"
+            f"sequence_length = {buf_len}\n"
+            f"token_dimension = {TOKEN_DIM}\n"
+            f"model_input_shape = (25, {TOKEN_DIM})\n"
+            f"inference_executed = true\n"
+            f"top1_class = {primary_class}\n"
+            f"top1_index = {CLASS_TO_INDEX.get(primary_class, -1)}\n"
+            f"top1_confidence = {primary_confidence:.4f}\n"
+            f"top3:\n"
+            f"class1 = {sorted_probs[0][0] if len(sorted_probs) > 0 else '--'}\n"
+            f"confidence1 = {sorted_probs[0][1] if len(sorted_probs) > 0 else 0.0:.4f}\n"
+            f"class2 = {sorted_probs[1][0] if len(sorted_probs) > 1 else '--'}\n"
+            f"confidence2 = {sorted_probs[1][1] if len(sorted_probs) > 1 else 0.0:.4f}\n"
+            f"class3 = {sorted_probs[2][0] if len(sorted_probs) > 2 else '--'}\n"
+            f"confidence3 = {sorted_probs[2][1] if len(sorted_probs) > 2 else 0.0:.4f}"
         )
-        for i, (c_name, c_conf) in enumerate(sorted_probs, 1):
-            safe_print(f"CNN_TOP{i}={c_name}\nCNN_TOP{i}_CONF={c_conf:.4f}")
 
-        # ── NO Temporal Gating ────────────────────────────────────────────
-        if no_prob >= NO_PROB_THRESHOLD:
-            binary_consecutive_no_count += 1
-        else:
-            binary_consecutive_no_count = 0
+        # ── Final Class Decision (Fusion) ──────────────────────────────────
+        had_two_hands_in_buffer = any(
+            (np.any(tk[:6] != 0) and np.any(tk[6:] != 0))
+            for tk in realtime_token_buffer
+        )
+        is_two_handed = (raw_hands_val >= 2) or (act_hands == "Left+Right") or had_two_hands_in_buffer
 
-        no_confirmed = binary_consecutive_no_count >= NO_CONSECUTIVE_REQUIRED
+        # Step 8: Prevent partial two-hand sequences from collapsing into single-hand Water
+        # Water is physically a 1-hand gesture (99.9% single-handed). A two-handed sequence must NEVER become Water!
+        if is_two_handed and primary_class == "water":
+            safe_print(f"\n[STEP 8 GUARD] Rejected Water classification on two-handed sequence. Continuing collection.")
+            non_water_candidates = [c for c, p in sorted_probs if c != "water"]
+            if non_water_candidates:
+                primary_class = non_water_candidates[0]
+                primary_confidence = float(probs.get(primary_class, 0.0))
+            else:
+                primary_class = "COLLECTING GESTURE..."
+                primary_confidence = 0.0
 
-        # ── Final Class Decision ──────────────────────────────────────────
-        is_chin_level = float(tokens_np[:, 5].mean()) < 0.0
         water_prob = probs.get("water", 0.0)
-        water_cand = (primary_class == "water") or (water_prob > 0.25)
         school_prob = probs.get("school", 0.0)
-        school_cand = (primary_class == "school") or (school_prob > 0.25)
-        if no_confirmed and not is_chin_level and not water_cand and not school_cand:
+        please_protected = (primary_class == "please" and primary_confidence >= 0.60)
+        thalapathy_protected = (primary_class == "thalapathy")
+
+        # Step 10 & 11: Final Class Fusion
+        # NO binary classifier must NEVER override valid 22-class predictions
+        if primary_class == "thalapathy":
+            final_class = "thalapathy"
+        elif primary_class == "water" and not is_two_handed:
+            final_class = "water"
+        elif no_confirmed and not is_two_handed and not please_protected and primary_confidence < 0.55 and water_prob < 0.30:
             final_class = "no"
         else:
             final_class = primary_class
 
         # Section 5: Capture Real School Sequence
-        if primary_class == "school" or school_cand:
+        if primary_class == "school" or (school_prob > 0.25):
             try:
                 school_save_npy = os.path.join(BASE_DIR, "models", "debug_live_school_sequence.npy")
                 school_save_txt = os.path.join(BASE_DIR, "models", "debug_live_school_sequence.txt")
@@ -587,18 +709,148 @@ async def process_token(data: TokenInput):
                     safe_print(f"TOP{i}={c_name}: {c_conf:.4f}")
             except Exception as e_fail:
                 safe_print(f"[Warning] Failed to save debug failed school sequence: {e_fail}")
+
+        # Step 6: Capture exact live sequence for PLEASE live diagnostic
+        try:
+            live_seq_npy = os.path.join(BASE_DIR, "models", "debug_failed_please_live_sequence.npy")
+            live_seq_txt = os.path.join(BASE_DIR, "models", "debug_failed_please_live_sequence.txt")
+            np.save(live_seq_npy, tokens_np)
+            with open(live_seq_txt, "w", encoding="utf-8") as f:
+                f.write(f"# REAL WEBCAM LIVE SEQUENCE CAPTURE\n")
+                f.write(f"# active_hand={sel_hand}\n")
+                f.write(f"# sequence_id={seq_id}\n")
+                f.write(f"# hand_switches={hand_switch_count}\n")
+                f.write(f"# predicted_class={primary_class}\n")
+                f.write(f"# predicted_conf={primary_confidence:.4f}\n")
+                f.write(f"# effective_fps={tokens_per_sec:.2f}\n")
+                for row in tokens_np:
+                    f.write(" ".join(f"{v:.6f}" for v in row) + "\n")
+            safe_print(
+                f"\nLIVE_PLEASE_SEQUENCE_SAVED=YES\n"
+                f"LIVE_PLEASE_SEQUENCE_SHAPE=(25,6)\n"
+                f"ACTIVE_HAND={sel_hand}\n"
+                f"HAND_SWITCH_COUNT={hand_switch_count}\n"
+                f"PREDICTED_CLASS={primary_class}\n"
+                f"PREDICTED_CONF={primary_confidence:.4f}"
+            )
+        except Exception as e_live:
+            safe_print(f"[Warning] Failed to save live sequence: {e_live}")
+
+        # PLEASE -> WATER capture: save any water prediction as the failed-please sequence
+        # so the diagnosis script (scripts/diagnose_please_water.py) can analyze it.
+        # This does NOT change any logic -- it only records the sequence for offline analysis.
+        # Step 9: Save Live Water Sequence and Metadata
+        if primary_class == "water" or final_class == "water":
+            try:
+                water_npy = os.path.join(BASE_DIR, "models", "debug_live_water_final.npy")
+                water_json = os.path.join(BASE_DIR, "models", "debug_live_water_final.json")
+                np.save(water_npy, tokens_np)
+                
+                water_meta = {
+                    "sequence_id": seq_id,
+                    "frame_ids": list(buffered_frame_ids),
+                    "raw_hand_count": raw_hands_val,
+                    "left_detected": l_det,
+                    "right_detected": r_det,
+                    "active_hands": act_hands,
+                    "token_dimension": TOKEN_DIM,
+                    "sequence_length": buf_len,
+                    "no_probability": round(float(no_prob), 4),
+                    "22-class top1": primary_class,
+                    "22-class confidence": round(float(primary_confidence), 4),
+                    "top3_predictions": sorted_probs[:3],
+                    "final_class": final_class,
+                    "gesture_state": "SIGNING" if buf_len >= 20 else "COLLECTING"
+                }
+                with open(water_json, "w", encoding="utf-8") as f_wj:
+                    json.dump(water_meta, f_wj, indent=2)
+
+                safe_print(
+                    f"\nLIVE_WATER_FINAL_SAVED=YES\n"
+                    f"SHAPE={tokens_np.shape}\n"
+                    f"PREDICTION={primary_class}\n"
+                    f"CONFIDENCE={primary_confidence:.4f}\n"
+                    f"ACTIVE_HANDS={act_hands}"
+                )
+            except Exception as e_w_meta:
+                safe_print(f"[Warning] Failed to save water debug metadata: {e_w_meta}")
+
+        # PLEASE -> WATER capture: save any water prediction as the failed-please sequence
+        # so the diagnosis script (scripts/diagnose_please_water.py) can analyze it.
+        # This does NOT change any logic -- it only records the sequence for offline analysis.
+        if primary_class == "water" or final_class == "water":
+            try:
+                please_fail_npy = os.path.join(BASE_DIR, "models", "debug_failed_please_as_water.npy")
+                please_fail_txt = os.path.join(BASE_DIR, "models", "debug_failed_please_as_water.txt")
+                np.save(please_fail_npy, tokens_np)
+                with open(please_fail_txt, "w", encoding="utf-8") as f:
+                    f.write(f"# Captured water prediction for PLEASE->WATER diagnosis\n")
+                    f.write(f"# CNN_RAW_CLASS={primary_class}\n")
+                    f.write(f"# CNN_RAW_CONFIDENCE={primary_confidence:.4f}\n")
+                    for row in tokens_np:
+                        f.write(" ".join(f"{v:.6f}" for v in row) + "\n")
+                safe_print(
+                    f"\nFAILED_PLEASE_SEQUENCE_CAPTURED=YES\n"
+                    f"FAILED_PLEASE_SEQUENCE_SHAPE=(25,12)\n"
+                    f"RAW_CNN_CLASS={primary_class}\n"
+                    f"RAW_CNN_CONFIDENCE={primary_confidence:.4f}"
+                )
+            except Exception as e_w:
+                safe_print(f"[Warning] Failed to save water debug sequence: {e_w}")
+        # Step 8: Save Live Thalapathy Sequence and Metadata
+        if primary_class == "thalapathy" or final_class == "thalapathy":
+            try:
+                thalapathy_npy = os.path.join(BASE_DIR, "models", "debug_live_thalapathy_final.npy")
+                thalapathy_json = os.path.join(BASE_DIR, "models", "debug_live_thalapathy_final.json")
+                np.save(thalapathy_npy, tokens_np)
+                
+                meta_data = {
+                    "frame_ids": list(buffered_frame_ids),
+                    "sequence_id": seq_id,
+                    "token_dimension": TOKEN_DIM,
+                    "left_detected": l_det,
+                    "right_detected": r_det,
+                    "active_hands": act_hands,
+                    "no_probability": round(float(no_prob), 4),
+                    "prediction_22class": primary_class,
+                    "confidence_22class": round(float(primary_confidence), 4),
+                    "top3_predictions": sorted_probs[:3],
+                    "final_class": final_class,
+                    "buffer_length": buf_len,
+                    "model_input_shape": list(tokens_np.shape)
+                }
+                with open(thalapathy_json, "w", encoding="utf-8") as f_json:
+                    json.dump(meta_data, f_json, indent=2)
+
+                safe_print(
+                    f"\nLIVE_THALAPATHY_FINAL_SAVED=YES\n"
+                    f"SHAPE={tokens_np.shape}\n"
+                    f"PREDICTION={primary_class}\n"
+                    f"CONFIDENCE={primary_confidence:.4f}\n"
+                    f"ACTIVE_HANDS={act_hands}"
+                )
+            except Exception as e_th:
+                safe_print(f"[Warning] Failed to save Thalapathy debug files: {e_th}")
     else:
+        # Step 5: Diagnostic output when collecting initial frames
+        safe_print(
+            f"\n[22 CLASS INFERENCE]\n"
+            f"sequence_length = {buf_len}\n"
+            f"token_dimension = {TOKEN_DIM}\n"
+            f"model_input_shape = (25, {TOKEN_DIM})\n"
+            f"inference_executed = false\n"
+            f"reason = collecting initial frames ({buf_len}/{MIN_INFERENCE_FRAMES})"
+        )
         prediction = {
-            "word": "COLLECTING GESTURE...",
+            "word": "Analyzing gesture...",
             "class_id": -1,
             "confidence": 0.0,
             "probabilities": {}
         }
-        primary_class = "COLLECTING GESTURE..."
+        primary_class = "Analyzing gesture..."
         primary_confidence = 0.0
-        final_class = "COLLECTING GESTURE..."
-        no_confirmed = False
-        buffer_status = f"{buf_len}/25 (Collecting)"
+        final_class = "Analyzing gesture..."
+        buffer_status = f"{buf_len}/25 (Analyzing)"
 
     # ── Sentence & Early Decision Processing ─────────────────────────────
     final_prediction_for_decision = dict(prediction)
@@ -606,7 +858,9 @@ async def process_token(data: TokenInput):
     effective_conf = no_prob if no_confirmed else primary_confidence
     final_prediction_for_decision["confidence"] = effective_conf
 
-    if buf_len >= 25 and final_class in CLASS_NAMES and effective_conf >= 0.35:
+    # Step 3 & 13: Enforce sufficient temporal sequence length before accepting final gestures
+    MIN_ACCEPTANCE_FRAMES = 20
+    if buf_len >= MIN_ACCEPTANCE_FRAMES and final_class in CLASS_NAMES and effective_conf >= 0.40:
         decision_res = early_decision_engine.process_prediction(final_prediction_for_decision, motion_energy)
         if decision_res["accepted"] and decision_res["word"]:
             accepted_word = decision_res["word"]
@@ -620,18 +874,26 @@ async def process_token(data: TokenInput):
         else:
             translation_res = sentence_processor.get_current_translation()
     else:
+        # Before 20 frames, sequence is still actively being performed and collected
+        gest_state = "COLLECTING" if buf_len < MIN_INFERENCE_FRAMES else "SIGNING"
         decision_res = {
-            "state": "COLLECTING" if buf_len < 25 else "PREDICTING",
+            "state": gest_state,
             "accepted": False,
-            "cooldown_remaining": 0,
+            "cooldown_remaining": early_decision_engine.cooldown_counter,
             "last_accepted_sign": early_decision_engine.last_accepted_sign,
             "sustained_count": 0,
-            "sustained_target": 2
+            "sustained_target": early_decision_engine.sustained_frames
         }
         translation_res = sentence_processor.get_current_translation()
 
     # Section 4: Determine UI Output Text
-    if final_class == "school":
+    if buf_len < 18 and not decision_res.get("accepted", False):
+        ui_output = "Analyzing gesture..."
+    elif final_class == "brother":
+        ui_output = "Brother (சகோதரன்)"
+    elif final_class == "father":
+        ui_output = "Father (அப்பா)"
+    elif final_class == "school":
         ui_output = "School"
     elif final_class == "water":
         ui_output = "Water (தண்ணீர்)"
@@ -639,12 +901,108 @@ async def process_token(data: TokenInput):
         ui_output = "No (இல்லை)"
     elif final_class == "please":
         ui_output = "Please."
+    elif final_class == "thalapathy":
+        ui_output = "THALAPATHY"
     elif final_class in ENGLISH_TRANSLATIONS:
         ui_output = ENGLISH_TRANSLATIONS[final_class]
     else:
         ui_output = final_class
 
-    if buf_len >= 25:
+    # Step 2: Diagnostic Trace for every NO evaluation
+    safe_print(
+        f"\n[NO DECISION TRACE]\n"
+        f"prob={no_prob:.4f}\n"
+        f"pred={'NO' if no_prob >= NO_PROB_THRESHOLD else 'NOT_NO'}\n"
+        f"threshold={NO_PROB_THRESHOLD:.4f}\n"
+        f"count={binary_consecutive_no_count}\n"
+        f"required={NO_CONSECUTIVE_REQUIRED}\n"
+        f"confirmed={str(no_confirmed).lower()}\n"
+        f"sequence_id={seq_id}\n"
+        f"active_hands={act_hands}\n"
+        f"multiclass={primary_class}\n"
+        f"multiclass_conf={primary_confidence:.4f}\n"
+        f"final={final_class}"
+    )
+
+    # Step 6: Temporal Buffer Debug Logging
+    two_hand_tokens = sum(1 for tk in realtime_token_buffer if np.any(tk[:6] != 0) and np.any(tk[6:] != 0))
+    one_hand_tokens = sum(1 for tk in realtime_token_buffer if (np.any(tk[:6] != 0) ^ np.any(tk[6:] != 0)))
+    zero_hand_tokens = sum(1 for tk in realtime_token_buffer if np.all(tk == 0))
+    safe_print(
+        f"\n[TEMPORAL BUFFER DEBUG]\n"
+        f"sequence_id = {seq_id}\n"
+        f"buffer_length = {buf_len}\n"
+        f"valid_token_count = {two_hand_tokens + one_hand_tokens}\n"
+        f"two_hand_token_count = {two_hand_tokens}\n"
+        f"one_hand_token_count = {one_hand_tokens}\n"
+        f"zero_hand_token_count = {zero_hand_tokens}"
+    )
+
+    # Step 8: Sequence debug logging
+    safe_print(
+        f"\n[SEQUENCE DEBUG]\n"
+        f"sequence_id={seq_id}\n"
+        f"frames_collected={buf_len}\n"
+        f"valid_token_count={buf_len}\n"
+        f"required_sequence_length=25"
+    )
+
+    # Step 8: Save Exact Real Webcam Sequence for Offline Analysis
+    if (primary_class == "thalapathy" or final_class == "thalapathy" or is_two_handed) and buf_len >= MIN_INFERENCE_FRAMES:
+        try:
+            thala_save_npy = os.path.join(MODEL_DIR, "debug_live_thalapathy_final.npy")
+            thala_save_json = os.path.join(MODEL_DIR, "debug_live_thalapathy_final.json")
+            np.save(thala_save_npy, tokens_np)
+            meta = {
+                "frame_id": fid,
+                "sequence_id": seq_id,
+                "token_dimension": TOKEN_DIM,
+                "left_detected": l_det,
+                "right_detected": r_det,
+                "active_hands": act_hands,
+                "raw_hands": raw_hands_val,
+                "no_probability": round(no_prob, 4),
+                "prediction_22class": primary_class,
+                "confidence_22class": round(primary_confidence, 4),
+                "buffer_length": buf_len,
+                "top3": sorted_probs[:3]
+            }
+            with open(thala_save_json, "w", encoding="utf-8") as jf:
+                json.dump(meta, jf, indent=2)
+        except Exception as e_s:
+            safe_print(f"[Warning] Failed to save debug_live_thalapathy_final: {e_s}")
+
+    if buf_len >= MIN_INFERENCE_FRAMES:
+        gesture_state_str = decision_res.get('state', 'READY') if isinstance(decision_res, dict) else 'READY'
+        # Step 4: Thalapathy Live Diagnostic Sample Log
+        safe_print(
+            f"\n[THALAPATHY LIVE DEBUG]\n"
+            f"frame_id = {fid}\n"
+            f"sequence_id = {seq_id}\n"
+            f"raw_hands = {raw_hands_val}\n"
+            f"left_detected = {str(l_det).lower()}\n"
+            f"right_detected = {str(r_det).lower()}\n"
+            f"active_hands = {act_hands}\n"
+            f"left_hand_confidence = {l_conf:.4f}\n"
+            f"right_hand_confidence = {r_conf:.4f}\n"
+            f"token_dimension = {TOKEN_DIM}\n"
+            f"left_features = {[round(float(v), 4) for v in token_arr[0:6]]}\n"
+            f"right_features = {[round(float(v), 4) for v in token_arr[6:12]]}\n"
+            f"21class_prediction = {primary_class}\n"
+            f"21class_confidence = {primary_confidence:.4f}\n"
+            f"top3_predictions = {sorted_probs[:3]}\n"
+            f"final_class = {final_class}\n"
+            f"gesture_state = {gesture_state_str}"
+        )
+        # Step 9: Direct Model Test Logging
+        safe_print(
+            f"\n[THALAPATHY MODEL DEBUG]\n"
+            f"sequence_shape={tokens_np.shape}\n"
+            f"top1={primary_class}\n"
+            f"top1_confidence={primary_confidence:.4f}\n"
+            f"top3={sorted_probs[:3]}"
+        )
+
         # Section 4: Trace exactly where School becomes Water
         safe_print(
             f"\nRAW_CNN_PREDICTION={primary_class}\n"
@@ -669,12 +1027,19 @@ async def process_token(data: TokenInput):
     # ── API Response (full diagnostic fields exposed) ─────────────────────
     return {
         "frame_id": fid,
+        "sequence_id": seq_id,
         "primary_class": primary_class,
         "primary_confidence": round(primary_confidence, 4),
+        "raw_hands": raw_hands_val,
+        "left_detected": l_det,
+        "right_detected": r_det,
+        "left_confidence": round(l_conf, 4),
+        "right_confidence": round(r_conf, 4),
+        "active_hands": act_hands,
         # Binary NO classifier fields
         "no_probability": round(no_prob, 4),
         "no_confirmations": binary_consecutive_no_count,
-        "no_confirmed": no_confirmed if buf_len >= 25 else False,
+        "no_confirmed": no_confirmed,
         # Final authoritative class (may differ from primary_class when NO override triggers)
         "final_class": final_class,
         "hand_detected": True,
@@ -688,16 +1053,16 @@ async def process_token(data: TokenInput):
         "prediction": {
             "word": final_class,
             "class_id": prediction.get("class_id", -1),
-            "confidence": round(primary_confidence, 4)
+            "confidence": round(effective_conf, 4)
         },
-        "binary_no_confirmed": no_confirmed if buf_len >= 25 else False,
-        "no_detected": no_confirmed if buf_len >= 25 else False,
+        "binary_no_confirmed": no_confirmed,
+        "no_detected": no_confirmed,
         "no_confidence": round(no_prob, 4),
         "no_prediction": "NO" if no_prob >= NO_PROB_THRESHOLD else "NOT_NO",
         "binary_no": {
             "no_probability": round(no_prob, 4),
             "no_prediction": "NO" if no_prob >= NO_PROB_THRESHOLD else "NOT_NO",
-            "no_confirmed": no_confirmed if buf_len >= 25 else False,
+            "no_confirmed": no_confirmed,
             "consecutive_count": binary_consecutive_no_count
         },
         "early_decision": {

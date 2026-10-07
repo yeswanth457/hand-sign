@@ -1,0 +1,46 @@
+{
+  "sequence_id": 1791403798335,
+  "frame_ids": [
+    577,
+    580,
+    584,
+    586,
+    588,
+    592,
+    596,
+    600,
+    604,
+    608,
+    612,
+    621,
+    630,
+    634,
+    638,
+    643
+  ],
+  "raw_hand_count": 1,
+  "left_detected": false,
+  "right_detected": true,
+  "active_hands": "Right",
+  "token_dimension": 12,
+  "sequence_length": 16,
+  "no_probability": 0.0077,
+  "22-class top1": "water",
+  "22-class confidence": 0.5558,
+  "top3_predictions": [
+    [
+      "water",
+      0.5558
+    ],
+    [
+      "hello",
+      0.4026
+    ],
+    [
+      "brother",
+      0.0157
+    ]
+  ],
+  "final_class": "water",
+  "gesture_state": "COLLECTING"
+}

@@ -104,7 +104,7 @@ ISL_21_CLASS_DEFINITIONS = {
     "father": {
         "target_min": 30,
         "target_pref": 40,
-        "instruction": "Dominant hand open with thumb tapping center of forehead or temple twice (ISL male marker)."
+        "instruction": "Perform your actual Father gesture."
     },
     "sister": {
         "target_min": 30,
@@ -114,7 +114,7 @@ ISL_21_CLASS_DEFINITIONS = {
     "brother": {
         "target_min": 30,
         "target_pref": 40,
-        "instruction": "Dominant thumb taps forehead (male marker) followed by both index fingers extended parallel touching together."
+        "instruction": "Perform your actual Brother gesture."
     },
     "friend": {
         "target_min": 30,

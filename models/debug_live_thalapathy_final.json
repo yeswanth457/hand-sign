@@ -1,0 +1,53 @@
+{
+  "frame_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21
+  ],
+  "sequence_id": 604860,
+  "token_dimension": 12,
+  "left_detected": true,
+  "right_detected": true,
+  "active_hands": "Left",
+  "no_probability": 0.0002,
+  "prediction_22class": "thalapathy",
+  "confidence_22class": 0.739,
+  "top3_predictions": [
+    [
+      "thalapathy",
+      0.739
+    ],
+    [
+      "sorry",
+      0.2263
+    ],
+    [
+      "school",
+      0.0298
+    ]
+  ],
+  "final_class": "thalapathy",
+  "buffer_length": 21,
+  "model_input_shape": [
+    21,
+    12
+  ]
+}

@@ -23,8 +23,21 @@ from config import (
     CLASS_NAMES, INDEX_TO_CLASS, CLASS_TO_INDEX
 )
 
-_best_model_path = os.path.join(MODEL_DIR, "isl_cnn_gru_21class_best.pt")
-CNN_GRU_MODEL_PATH = _best_model_path if os.path.exists(_best_model_path) else os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
+_father_fix_path = os.path.join(MODEL_DIR, "isl_cnn_gru_father_fix.pt")
+_brother_updated_path = os.path.join(MODEL_DIR, "isl_cnn_gru_22class_brother_updated.pt")
+_best_22_path = os.path.join(MODEL_DIR, "isl_cnn_gru_22class_best.pt")
+_best_21_path = os.path.join(MODEL_DIR, "isl_cnn_gru_21class_best.pt")
+_default_path = os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
+if os.path.exists(_father_fix_path):
+    CNN_GRU_MODEL_PATH = _father_fix_path
+elif os.path.exists(_brother_updated_path):
+    CNN_GRU_MODEL_PATH = _brother_updated_path
+elif os.path.exists(_best_22_path):
+    CNN_GRU_MODEL_PATH = _best_22_path
+elif os.path.exists(_best_21_path):
+    CNN_GRU_MODEL_PATH = _best_21_path
+else:
+    CNN_GRU_MODEL_PATH = _default_path
 
 
 class ISL_CNN_GRU_Model(nn.Module):
@@ -109,6 +122,23 @@ class ISL_CNN_GRU_Model(nn.Module):
         return logits
 
 
+def resample_tokens(tokens, target_t=25):
+    """Resamples token sequence (N, C) to exact target length target_t using smooth temporal interpolation."""
+    if tokens.ndim == 1:
+        tokens = tokens.reshape(1, -1)
+    n, c = tokens.shape
+    if n == target_t:
+        return tokens.astype(np.float32)
+    if n == 1:
+        return np.repeat(tokens.astype(np.float32), target_t, axis=0)
+    old_t = np.linspace(0.0, 1.0, max(1, n))
+    new_t = np.linspace(0.0, 1.0, target_t)
+    resampled = np.zeros((target_t, c), dtype=np.float32)
+    for j in range(c):
+        resampled[:, j] = np.interp(new_t, old_t, tokens[:, j])
+    return resampled
+
+
 class CNNGRUInferenceEngine:
     """Inference engine for the 21-class ISL CNN-GRU model."""
     
@@ -137,14 +167,20 @@ class CNNGRUInferenceEngine:
             try:
                 state_dict = torch.load(self.model_path, map_location=self.device, weights_only=True)
                 
-                # Verify checkpoint has exactly 21 output classes
-                if isinstance(state_dict, dict) and "classifier.weight" in state_dict:
-                    ckpt_classes = state_dict["classifier.weight"].shape[0]
-                    if ckpt_classes != NUM_CLASSES:
-                        print(f"[CNNGRUInferenceEngine] WARNING: Checkpoint has {ckpt_classes} classes, expected {NUM_CLASSES}.")
-                        print(f"[CNNGRUInferenceEngine] Model will be initialized with random weights until retrained.")
-                        self._init_fresh_model()
-                        return
+                # Verify checkpoint has matching token_dim and output classes
+                if isinstance(state_dict, dict):
+                    if "conv1.weight" in state_dict:
+                        ckpt_dim = state_dict["conv1.weight"].shape[1]
+                        if ckpt_dim != TOKEN_DIM:
+                            print(f"[CNNGRUInferenceEngine] WARNING: Checkpoint has token_dim={ckpt_dim}, expected {TOKEN_DIM}.")
+                            self._init_fresh_model()
+                            return
+                    if "classifier.weight" in state_dict:
+                        ckpt_classes = state_dict["classifier.weight"].shape[0]
+                        if ckpt_classes != NUM_CLASSES:
+                            print(f"[CNNGRUInferenceEngine] WARNING: Checkpoint has {ckpt_classes} classes, expected {NUM_CLASSES}.")
+                            self._init_fresh_model()
+                            return
 
                 self.model = ISL_CNN_GRU_Model(
                     token_dim=TOKEN_DIM,
@@ -198,12 +234,15 @@ class CNNGRUInferenceEngine:
         
         seq_len = len(tokens)
 
-        # Pad or truncate to max_seq_len (25 to match training)
-        if seq_len < max_seq_len:
-            padded = np.zeros((max_seq_len, TOKEN_DIM), dtype=np.float32)
-            padded[:seq_len] = tokens[:, :TOKEN_DIM]
+        # Smoothly resample sequence to exactly max_seq_len (25) matching training pipeline
+        token_sub = tokens[:, :TOKEN_DIM]
+        if token_sub.shape[1] < TOKEN_DIM:
+            pad_w = TOKEN_DIM - token_sub.shape[1]
+            token_sub = np.pad(token_sub, ((0, 0), (0, pad_w)), mode='constant')
+        if seq_len == max_seq_len:
+            padded = token_sub.astype(np.float32)
         else:
-            padded = tokens[:max_seq_len, :TOKEN_DIM]
+            padded = resample_tokens(token_sub, target_t=max_seq_len)
 
         # Apply feature normalization (same as training)
         if self.feature_mean is not None and self.feature_std is not None:

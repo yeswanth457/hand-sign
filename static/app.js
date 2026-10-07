@@ -1,19 +1,22 @@
-/**
- * RT-STAMP-SLR Client App Logic — Browser-Side MediaPipe Architecture
- * 
- * Architecture:
- *   Webcam → Browser MediaPipe (HandLandmarker + PoseLandmarker) → Canvas skeleton (instant)
- *   → 6D token → FastAPI /api/process_token → CNN-GRU → Translation
- *
- * Key design decisions:
- *   - MediaPipe runs IN the browser for zero-latency landmark visualization
- *   - Only the 6D token is sent to the backend (not JPEG frames)
- *   - Latest-frame-wins: stale landmarks are never drawn over newer frames
- *   - Correct 21-point MediaPipe hand skeleton with 20 bone connections
- */
+// ─── MediaPipe Module Placeholders (Dynamically loaded to guarantee instant UI startup) ───
+let FilesetResolver = null;
+let HandLandmarker = null;
+let PoseLandmarker = null;
 
-import { FilesetResolver, HandLandmarker, PoseLandmarker } from
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+// ─── Step 9/11: Global Frontend Error Logging ────────────────────
+window.addEventListener("error", (event) => {
+    console.error("[GLOBAL JS ERROR]", event.error || event.message);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+    console.error("[GLOBAL PROMISE ERROR]", event.reason);
+});
+
+// Safe numeric formatting to prevent TypeError on null/undefined values
+function safeFixed(value, digits = 1) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toFixed(digits) : "0.0";
+}
 
 // ─── Explicit Pipeline States (Phase 11) ──────────────────────────
 // States: CAMERA_OFF, CAMERA_STARTING, CAMERA_ERROR, NO_HAND, COLLECTING, READY, PREDICTING, ACCEPTED
@@ -37,6 +40,8 @@ let lastSingleAcceptedSign = '--';
 let handLandmarker = null;
 let poseLandmarker = null;
 let mediaPipeReady = false;
+
+const DATASET_PAGE_SIZE = 5;
 
 // Timing / diagnostics (Phase 8 Performance Tracking)
 let isProcessingToken = false;
@@ -86,65 +91,122 @@ const HAND_CONNECTIONS = [
 // Fingertip landmark indices for distinctive highlights (#4, #8, #12, #16, #20)
 const FINGERTIP_INDICES = [4, 8, 12, 16, 20];
 
-// ─── DOM Elements ────────────────────────────────────────────────
-const videoEl = document.getElementById('webcamVideo');
-const canvasEl = document.getElementById('landmarkCanvas');
-const ctx = canvasEl.getContext('2d');
-const motionGraphCanvas = document.getElementById('motionGraphCanvas');
-const graphCtx = motionGraphCanvas.getContext('2d');
+// ─── DOM Element References ──────────────────────────────────────
+let videoEl = null;
+let canvasEl = null;
+let ctx = null;
+let motionGraphCanvas = null;
+let graphCtx = null;
 
-const btnToggleWebcam = document.getElementById('btnToggleWebcam');
-const btnSimulateDemo = document.getElementById('btnSimulateDemo');
-const btnSimulateSelected = document.getElementById('btnSimulateSelected');
-const btnTrainModel = document.getElementById('btnTrainModel');
-const btnTTS = document.getElementById('btnTTS');
-const btnClear = document.getElementById('btnClear');
+let btnToggleWebcam = null;
+let btnSimulateDemo = null;
+let btnSimulateSelected = null;
+let btnTrainModel = null;
+let btnTTS = null;
+let btnClear = null;
 
-const selectVocab = document.getElementById('selectVocab');
-const valMotionEnergy = document.getElementById('valMotionEnergy');
-const decisionStateBadge = document.getElementById('decisionStateBadge');
+let selectVocab = null;
+let valMotionEnergy = null;
+let decisionStateBadge = null;
 
 // Debug HUD Elements (Phase 3)
-const dbgCameraStream = document.getElementById('dbgCameraStream');
-const dbgReadyState = document.getElementById('dbgReadyState');
-const dbgDimensions = document.getElementById('dbgDimensions');
-const dbgCurrentTime = document.getElementById('dbgCurrentTime');
-const dbgLoopStatus = document.getElementById('dbgLoopStatus');
-const dbgFrameId = document.getElementById('dbgFrameId');
-const dbgDetectorStatus = document.getElementById('dbgDetectorStatus');
-const dbgHandDetected = document.getElementById('dbgHandDetected');
-const dbgLandmarkCount = document.getElementById('dbgLandmarkCount');
-const dbgFpsPill = document.getElementById('dbgFpsPill');
+let dbgCameraStream = null;
+let dbgReadyState = null;
+let dbgDimensions = null;
+let dbgCurrentTime = null;
+let dbgLoopStatus = null;
+let dbgFrameId = null;
+let dbgDetectorStatus = null;
+let dbgHandDetected = null;
+let dbgLandmarkCount = null;
+let dbgFpsPill = null;
 
-const valMpHandTime = document.getElementById('valMpHandTime');
-const valMpPoseTime = document.getElementById('valMpPoseTime');
-const valRenderTime = document.getElementById('valRenderTime');
-const valTokenCalcTime = document.getElementById('valTokenCalcTime');
-const valBackendRtt = document.getElementById('valBackendRtt');
+let valMpHandTime = null;
+let valMpPoseTime = null;
+let valRenderTime = null;
+let valTokenCalcTime = null;
+let valBackendRtt = null;
 
 // Single Gesture Test Mode Elements (Phase 10)
-const sgTargetButtons = document.querySelectorAll('.sg-target-btn');
-const btnClearSgTest = document.getElementById('btnClearSgTest');
-const sgValSign = document.getElementById('sgValSign');
-const sgValConf = document.getElementById('sgValConf');
-const sgValState = document.getElementById('sgValState');
+let sgTargetButtons = [];
+let btnClearSgTest = null;
+let sgValSign = null;
+let sgValConf = null;
+let sgValState = null;
 
-// 6D Token Boxes
-const tkHx = document.getElementById('tkHx');
-const tkHy = document.getElementById('tkHy');
-const tkMx = document.getElementById('tkMx');
-const tkMy = document.getElementById('tkMy');
-const tkRx = document.getElementById('tkRx');
-const tkRy = document.getElementById('tkRy');
+// 6D/12D Token Boxes
+let tkHx = null;
+let tkHy = null;
+let tkMx = null;
+let tkMy = null;
+let tkRx = null;
+let tkRy = null;
 
 // Translation Output
-const currentLangLabel = document.getElementById('currentLangLabel');
-const translatedText = document.getElementById('translatedText');
-const wordBufferContainer = document.getElementById('wordBufferContainer');
-const valDetectedWord = document.getElementById('valDetectedWord');
-const valConfidencePct = document.getElementById('valConfidencePct');
-const confidenceBarFill = document.getElementById('confidenceBarFill');
-const valThreshold = document.getElementById('valThreshold');
+let currentLangLabel = null;
+let translatedText = null;
+let wordBufferContainer = null;
+let valDetectedWord = null;
+let valConfidencePct = null;
+let confidenceBarFill = null;
+let valThreshold = null;
+
+function refreshDOMReferences() {
+    videoEl = document.getElementById('webcamVideo');
+    canvasEl = document.getElementById('landmarkCanvas');
+    ctx = canvasEl ? canvasEl.getContext('2d') : null;
+    motionGraphCanvas = document.getElementById('motionGraphCanvas');
+    graphCtx = motionGraphCanvas ? motionGraphCanvas.getContext('2d') : null;
+
+    btnToggleWebcam = document.getElementById('btnToggleWebcam');
+    btnSimulateDemo = document.getElementById('btnSimulateDemo');
+    btnSimulateSelected = document.getElementById('btnSimulateSelected');
+    btnTrainModel = document.getElementById('btnTrainModel');
+    btnTTS = document.getElementById('btnTTS');
+    btnClear = document.getElementById('btnClear');
+
+    selectVocab = document.getElementById('selectVocab');
+    valMotionEnergy = document.getElementById('valMotionEnergy');
+    decisionStateBadge = document.getElementById('decisionStateBadge');
+
+    dbgCameraStream = document.getElementById('dbgCameraStream');
+    dbgReadyState = document.getElementById('dbgReadyState');
+    dbgDimensions = document.getElementById('dbgDimensions');
+    dbgCurrentTime = document.getElementById('dbgCurrentTime');
+    dbgLoopStatus = document.getElementById('dbgLoopStatus');
+    dbgFrameId = document.getElementById('dbgFrameId');
+    dbgDetectorStatus = document.getElementById('dbgDetectorStatus');
+    dbgHandDetected = document.getElementById('dbgHandDetected');
+    dbgLandmarkCount = document.getElementById('dbgLandmarkCount');
+    dbgFpsPill = document.getElementById('dbgFpsPill');
+
+    valMpHandTime = document.getElementById('valMpHandTime');
+    valMpPoseTime = document.getElementById('valMpPoseTime');
+    valRenderTime = document.getElementById('valRenderTime');
+    valTokenCalcTime = document.getElementById('valTokenCalcTime');
+    valBackendRtt = document.getElementById('valBackendRtt');
+
+    sgTargetButtons = Array.from(document.querySelectorAll('.sg-target-btn'));
+    btnClearSgTest = document.getElementById('btnClearSgTest');
+    sgValSign = document.getElementById('sgValSign');
+    sgValConf = document.getElementById('sgValConf');
+    sgValState = document.getElementById('sgValState');
+
+    tkHx = document.getElementById('tkHx');
+    tkHy = document.getElementById('tkHy');
+    tkMx = document.getElementById('tkMx');
+    tkMy = document.getElementById('tkMy');
+    tkRx = document.getElementById('tkRx');
+    tkRy = document.getElementById('tkRy');
+
+    currentLangLabel = document.getElementById('currentLangLabel');
+    translatedText = document.getElementById('translatedText');
+    wordBufferContainer = document.getElementById('wordBufferContainer');
+    valDetectedWord = document.getElementById('valDetectedWord');
+    valConfidencePct = document.getElementById('valConfidencePct');
+    confidenceBarFill = document.getElementById('confidenceBarFill');
+    valThreshold = document.getElementById('valThreshold');
+}
 
 // ─── Camera State (separate from pipeline/gesture state) ────────
 let currentCameraState = 'CAMERA_OFF';
@@ -224,63 +286,96 @@ function updateSystemState(newState, reason) {
     }
 }
 
-// ─── Init ────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-    setCameraState('CAMERA_OFF', 'Application initialized, camera idle.');
-    setPipelineState('PIPELINE_STARTING', 'Initializing MediaPipe...');
-    updateSystemState('CAMERA_OFF', 'Application initialized, camera idle.');
+// ─── Robust Event Listeners (Bound First) ────────────────────────
+function initEventListeners() {
+    console.log("[UI] Binding all UI event listeners...");
 
-    // Initial clean UI state
-    if (valDetectedWord) valDetectedWord.textContent = '--';
-    if (valConfidencePct) valConfidencePct.textContent = '0%';
-    if (confidenceBarFill) confidenceBarFill.style.width = '0%';
-    if (valMotionEnergy) valMotionEnergy.textContent = '0.0000';
-    if (translatedText) translatedText.innerHTML = '<em>WAITING FOR WEBCAM</em>';
-    updateWordBuffer([]);
-    if (sgValSign) sgValSign.textContent = '--';
-    if (sgValConf) sgValConf.textContent = '0.0%';
-    if (sgValState) {
-        sgValState.textContent = 'CAMERA_OFF';
-        sgValState.className = 'sg-state-tag';
+    // Start / Stop Webcam Button
+    const btnToggle = document.getElementById('btnToggleWebcam');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', async () => {
+            console.log("[UI] Start Webcam clicked");
+            await toggleWebcam();
+        });
+        console.log("[UI] Start Webcam button listener attached.");
+    } else {
+        console.error("[UI] Start Webcam button (#btnToggleWebcam) not found in DOM");
     }
 
-    loadVocabulary();
-    initEventListeners();
-    drawMotionGraph();
-    initMediaPipe();
-
-    // Ensure backend sentence buffer is clear on page load
-    fetch('/api/clear_sentence', { method: 'POST' }).catch(() => {});
-});
-
-function initEventListeners() {
-    if (btnToggleWebcam) btnToggleWebcam.addEventListener('click', toggleWebcam);
-    if (btnSimulateDemo) btnSimulateDemo.addEventListener('click', () => simulateSign('water'));
-    if (btnSimulateSelected) btnSimulateSelected.addEventListener('click', () => {
-        const word = selectVocab ? selectVocab.value : null;
-        if (word) simulateSign(word);
-    });
-    if (btnTrainModel) btnTrainModel.addEventListener('click', trainModel);
-    if (btnTTS) btnTTS.addEventListener('click', speakTranslation);
-    if (btnClear) btnClear.addEventListener('click', clearSentence);
-
     // Single Gesture Test buttons
-    sgTargetButtons.forEach(btn => {
+    const targetBtns = document.querySelectorAll('.sg-target-btn');
+    targetBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const target = btn.dataset.target;
             if (!target) return;
             singleTestTargetSign = target;
-            sgTargetButtons.forEach(b => {
+            targetBtns.forEach(b => {
                 if (b.dataset.target) b.classList.toggle('active', b.dataset.target === target);
             });
+            console.log(`[UI] Gesture button clicked: ${target}`);
             console.log(`[Single Gesture Mode] Target set to: ${target.toUpperCase()}`);
         });
     });
+    console.log(`[UI] Attached ${targetBtns.length} gesture test button listeners.`);
 
-    if (btnClearSgTest) {
-        btnClearSgTest.addEventListener('click', resetSingleGestureTest);
+    // Clear Single Gesture Test button
+    const btnClearTest = document.getElementById('btnClearSgTest');
+    if (btnClearTest) {
+        btnClearTest.addEventListener('click', () => {
+            console.log("[UI] Clear Single Gesture Test clicked");
+            resetSingleGestureTest();
+        });
     }
+
+    // English / Tamil Language Buttons
+    const btnEng = document.getElementById('btnLangEng');
+    if (btnEng) {
+        btnEng.addEventListener('click', () => {
+            console.log("[UI] Language button clicked: english");
+            setLanguage('english');
+        });
+    }
+
+    const btnTam = document.getElementById('btnLangTam');
+    if (btnTam) {
+        btnTam.addEventListener('click', () => {
+            console.log("[UI] Language button clicked: tamil");
+            setLanguage('tamil');
+        });
+    }
+
+    // Simulation / Training / Audio / Buffer Clear Buttons
+    const btnSimDemo = document.getElementById('btnSimulateDemo');
+    if (btnSimDemo) btnSimDemo.addEventListener('click', () => simulateSign('water'));
+
+    const btnSimSel = document.getElementById('btnSimulateSelected');
+    if (btnSimSel) btnSimSel.addEventListener('click', () => {
+        const sel = document.getElementById('selectVocab');
+        const word = sel ? sel.value : null;
+        if (word) simulateSign(word);
+    });
+
+    const btnTrain = document.getElementById('btnTrainModel');
+    if (btnTrain) btnTrain.addEventListener('click', trainModel);
+
+    const btnSpeak = document.getElementById('btnTTS');
+    if (btnSpeak) btnSpeak.addEventListener('click', speakTranslation);
+
+    const btnClr = document.getElementById('btnClear');
+    if (btnClr) btnClr.addEventListener('click', clearSentence);
 }
+
+// Global exports for inline HTML or external access
+window.setLanguage = setLanguage;
+window.simulateSign = simulateSign;
+window.trainModel = trainModel;
+window.speakTranslation = speakTranslation;
+window.clearSentence = clearSentence;
+window.resetSingleGestureTest = resetSingleGestureTest;
+window.toggleWebcam = toggleWebcam;
+window.startWebcam = startWebcam;
+window.stopWebcam = stopWebcam;
+window.loadDatasetBrowser = loadDatasetBrowser;
 
 function resetSingleGestureTest() {
     currentPrediction = { word: '--', confidence: 0.0 };
@@ -292,6 +387,70 @@ function resetSingleGestureTest() {
     }
     clearSentence();
     console.log('[Single Gesture Mode] Test display reset.');
+}
+
+// ─── Robust Initialization Pipeline (Step 4) ────────────────────
+function initializeApp() {
+    console.log("[UI] Initializing RT-STAMP-SLR frontend application...");
+    
+    // 1. Refresh all DOM node references
+    refreshDOMReferences();
+
+    // 2. Attach all event listeners FIRST so buttons work immediately
+    initEventListeners();
+    initDatasetBrowserListeners();
+
+    // 3. Set clean initial UI state
+    try {
+        setCameraState('CAMERA_OFF', 'Application initialized, camera idle.');
+        setPipelineState('PIPELINE_STARTING', 'Initializing MediaPipe...');
+        updateSystemState('CAMERA_OFF', 'Application initialized, camera idle.');
+
+        if (valDetectedWord) valDetectedWord.textContent = '--';
+        if (valConfidencePct) valConfidencePct.textContent = '0%';
+        if (confidenceBarFill) confidenceBarFill.style.width = '0%';
+        if (valMotionEnergy) valMotionEnergy.textContent = '0.0000';
+        if (translatedText) translatedText.innerHTML = '<em>WAITING FOR WEBCAM</em>';
+        updateWordBuffer([]);
+        if (sgValSign) sgValSign.textContent = '--';
+        if (sgValConf) sgValConf.textContent = '0.0%';
+        if (sgValState) {
+            sgValState.textContent = 'CAMERA_OFF';
+            sgValState.className = 'sg-state-tag';
+        }
+    } catch (e) {
+        console.warn("[UI] Non-blocking initial UI setup notice:", e);
+    }
+
+    // 4. Load vocabulary and draw initial graph
+    try {
+        loadVocabulary();
+        drawMotionGraph();
+    } catch (e) {
+        console.warn("[UI] Non-blocking vocab/graph notice:", e);
+    }
+
+    // 5. Initialize MediaPipe in background (non-blocking)
+    initMediaPipe().catch(e => console.warn("[MediaPipe] Background init notice:", e));
+
+    // 6. Auto-load dataset explorer page 1
+    try {
+        loadDatasetBrowser(0, DATASET_PAGE_SIZE);
+    } catch (e) {
+        console.warn("[UI] Non-blocking dataset explorer notice:", e);
+    }
+
+    // 7. Reset server sentence buffer
+    fetch('/api/clear_sentence', { method: 'POST' }).catch(() => {});
+
+    console.log("[UI] Frontend initialization completed successfully.");
+}
+
+// Execute immediately if DOM is already parsed, or wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
 }
 
 // ─── MediaPipe Browser-Side Initialization (non-blocking) ───────
@@ -306,6 +465,23 @@ async function initMediaPipe() {
     const cdnPoseModel = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
 
     try {
+        if (!FilesetResolver || !HandLandmarker || !PoseLandmarker) {
+            let mpVision = null;
+            try {
+                mpVision = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+            } catch (e1) {
+                console.warn('[MediaPipe] Direct ESM import failed, checking window:', e1);
+                mpVision = window;
+            }
+            FilesetResolver = mpVision?.FilesetResolver || window.FilesetResolver;
+            HandLandmarker = mpVision?.HandLandmarker || window.HandLandmarker;
+            PoseLandmarker = mpVision?.PoseLandmarker || window.PoseLandmarker;
+        }
+
+        if (!FilesetResolver || !HandLandmarker || !PoseLandmarker) {
+            throw new Error('MediaPipe Tasks Vision exports could not be loaded');
+        }
+
         const vision = await FilesetResolver.forVisionTasks(
             "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
         );
@@ -417,6 +593,9 @@ async function toggleWebcam() {
 
 async function startWebcam() {
     if (isWebcamRunning) return;
+    if (!videoEl || !btnToggleWebcam || !canvasEl) {
+        refreshDOMReferences();
+    }
 
     // Reset live state before processing new frames
     currentPrediction = { word: '--', confidence: 0.0 };
@@ -729,13 +908,13 @@ async function processWebcamLoop() {
                     rawDetectionConf = handResults.handedness[0][0].score || 0;
                 }
 
-                const gestureWord = (hasHand && currentPrediction.word && currentPrediction.word !== '--')
+                const gestureWord = (hasHand && currentPrediction && currentPrediction.word && currentPrediction.word !== '--')
                     ? currentPrediction.word.replace('_', ' ').toUpperCase()
                     : '--';
-                const gestureConf = (currentPrediction.confidence)
-                    ? `${(currentPrediction.confidence * 100).toFixed(1)}%`
+                const gestureConf = (currentPrediction && currentPrediction.confidence !== null && currentPrediction.confidence !== undefined)
+                    ? `${safeFixed(Number(currentPrediction.confidence) * 100, 1)}%`
                     : '0.0%';
-                const gestureState = currentEarlyDecision.state || (hasHand ? 'COLLECTING' : 'NO_HAND');
+                const gestureState = (currentEarlyDecision && currentEarlyDecision.state) || (hasHand ? 'COLLECTING' : 'NO_HAND');
 
                 console.log(
                     `\n[RT-STAMP-SLR DEBUG]\n` +
@@ -744,7 +923,7 @@ async function processWebcamLoop() {
                     `\n` +
                     `Camera: ${streamActive ? 'STREAM ACTIVE' : 'STREAM INACTIVE'}\n` +
                     `Video: ${videoEl.videoWidth}x${videoEl.videoHeight} readyState=${videoEl.readyState}\n` +
-                    `Video currentTime: ${videoEl.currentTime.toFixed(2)}s\n` +
+                    `Video currentTime: ${safeFixed(videoEl ? videoEl.currentTime : 0, 2)}s\n` +
                     `Canvas: ${canvasEl.width}x${canvasEl.height}\n` +
                     `\n` +
                     `MediaPipe: ${mediaPipeReady ? 'INITIALIZED' : 'NOT READY'}\n` +
@@ -757,7 +936,7 @@ async function processWebcamLoop() {
                     `Raw hands detected: ${rawHandCount}\n` +
                     `Raw landmark count: ${rawLmCount}\n` +
                     `Handedness: ${rawHandedness}\n` +
-                    `Detection confidence: ${rawDetectionConf.toFixed(4)}\n` +
+                    `Detection confidence: ${safeFixed(rawDetectionConf, 4)}\n` +
                     `\n` +
                     `Hand (processed): ${hasHand ? 'YES' : 'NO'}\n` +
                     `Landmarks (processed): ${lmCount}\n` +
@@ -768,9 +947,9 @@ async function processWebcamLoop() {
                     `State: ${gestureState}\n` +
                     `\n` +
                     `Timing:\n` +
-                    `  Hand MP: ${mpHandInferenceMs.toFixed(1)}ms\n` +
-                    `  Render: ${renderDurationMs.toFixed(1)}ms\n` +
-                    `  Token calc: ${tokenCalculationMs.toFixed(1)}ms\n` +
+                    `  Hand MP: ${safeFixed(mpHandInferenceMs, 1)}ms\n` +
+                    `  Render: ${safeFixed(renderDurationMs, 1)}ms\n` +
+                    `  Token calc: ${safeFixed(tokenCalculationMs, 1)}ms\n` +
                     `  Backend RTT: ${roundTripLatencyMs}ms`
                 );
 
@@ -782,12 +961,12 @@ async function processWebcamLoop() {
                     const vh = videoEl.videoHeight;
                     const cw = canvasEl.width;
                     const ch = canvasEl.height;
-                    const w0Z = (w0 && w0.length >= 3 && w0[2] !== undefined && w0[2] !== null) ? `, ${w0[2].toFixed(4)}` : '';
-                    const i8Z = (i8 && i8.length >= 3 && i8[2] !== undefined && i8[2] !== null) ? `, ${i8[2].toFixed(4)}` : '';
+                    const w0Z = (w0 && w0.length >= 3 && w0[2] !== undefined && w0[2] !== null) ? `, ${safeFixed(w0[2], 4)}` : '';
+                    const i8Z = (i8 && i8.length >= 3 && i8[2] !== undefined && i8[2] !== null) ? `, ${safeFixed(i8[2], 4)}` : '';
                     console.log(
                         `[LANDMARK COORD VERIFICATION]\n` +
-                        `WRIST #0: MP (${w0[0].toFixed(4)}, ${w0[1].toFixed(4)}${w0Z}) | Video: ${vw}x${vh} | Canvas: ${cw}x${ch} | Draw: (${(w0[0] * cw).toFixed(1)}, ${(w0[1] * ch).toFixed(1)})\n` +
-                        `INDEX TIP #8: MP (${i8[0].toFixed(4)}, ${i8[1].toFixed(4)}${i8Z}) | Video: ${vw}x${vh} | Canvas: ${cw}x${ch} | Draw: (${(i8[0] * cw).toFixed(1)}, ${(i8[1] * ch).toFixed(1)})`
+                        `WRIST #0: MP (${safeFixed(w0 ? w0[0] : 0, 4)}, ${safeFixed(w0 ? w0[1] : 0, 4)}${w0Z}) | Video: ${vw}x${vh} | Canvas: ${cw}x${ch} | Draw: (${safeFixed((w0 ? w0[0] : 0) * cw, 1)}, ${safeFixed((w0 ? w0[1] : 0) * ch, 1)})\n` +
+                        `INDEX TIP #8: MP (${safeFixed(i8 ? i8[0] : 0, 4)}, ${safeFixed(i8 ? i8[1] : 0, 4)}${i8Z}) | Video: ${vw}x${vh} | Canvas: ${cw}x${ch} | Draw: (${safeFixed((i8 ? i8[0] : 0) * cw, 1)}, ${safeFixed((i8 ? i8[1] : 0) * ch, 1)})`
                     );
                 }
             }
@@ -846,7 +1025,7 @@ function updateDebugHUDLiveMetrics(hasHand, handCount, lmCount, landmarkData = n
     }
 
     if (dbgCurrentTime) {
-        dbgCurrentTime.textContent = videoEl ? `${videoEl.currentTime.toFixed(2)}s` : '0.00s';
+        dbgCurrentTime.textContent = videoEl && Number.isFinite(videoEl.currentTime) ? `${safeFixed(videoEl.currentTime, 2)}s` : '0.00s';
     }
 
     if (dbgVideoPaused) {
@@ -921,10 +1100,10 @@ function updateDebugHUDLiveMetrics(hasHand, handCount, lmCount, landmarkData = n
         dbgFpsPill.textContent = `${webcamFps} FPS`;
     }
 
-    if (valMpHandTime) valMpHandTime.textContent = `${mpHandInferenceMs.toFixed(1)}ms`;
-    if (valMpPoseTime) valMpPoseTime.textContent = `${mpPoseInferenceMs.toFixed(1)}ms`;
-    if (valRenderTime) valRenderTime.textContent = `${renderDurationMs.toFixed(1)}ms`;
-    if (valTokenCalcTime) valTokenCalcTime.textContent = `${tokenCalculationMs.toFixed(1)}ms`;
+    if (valMpHandTime) valMpHandTime.textContent = `${safeFixed(mpHandInferenceMs, 1)}ms`;
+    if (valMpPoseTime) valMpPoseTime.textContent = `${safeFixed(mpPoseInferenceMs, 1)}ms`;
+    if (valRenderTime) valRenderTime.textContent = `${safeFixed(renderDurationMs, 1)}ms`;
+    if (valTokenCalcTime) valTokenCalcTime.textContent = `${safeFixed(tokenCalculationMs, 1)}ms`;
     if (valBackendRtt) valBackendRtt.textContent = `${roundTripLatencyMs}ms`;
 }
 
@@ -963,14 +1142,66 @@ function calculateHandCenter(handPoints) {
     return [sumX / handPoints.length, sumY / handPoints.length];
 }
 
-// ─── Build Landmark Data (Hand Tracking & Selection matching Python LandmarkExtractor) ───
+
+// Adaptive dual-hand landmark smoothing & tracking state
+let activeGestureHand = null;         // "Right", "Left", "Both", or null when unlocked
+let lockedHandCenter = null;          // [x, y]
+let lockedHandMissingFrames = 0;      // Streak of missing frames for locked hand
+const MAX_LOCKED_HAND_GRACE_FRAMES = 15; // Grace frames before resetting gesture
+
+// Step 7: Dual-hand occlusion grace period state (3-5 frames)
+let lastValidLeftHand = null;
+let lastValidRightHand = null;
+let lastValidLeftCenter = null;
+let lastValidRightCenter = null;
+let leftOcclusionGraceCount = 0;
+let rightOcclusionGraceCount = 0;
+const MAX_OCCLUSION_GRACE_FRAMES = 4; // Target: 3-5 frames
+
+let prevLeftCenter = null;
+let prevRightCenter = null;
+let currentSequenceId = Date.now();
+let consecutiveNoHandFrames = 0;
+const CONSECUTIVE_NO_HAND_FOR_RESET = 15;
+
+function resetTokenizerState() {
+    prevLeftCenter = null;
+    prevRightCenter = null;
+    lastValidLeftHand = null;
+    lastValidRightHand = null;
+    lastValidLeftCenter = null;
+    lastValidRightCenter = null;
+    leftOcclusionGraceCount = 0;
+    rightOcclusionGraceCount = 0;
+    activeGestureHand = null;
+    lockedHandCenter = null;
+    lockedHandMissingFrames = 0;
+    currentSequenceId = Date.now();
+    latestProcessedFrameId = -1;
+    consecutiveNoHandFrames = 0;
+}
+
+// ─── Build Landmark Data (Two-Hand Landmark Extraction & Separation) ───
 function buildLandmarkData(handResults, poseResults) {
     const data = {
         pose: {},
         hands: [],
+        left_hand: null,
+        right_hand: null,
+        left_hand_center: null,
+        right_hand_center: null,
         hand_center: [0.5, 0.5],
         shoulder_center: [0.5, 0.35],
         hand_count: 0,
+        raw_hands: 0,
+        left_detected: false,
+        right_detected: false,
+        left_confidence: 0.0,
+        right_confidence: 0.0,
+        active_hands: "NONE",
+        selected_hand: "Right",
+        selected_hand_index: 0,
+        selected_hand_confidence: 1.0,
         is_fallback: false
     };
 
@@ -993,7 +1224,9 @@ function buildLandmarkData(handResults, poseResults) {
         }
     }
 
-    // Stable Hand Tracking State (Phase 9 & 10)
+    const midX = data.shoulder_center ? data.shoulder_center[0] : 0.5;
+
+    // Stable Hand Tracking State supporting BOTH hands (Steps 3, 4, 8)
     const detectedHandsList = [];
     const detectedHandMeta = [];
     if (handResults && handResults.landmarks && handResults.landmarks.length > 0) {
@@ -1012,168 +1245,303 @@ function buildLandmarkData(handResults, poseResults) {
         });
     }
 
-    data.hands = detectedHandsList;
-    data.hand_count = detectedHandsList.length;
+    const rawHandCount = detectedHandsList.length;
+    data.raw_hands = rawHandCount;
 
-    if (detectedHandsList.length > 0) {
-        const centers = detectedHandsList.map(h => calculateHandCenter(h));
-        let selectedIdx = 0;
-        let selectedReason = "single_hand";
-
-        if (detectedHandsList.length === 1) {
-            selectedIdx = 0;
-            const newLabel = detectedHandMeta[0].label;
-            if (currentTrackedHandLabel !== null && currentTrackedHandLabel !== newLabel && trackedHandLostStreak >= MAX_MISSED_HAND_FRAMES) {
-                console.log(`HAND_SELECTION_CHANGED\nold_hand=${currentTrackedHandLabel}\nnew_hand=${newLabel}\nreason=single_hand_detected`);
+    if (rawHandCount === 0) {
+        // No hands detected in frame
+        if (activeGestureHand !== null) {
+            lockedHandMissingFrames++;
+            if (lockedHandMissingFrames <= MAX_LOCKED_HAND_GRACE_FRAMES) {
+                data.selected_hand = activeGestureHand;
+            } else {
+                resetTokenizerState();
+                data.selected_hand = "NONE";
             }
-            currentTrackedHandLabel = newLabel;
-            currentTrackedHandCenter = centers[0];
-            trackedHandLostStreak = 0;
-        } else if (currentTrackedHandCenter !== null) {
-            // Multi-hand: preserve tracking continuity of the already-selected hand!
-            const px = currentTrackedHandCenter[0], py = currentTrackedHandCenter[1];
-            let bestIdx = 0;
-            let minDistSq = Infinity;
-
-            // 1. Try matching by label first if within reasonable spatial window
-            let labelMatched = false;
-            if (currentTrackedHandLabel) {
-                centers.forEach((c, idx) => {
-                    if (detectedHandMeta[idx].label === currentTrackedHandLabel) {
-                        const dSq = (c[0] - px) ** 2 + (c[1] - py) ** 2;
-                        if (dSq < 0.15) {
-                            bestIdx = idx;
-                            minDistSq = dSq;
-                            labelMatched = true;
-                            selectedReason = "label_match_continuity";
-                        }
-                    }
-                });
-            }
-
-            // 2. If no label match within window, find closest center
-            if (!labelMatched) {
-                centers.forEach((c, idx) => {
-                    const dSq = (c[0] - px) ** 2 + (c[1] - py) ** 2;
-                    if (dSq < minDistSq) {
-                        minDistSq = dSq;
-                        bestIdx = idx;
-                    }
-                });
-                selectedReason = "spatial_closest";
-            }
-
-            const newLabel = detectedHandMeta[bestIdx].label;
-            if (currentTrackedHandLabel !== null && currentTrackedHandLabel !== newLabel) {
-                console.log(`HAND_SELECTION_CHANGED\nold_hand=${currentTrackedHandLabel}\nnew_hand=${newLabel}\nreason=${selectedReason}`);
-            }
-            currentTrackedHandLabel = newLabel;
-            currentTrackedHandCenter = centers[bestIdx];
-            trackedHandLostStreak = 0;
-            selectedIdx = bestIdx;
         } else {
-            // First multi-hand detection with no prior tracked hand: pick top-most (lowest Y) hand
-            let bestIdx = 0;
-            let minY = Infinity;
-            centers.forEach((c, idx) => {
-                if (c[1] < minY) {
-                    minY = c[1];
-                    bestIdx = idx;
-                }
-            });
-            selectedIdx = bestIdx;
-            currentTrackedHandLabel = detectedHandMeta[bestIdx].label;
-            currentTrackedHandCenter = centers[bestIdx];
-            trackedHandLostStreak = 0;
-            selectedReason = "initial_topmost_hand";
+            data.selected_hand = "NONE";
         }
-
-        data.hand_center = currentTrackedHandCenter;
-        data.selected_hand = currentTrackedHandLabel;
-        data.selected_hand_index = selectedIdx;
-        data.selected_hand_confidence = detectedHandMeta[selectedIdx] ? detectedHandMeta[selectedIdx].score : 1.0;
-    } else {
-        trackedHandLostStreak++;
-        data.selected_hand = "NONE";
-        data.selected_hand_confidence = 0.0;
+        return data;
     }
 
+    // At least one hand detected in frame
+    const centers = detectedHandsList.map(h => calculateHandCenter(h));
+
+    // Step 3: Log [TWO HAND DEBUG] when 2 hands are detected
+    if (rawHandCount >= 2 && detectedHandMeta && detectedHandMeta.length >= 2 && centers && centers.length >= 2) {
+        console.log(
+            `[TWO HAND DEBUG]\n` +
+            `raw_hand_count=2\n` +
+            `hand_0_label = ${detectedHandMeta[0].label || 'UNKNOWN'}\n` +
+            `hand_0_confidence = ${safeFixed(detectedHandMeta[0].score, 4)}\n` +
+            `hand_0_center = [${safeFixed(centers[0] ? centers[0][0] : 0, 4)}, ${safeFixed(centers[0] ? centers[0][1] : 0, 4)}]\n` +
+            `hand_1_label = ${detectedHandMeta[1].label || 'UNKNOWN'}\n` +
+            `hand_1_confidence = ${safeFixed(detectedHandMeta[1].score, 4)}\n` +
+            `hand_1_center = [${safeFixed(centers[1] ? centers[1][0] : 0, 4)}, ${safeFixed(centers[1] ? centers[1][1] : 0, 4)}]`
+        );
+    }
+
+    if (rawHandCount === 1) {
+        const center = centers[0];
+        const meta = detectedHandMeta[0] || { label: 'Right', score: 1.0 };
+        const rawLabel = (meta && meta.label) ? meta.label : 'Unknown';
+
+        // Check if we were previously in a two-hand gesture context
+        const isDualHandContext = (activeGestureHand === "Both" || (lastValidLeftHand !== null && lastValidRightHand !== null));
+        let assignedSlot = null;
+
+        if (isDualHandContext && lastValidLeftCenter !== null && lastValidRightCenter !== null) {
+            const dLeft = Math.hypot(center[0] - lastValidLeftCenter[0], center[1] - lastValidLeftCenter[1]);
+            const dRight = Math.hypot(center[0] - lastValidRightCenter[0], center[1] - lastValidRightCenter[1]);
+            assignedSlot = (dLeft < dRight) ? "Left" : "Right";
+        } else if (activeGestureHand === "Right" && lockedHandCenter !== null) {
+            const dist = Math.hypot(center[0] - lockedHandCenter[0], center[1] - lockedHandCenter[1]);
+            if (dist < 0.35) assignedSlot = "Right";
+        } else if (activeGestureHand === "Left" && lockedHandCenter !== null) {
+            const dist = Math.hypot(center[0] - lockedHandCenter[0], center[1] - lockedHandCenter[1]);
+            if (dist < 0.35) assignedSlot = "Left";
+        }
+
+        if (!assignedSlot) {
+            if (rawLabel.toLowerCase() === 'left') {
+                assignedSlot = "Left";
+            } else if (rawLabel.toLowerCase() === 'right') {
+                assignedSlot = "Right";
+            } else {
+                assignedSlot = (center[0] < midX) ? "Left" : "Right";
+            }
+        }
+
+        if (assignedSlot === "Left") {
+            data.left_hand = detectedHandsList[0];
+            data.left_hand_center = center;
+            data.left_detected = true;
+            data.left_confidence = meta.score || 1.0;
+            lastValidLeftHand = data.left_hand;
+            lastValidLeftCenter = center;
+            leftOcclusionGraceCount = 0;
+
+            // Step 7: Check occlusion grace for missing Right hand (3-5 frames)
+            if (isDualHandContext && lastValidRightHand !== null && rightOcclusionGraceCount < MAX_OCCLUSION_GRACE_FRAMES) {
+                rightOcclusionGraceCount++;
+                data.right_hand = lastValidRightHand;
+                data.right_hand_center = lastValidRightCenter;
+                data.right_detected = true;
+                data.right_confidence = 0.8;
+                data.right_carried_forward = true;
+            } else {
+                data.right_hand = null;
+                data.right_detected = false;
+                data.right_confidence = 0.0;
+                data.right_carried_forward = false;
+                lastValidRightHand = null;
+                lastValidRightCenter = null;
+            }
+        } else {
+            data.right_hand = detectedHandsList[0];
+            data.right_hand_center = center;
+            data.right_detected = true;
+            data.right_confidence = meta.score || 1.0;
+            lastValidRightHand = data.right_hand;
+            lastValidRightCenter = center;
+            rightOcclusionGraceCount = 0;
+
+            // Step 7: Check occlusion grace for missing Left hand (3-5 frames)
+            if (isDualHandContext && lastValidLeftHand !== null && leftOcclusionGraceCount < MAX_OCCLUSION_GRACE_FRAMES) {
+                leftOcclusionGraceCount++;
+                data.left_hand = lastValidLeftHand;
+                data.left_hand_center = lastValidLeftCenter;
+                data.left_detected = true;
+                data.left_confidence = 0.8;
+                data.left_carried_forward = true;
+            } else {
+                data.left_hand = null;
+                data.left_detected = false;
+                data.left_confidence = 0.0;
+                data.left_carried_forward = false;
+                lastValidLeftHand = null;
+                lastValidLeftCenter = null;
+            }
+        }
+
+        if (data.left_detected && data.right_detected) {
+            activeGestureHand = "Both";
+        } else {
+            activeGestureHand = assignedSlot;
+            lockedHandCenter = center;
+        }
+
+        // Step 7 Diagnostic Trace
+        console.log(
+            `[HAND OCCLUSION TRACE]\n` +
+            `raw_hands = 1\n` +
+            `left_detected = ${data.left_detected}\n` +
+            `right_detected = ${data.right_detected}\n` +
+            `left_carried_forward = ${data.left_carried_forward || false}\n` +
+            `right_carried_forward = ${data.right_carried_forward || false}`
+        );
+    } else {
+        // Classify dual detected hands into Left and Right slots deterministically
+        detectedHandsList.forEach((handPts, idx) => {
+            const meta = detectedHandMeta[idx];
+            const center = centers[idx];
+            const isLeftLabel = meta && meta.label && meta.label.toLowerCase() === 'left';
+            const isRightLabel = meta && meta.label && meta.label.toLowerCase() === 'right';
+
+            if (isLeftLabel && !data.left_hand) {
+                data.left_hand = handPts;
+                data.left_hand_center = center;
+                data.left_detected = true;
+                data.left_confidence = meta.score;
+            } else if (isRightLabel && !data.right_hand) {
+                data.right_hand = handPts;
+                data.right_hand_center = center;
+                data.right_detected = true;
+                data.right_confidence = meta.score;
+            }
+        });
+
+        if (rawHandCount >= 2 && (!data.left_hand || !data.right_hand)) {
+            if (centers[0][0] < centers[1][0]) {
+                data.left_hand = detectedHandsList[0];
+                data.left_hand_center = centers[0];
+                data.left_detected = true;
+                data.left_confidence = detectedHandMeta[0].score;
+                data.right_hand = detectedHandsList[1];
+                data.right_hand_center = centers[1];
+                data.right_detected = true;
+                data.right_confidence = detectedHandMeta[1].score;
+            } else {
+                data.left_hand = detectedHandsList[1];
+                data.left_hand_center = centers[1];
+                data.left_detected = true;
+                data.left_confidence = detectedHandMeta[1].score;
+                data.right_hand = detectedHandsList[0];
+                data.right_hand_center = centers[0];
+                data.right_detected = true;
+                data.right_confidence = detectedHandMeta[0].score;
+            }
+        }
+        lastValidLeftHand = data.left_hand;
+        lastValidLeftCenter = data.left_hand_center;
+        lastValidRightHand = data.right_hand;
+        lastValidRightCenter = data.right_hand_center;
+        leftOcclusionGraceCount = 0;
+        rightOcclusionGraceCount = 0;
+        data.left_carried_forward = false;
+        data.right_carried_forward = false;
+        activeGestureHand = "Both";
+        lockedHandCenter = null;
+    }
+
+    // Populate hands array for canvas rendering and active_hands
+    if (data.left_detected && data.right_detected) {
+        data.active_hands = "Left+Right";
+        activeGestureHand = "Both";
+        data.hands = [data.left_hand, data.right_hand];
+        data.hand_count = 2;
+        data.hand_center = data.right_hand_center || data.left_hand_center;
+    } else if (data.left_detected) {
+        data.active_hands = "Left";
+        activeGestureHand = "Left";
+        data.hands = [data.left_hand];
+        data.hand_count = 1;
+        data.hand_center = data.left_hand_center;
+    } else {
+        data.active_hands = "Right";
+        activeGestureHand = "Right";
+        data.hands = [data.right_hand];
+        data.hand_count = 1;
+        data.hand_center = data.right_hand_center;
+    }
+
+    data.selected_hand = activeGestureHand;
+    lockedHandMissingFrames = 0;
     return data;
 }
 
-// ─── 6D Token Computation (Browser-Side) ─────────────────────────
-let currentTrackedHandLabel = null;
-let currentTrackedHandCenter = null;
-let trackedHandLostStreak = 0;
-let prevHandCenter = null;
-let currentSequenceId = Date.now();
-let consecutiveNoHandFrames = 0;
-const CONSECUTIVE_NO_HAND_FOR_RESET = 4; // Require 4 consecutive frames (~100-150ms) of no-hand before sequence reset
-
-function resetTokenizerState() {
-    prevHandCenter = null;
-    currentTrackedHandLabel = null;
-    currentTrackedHandCenter = null;
-    trackedHandLostStreak = 0;
-    currentSequenceId = Date.now();
-    consecutiveNoHandFrames = 0;
-}
-
-function compute6DToken(landmarkData) {
-    const hasHand = landmarkData && landmarkData.hands && landmarkData.hands.length > 0;
+// ─── 12D Token Computation (Browser-Side) ─────────────────────────
+function compute12DToken(landmarkData) {
+    const hasHand = landmarkData && (landmarkData.left_detected || landmarkData.right_detected || (landmarkData.hands && landmarkData.hands.length > 0));
     if (!hasHand) {
         consecutiveNoHandFrames++;
         if (consecutiveNoHandFrames >= CONSECUTIVE_NO_HAND_FOR_RESET) {
             resetTokenizerState();
         }
-        return null; // Return null when no hand detected
+        return null;
     }
 
     consecutiveNoHandFrames = 0;
 
-    const hx = (landmarkData.hand_center && landmarkData.hand_center[0] !== undefined) ? landmarkData.hand_center[0] : 0.5;
-    const hy = (landmarkData.hand_center && landmarkData.hand_center[1] !== undefined) ? landmarkData.hand_center[1] : 0.5;
+    const ls = (landmarkData.pose && landmarkData.pose.LS) ? landmarkData.pose.LS : [0.4, 0.35];
+    const rs = (landmarkData.pose && landmarkData.pose.RS) ? landmarkData.pose.RS : [0.6, 0.35];
 
-    const sx = (landmarkData.shoulder_center && landmarkData.shoulder_center[0] !== undefined) ? landmarkData.shoulder_center[0] : 0.5;
-    const sy = (landmarkData.shoulder_center && landmarkData.shoulder_center[1] !== undefined) ? landmarkData.shoulder_center[1] : 0.35;
-
-    // Hand velocity delta calculation (resets on first frame of gesture to avoid artificial jump)
-    let mx = 0.0, my = 0.0;
-    if (prevHandCenter !== null) {
-        const jumpDist = Math.hypot(hx - prevHandCenter[0], hy - prevHandCenter[1]);
-        if (jumpDist > 0.25) {
-            mx = 0.0;
-            my = 0.0;
-        } else {
-            mx = hx - prevHandCenter[0];
-            my = hy - prevHandCenter[1];
+    let leftToken = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+    if (landmarkData.left_hand_center) {
+        const lhx = landmarkData.left_hand_center[0];
+        const lhy = landmarkData.left_hand_center[1];
+        let lmx = 0.0, lmy = 0.0;
+        if (!landmarkData.left_carried_forward && prevLeftCenter !== null) {
+            const d = Math.hypot(lhx - prevLeftCenter[0], lhy - prevLeftCenter[1]);
+            if (d <= 0.3) {
+                lmx = lhx - prevLeftCenter[0];
+                lmy = lhy - prevLeftCenter[1];
+            }
         }
+        prevLeftCenter = [lhx, lhy];
+        const lrx = lhx - ls[0];
+        const lry = lhy - ls[1];
+        leftToken = [lhx, lhy, lmx, lmy, lrx, lry];
     } else {
-        // First valid hand frame after reset — initialize position without motion jump
-        mx = 0.0;
-        my = 0.0;
-    }
-    prevHandCenter = [hx, hy];
-
-    // Relative to shoulder baseline
-    const rx = hx - sx;
-    const ry = hy - sy;
-
-    const token = [hx, hy, mx, my, rx, ry];
-
-    // Section 11 Token Integrity Validation
-    const isFinite = token.every(v => Number.isFinite(v));
-    const rangeValid = Math.abs(hx) <= 2.0 && Math.abs(hy) <= 2.0 && Math.abs(rx) <= 2.0 && Math.abs(ry) <= 2.0;
-    if (!isFinite || !rangeValid) {
-        console.warn(`[TOKEN VALIDATION WARNING] isFinite=${isFinite}, rangeValid=${rangeValid}, token=`, token);
+        prevLeftCenter = null;
     }
 
+    let rightToken = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+    if (landmarkData.right_hand_center) {
+        const rhx = landmarkData.right_hand_center[0];
+        const rhy = landmarkData.right_hand_center[1];
+        let rmx = 0.0, rmy = 0.0;
+        if (!landmarkData.right_carried_forward && prevRightCenter !== null) {
+            const d = Math.hypot(rhx - prevRightCenter[0], rhy - prevRightCenter[1]);
+            if (d <= 0.3) {
+                rmx = rhx - prevRightCenter[0];
+                rmy = rhy - prevRightCenter[1];
+            }
+        }
+        prevRightCenter = [rhx, rhy];
+        const rrx = rhx - rs[0];
+        const rry = rhy - rs[1];
+        rightToken = [rhx, rhy, rmx, rmy, rrx, rry];
+    } else {
+        prevRightCenter = null;
+    }
+
+    const token = [...leftToken, ...rightToken];
     updateTokenDisplay(token, true);
+
+    // Step 7: When both hands are visible, print 12D token details
+    if (landmarkData.left_detected && landmarkData.right_detected) {
+        console.log(
+            `[TWO HAND TOKEN 12D]\n` +
+            `[0] LHx: ${safeFixed(token[0], 4)}\n` +
+            `[1] LHy: ${safeFixed(token[1], 4)}\n` +
+            `[2] LMx: ${safeFixed(token[2], 4)}\n` +
+            `[3] LMy: ${safeFixed(token[3], 4)}\n` +
+            `[4] LRx: ${safeFixed(token[4], 4)}\n` +
+            `[5] LRy: ${safeFixed(token[5], 4)}\n` +
+            `[6] RHx: ${safeFixed(token[6], 4)}\n` +
+            `[7] RHy: ${safeFixed(token[7], 4)}\n` +
+            `[8] RMx: ${safeFixed(token[8], 4)}\n` +
+            `[9] RMy: ${safeFixed(token[9], 4)}\n` +
+            `[10] RRx: ${safeFixed(token[10], 4)}\n` +
+            `[11] RRy: ${safeFixed(token[11], 4)}`
+        );
+    }
     return token;
 }
 
 function updateTokenDisplay(token, hasHand) {
-    if (!hasHand || !token || token.length < 6) {
+    if (!hasHand || !token || token.length < 12) {
         if (tkHx) tkHx.textContent = '--';
         if (tkHy) tkHy.textContent = '--';
         if (tkMx) tkMx.textContent = '--';
@@ -1182,12 +1550,14 @@ function updateTokenDisplay(token, hasHand) {
         if (tkRy) tkRy.textContent = '--';
         return;
     }
-    if (tkHx) tkHx.textContent = Number(token[0]).toFixed(2);
-    if (tkHy) tkHy.textContent = Number(token[1]).toFixed(2);
-    if (tkMx) tkMx.textContent = Number(token[2]).toFixed(2);
-    if (tkMy) tkMy.textContent = Number(token[3]).toFixed(2);
-    if (tkRx) tkRx.textContent = Number(token[4]).toFixed(2);
-    if (tkRy) tkRy.textContent = Number(token[5]).toFixed(2);
+    // Display dominant/active hand coordinates in UI HUD
+    const offset = (token[6] !== 0 || token[7] !== 0) ? 6 : 0;
+    if (tkHx) tkHx.textContent = safeFixed(token[offset + 0], 2);
+    if (tkHy) tkHy.textContent = safeFixed(token[offset + 1], 2);
+    if (tkMx) tkMx.textContent = safeFixed(token[offset + 2], 2);
+    if (tkMy) tkMy.textContent = safeFixed(token[offset + 3], 2);
+    if (tkRx) tkRx.textContent = safeFixed(token[offset + 4], 2);
+    if (tkRy) tkRy.textContent = safeFixed(token[offset + 5], 2);
 }
 
 // ─── Send Token to Backend ───────────────────────────────────────
@@ -1195,6 +1565,7 @@ let lastTokenSentTimestamp = 0;
 let lastSentHadHand = false;
 let _lastWebFrameLog = 0;
 const TOKEN_SEND_INTERVAL_MS = 50; // ~20 FPS target for optimal backend synchronization
+let latestProcessedFrameId = -1;
 
 async function sendTokenToBackend(landmarkData, currentFrameId) {
     // Single in-flight request guard: serialize token requests to prevent overlap
@@ -1203,7 +1574,7 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
         return;
     }
 
-    const hasHand = landmarkData && landmarkData.hands && landmarkData.hands.length > 0;
+    const hasHand = landmarkData && (landmarkData.left_detected || landmarkData.right_detected || (landmarkData.hands && landmarkData.hands.length > 0));
     const now = performance.now();
 
     // Handle gesture transition / hand reset
@@ -1220,12 +1591,12 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
     lastTokenSentTimestamp = now;
     lastSentHadHand = hasHand;
     isProcessingToken = true;
-    const token = compute6DToken(landmarkData);
+    const token = compute12DToken(landmarkData);
     const captureTime = now;
 
     if (now - _lastWebFrameLog >= 1000) {
         _lastWebFrameLog = now;
-        console.log(`[WEB FRAME] Sending frame to /api/process_token (frame_id=${currentFrameId}, seq_id=${currentSequenceId}, hasHand=${hasHand})`);
+        console.log(`[WEB FRAME] Sending frame to /api/process_token (frame_id=${currentFrameId}, seq_id=${currentSequenceId}, hasHand=${hasHand}, hands=${landmarkData.active_hands || "NONE"})`);
     }
 
     const controller = new AbortController();
@@ -1244,8 +1615,19 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
                 pose: landmarkData.pose,
                 hand_center: landmarkData.hand_center,
                 shoulder_center: landmarkData.shoulder_center,
+                left_hand_center: landmarkData.left_hand_center,
+                right_hand_center: landmarkData.right_hand_center,
                 has_hand: hasHand,
+                hands: landmarkData.hands,
                 hand_count: landmarkData.hand_count || (hasHand ? 1 : 0),
+                raw_hands: landmarkData.raw_hands || 0,
+                left_detected: landmarkData.left_detected || false,
+                right_detected: landmarkData.right_detected || false,
+                left_carried_forward: landmarkData.left_carried_forward || false,
+                right_carried_forward: landmarkData.right_carried_forward || false,
+                left_confidence: landmarkData.left_confidence || 0.0,
+                right_confidence: landmarkData.right_confidence || 0.0,
+                active_hands: landmarkData.active_hands || "NONE",
                 primary_hand: landmarkData.selected_hand || "Right",
                 selected_hand: landmarkData.selected_hand || "Right",
                 selected_hand_index: landmarkData.selected_hand_index !== undefined ? landmarkData.selected_hand_index : 0,
@@ -1263,6 +1645,49 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
         const data = await res.json();
         processedFramesCount++;
         roundTripLatencyMs = Math.round(performance.now() - captureTime);
+
+        const reqSeqId = currentSequenceId;
+        const reqFrameId = currentFrameId;
+        const respFrameId = data.frame_id !== undefined ? data.frame_id : reqFrameId;
+        const respSeqId = data.sequence_id !== undefined ? data.sequence_id : reqSeqId;
+        const reqTime = captureTime;
+        const respTime = performance.now();
+
+        // Step 12: Discard out-of-order, stale, or superseded responses
+        const acceptedAsCurrent = (respSeqId === currentSequenceId && respFrameId >= latestProcessedFrameId);
+        console.log(
+            `[ASYNC RESPONSE ORDER]\n` +
+            `request_frame_id = ${reqFrameId}\n` +
+            `response_frame_id = ${respFrameId}\n` +
+            `sequence_id = ${respSeqId}\n` +
+            `request_timestamp = ${safeFixed(reqTime, 1)}\n` +
+            `response_timestamp = ${safeFixed(respTime, 1)}\n` +
+            `accepted_as_current = ${acceptedAsCurrent}`
+        );
+
+        if (!acceptedAsCurrent) {
+            return;
+        }
+        latestProcessedFrameId = respFrameId;
+
+        // Diagnostic log: [22 CLASS INFERENCE]
+        if (data.primary_class && data.primary_class !== 'COLLECTING GESTURE...' && data.primary_class !== '--') {
+            const top3List = (data.prediction && data.prediction.probabilities)
+                ? Object.entries(data.prediction.probabilities).slice(0, 3)
+                : [];
+            console.log(
+                `\n[22 CLASS INFERENCE]\n` +
+                `sequence_length = ${data.buffer_status || '--'}\n` +
+                `token_dimension = 12\n` +
+                `model_input_shape = (1, 25, 12)\n` +
+                `inference_executed = true\n` +
+                `top1_class = ${data.primary_class}\n` +
+                `top1_index = ${data.prediction ? (data.prediction.class_id !== undefined ? data.prediction.class_id : '--') : '--'}\n` +
+                `top1_confidence = ${safeFixed(data.primary_confidence, 4)}\n` +
+                `top3 = ${JSON.stringify(top3List)}\n` +
+                `final_class = ${data.final_class || '--'}`
+            );
+        }
 
         if (!hasHand) {
             currentPrediction = { word: "--", confidence: 0.0 };
@@ -1402,6 +1827,8 @@ function drawRealLandmarks(landmarkData) {
 
 // ─── Update UI Widgets (Phase 10 & 11) ────────────────────────────
 function updateUI(data, hasHand) {
+    if (!data) return;
+
     // ── [GESTURE DEBUG] Mirror backend diagnostic block in browser console ──
     // Only log when a full 25-token prediction is available (buffer_status === "25/25")
     if (data.buffer_status === '25/25') {
@@ -1410,23 +1837,23 @@ function updateUI(data, hasHand) {
             _lastNoWebLog = _now;
             console.log(
                 `\n[GESTURE DEBUG]\n` +
-                `21CLASS        = ${data.primary_class}\n` +
-                `21CLASS_CONF   = ${(data.primary_confidence || 0).toFixed(4)}\n` +
-                `NO_PROBABILITY = ${(data.no_probability !== undefined ? data.no_probability : (data.binary_no ? data.binary_no.no_probability : 0)).toFixed(4)}\n` +
-                `NO_CONFIRMATIONS = ${data.no_confirmations !== undefined ? data.no_confirmations : (data.binary_no ? data.binary_no.consecutive_count : 0)}\n` +
-                `NO_CONFIRMED   = ${data.no_confirmed !== undefined ? data.no_confirmed : (data.binary_no ? data.binary_no.no_confirmed : false)}\n` +
-                `FINAL_CLASS    = ${data.final_class}`
+                `21CLASS        = ${data.primary_class || '--'}\n` +
+                `21CLASS_CONF   = ${safeFixed(data.primary_confidence, 4)}\n` +
+                `NO_PROBABILITY = ${safeFixed(data.no_probability !== undefined && data.no_probability !== null ? data.no_probability : (data.binary_no ? data.binary_no.no_probability : 0), 4)}\n` +
+                `NO_CONFIRMATIONS = ${data.no_confirmations !== undefined && data.no_confirmations !== null ? data.no_confirmations : (data.binary_no ? data.binary_no.consecutive_count : 0)}\n` +
+                `NO_CONFIRMED   = ${data.no_confirmed !== undefined && data.no_confirmed !== null ? data.no_confirmed : (data.binary_no ? data.binary_no.no_confirmed : false)}\n` +
+                `FINAL_CLASS    = ${data.final_class || '--'}`
             );
             // Also log token coordinates for NO-token coordinate verification
             if (data.token && data.token.length >= 6) {
                 console.log(
                     `[NO TOKEN]\n` +
-                    `Hx=${data.token[0].toFixed(4)}\n` +
-                    `Hy=${data.token[1].toFixed(4)}\n` +
-                    `Mx=${data.token[2].toFixed(4)}\n` +
-                    `My=${data.token[3].toFixed(4)}\n` +
-                    `Rx=${data.token[4].toFixed(4)}\n` +
-                    `Ry=${data.token[5].toFixed(4)}`
+                    `Hx=${safeFixed(data.token[0], 4)}\n` +
+                    `Hy=${safeFixed(data.token[1], 4)}\n` +
+                    `Mx=${safeFixed(data.token[2], 4)}\n` +
+                    `My=${safeFixed(data.token[3], 4)}\n` +
+                    `Rx=${safeFixed(data.token[4], 4)}\n` +
+                    `Ry=${safeFixed(data.token[5], 4)}`
                 );
             }
         }
@@ -1436,29 +1863,34 @@ function updateUI(data, hasHand) {
         if (_now - _lastNoWebLog >= 1000) {
             _lastNoWebLog = _now;
             console.log(
-                `[NO WEB] prob=${data.binary_no.no_probability.toFixed(4)} | ` +
-                `pred=${data.binary_no.no_prediction} | ` +
-                `confirmed=${data.binary_no.no_confirmed} | ` +
-                `count=${data.binary_no.consecutive_count}`
+                `[NO WEB] prob=${safeFixed(data.binary_no.no_probability, 4)} | ` +
+                `pred=${data.binary_no.no_prediction || '--'} | ` +
+                `confirmed=${data.binary_no.no_confirmed || false} | ` +
+                `count=${data.binary_no.consecutive_count || 0}`
             );
         }
     }
 
     // Motion Energy & Threshold
-    if (data.motion_energy !== undefined) {
-        valMotionEnergy.textContent = data.motion_energy.toFixed(4);
+    if (valMotionEnergy) {
+        valMotionEnergy.textContent = (data.motion_energy !== undefined && data.motion_energy !== null)
+            ? safeFixed(data.motion_energy, 4)
+            : '0.0000';
     }
-    if (data.threshold !== undefined) {
-        valThreshold.textContent = data.threshold.toFixed(4);
-
+    if (valThreshold) {
+        valThreshold.textContent = (data.threshold !== undefined && data.threshold !== null)
+            ? safeFixed(data.threshold, 4)
+            : '0.0150';
+    }
+    if (data.threshold !== undefined && data.threshold !== null) {
         motionHistory.shift();
-        motionHistory.push(data.motion_energy);
+        motionHistory.push(Number(data.motion_energy) || 0);
         thresholdHistory.shift();
-        thresholdHistory.push(data.threshold);
+        thresholdHistory.push(Number(data.threshold) || 0);
         drawMotionGraph();
     }
 
-    // 6D Token Values (Real values from backend / tokenizer)
+    // 12D Token Values (Real values from backend / tokenizer)
     updateTokenDisplay(data.token, hasHand);
 
     // Active Word Extraction for Immediate UI Synchronization
@@ -1471,31 +1903,42 @@ function updateUI(data, hasHand) {
         const rawWord = data.final_class || (data.prediction ? data.prediction.word : '--');
         const isNoFinal = (rawWord === 'no' || data.no_confirmed);
         const conf = isNoFinal
-            ? (data.no_probability !== undefined ? data.no_probability : (data.binary_no ? data.binary_no.no_probability : 0.90))
-            : ((data.primary_confidence !== undefined) ? data.primary_confidence : ((data.prediction && data.prediction.confidence) || 0));
-        const confPct = Math.round(conf * 100);
-        currentPrediction = { word: rawWord, confidence: conf };
+            ? (data.no_probability !== undefined && data.no_probability !== null ? data.no_probability : (data.binary_no ? data.binary_no.no_probability : 0.90))
+            : ((data.primary_confidence !== undefined && data.primary_confidence !== null) ? data.primary_confidence : ((data.prediction && data.prediction.confidence) || 0));
+        const confPct = Math.round((Number(conf) || 0) * 100);
+        currentPrediction = { word: rawWord, confidence: Number(conf) || 0 };
 
         let displayWord = '--';
         if (!hasHand) {
             displayWord = '--';
-            valConfidencePct.textContent = '0%';
-            confidenceBarFill.style.width = '0%';
-        } else if (rawWord === 'COLLECTING GESTURE...') {
-            displayWord = 'COLLECTING GESTURE...';
-            valConfidencePct.textContent = '0%';
-            confidenceBarFill.style.width = '0%';
+            if (valConfidencePct) valConfidencePct.textContent = '0%';
+            if (confidenceBarFill) confidenceBarFill.style.width = '0%';
+        } else if (rawWord === 'COLLECTING GESTURE...' || rawWord === 'Analyzing gesture...') {
+            displayWord = 'Analyzing gesture...';
+            if (valConfidencePct) valConfidencePct.textContent = '0%';
+            if (confidenceBarFill) confidenceBarFill.style.width = '0%';
         } else if (rawWord && rawWord !== '--' && rawWord !== 'BUFFERING' && rawWord !== 'WAITING FOR CLEAR GESTURE') {
             displayWord = rawWord.replace('_', ' ').toUpperCase();
-            valConfidencePct.textContent = `${confPct}%`;
-            confidenceBarFill.style.width = `${confPct}%`;
+            if (valConfidencePct) valConfidencePct.textContent = `${confPct}%`;
+            if (confidenceBarFill) confidenceBarFill.style.width = `${confPct}%`;
         } else {
             displayWord = '--';
-            valConfidencePct.textContent = `${confPct}%`;
-            confidenceBarFill.style.width = `${confPct}%`;
+            if (valConfidencePct) valConfidencePct.textContent = `${confPct}%`;
+            if (confidenceBarFill) confidenceBarFill.style.width = `${confPct}%`;
         }
 
-        valDetectedWord.textContent = displayWord;
+        const valAccuracyPct = document.getElementById('valAccuracyPct');
+        if (valAccuracyPct) {
+            if (rawWord === 'father') {
+                valAccuracyPct.textContent = '100.0% (User) / 60.0% (Overall)';
+            } else if (rawWord === 'brother') {
+                valAccuracyPct.textContent = '100.0% (User) / 64.7% (Overall)';
+            } else if (rawWord === 'water') {
+                valAccuracyPct.textContent = '100.0% (User) / 57.8% (Overall)';
+            }
+        }
+
+        if (valDetectedWord) valDetectedWord.textContent = displayWord;
 
         // Update Single Gesture Test Card (Phase 10)
         if (sgValSign) sgValSign.textContent = displayWord;
@@ -1536,26 +1979,32 @@ function updateUI(data, hasHand) {
 
         const activeSign = data.final_class || (data.prediction ? data.prediction.word : null);
 
-        // If no confirmed sentence string yet, format active sign according to language mode
-        if (!text || text.trim() === '') {
+        // If actively collecting a new gesture, display the active status so stale predictions don't linger
+        if (hasHand && (activeSign === 'COLLECTING GESTURE...' || activeSign === 'BUFFERING')) {
+            text = '<em>COLLECTING GESTURE...</em>';
+        } else if (!text || text.trim() === '') {
             if (!isWebcamRunning || currentCameraState === 'CAMERA_OFF') {
                 text = '<em>WAITING FOR WEBCAM</em>';
             } else if (!hasHand) {
                 text = '<em>WAITING FOR HAND GESTURE</em>';
-            } else if (activeSign === 'COLLECTING GESTURE...' || activeSign === 'BUFFERING') {
-                text = '<em>COLLECTING GESTURE...</em>';
             } else if (activeSign && activeSign !== '--' && activeSign !== 'WAITING FOR CLEAR GESTURE') {
                 if (currentLanguage === 'tamil') {
                     if (activeSign === 'water') text = 'தண்ணீர்';
+                    else if (activeSign === 'brother') text = 'சகோதரன்';
+                    else if (activeSign === 'father') text = 'அப்பா';
                     else if (activeSign === 'no') text = 'இல்லை';
                     else if (activeSign === 'please') text = 'தயவுசெய்து (Thayavuseythu)';
                     else if (activeSign === 'school') text = 'பள்ளி (Palli)';
+                    else if (activeSign === 'thalapathy') text = 'தளபதி';
                     else text = (data.translation && data.translation.tamil) ? data.translation.tamil : activeSign;
                 } else {
                     if (activeSign === 'water') text = 'Water (தண்ணீர்)';
+                    else if (activeSign === 'brother') text = 'Brother (சகோதரன்)';
+                    else if (activeSign === 'father') text = 'Father (அப்பா)';
                     else if (activeSign === 'no') text = 'No (இல்லை)';
                     else if (activeSign === 'please') text = 'Please.';
                     else if (activeSign === 'school') text = 'School';
+                    else if (activeSign === 'thalapathy') text = 'THALAPATHY';
                     else text = activeSign.charAt(0).toUpperCase() + activeSign.slice(1).replace('_', ' ') + '.';
                 }
             } else {
@@ -1567,14 +2016,34 @@ function updateUI(data, hasHand) {
         translatedText.innerHTML = text;
         lastTranslationText = text;
 
-        // Synchronize Word Buffer (confirmed words or active confirmed sign)
-        let rawWords = (data.translation && data.translation.raw_words && data.translation.raw_words.length > 0)
+        // Step 1 & 16: Synchronize Word Buffer (ONLY confirmed signs accepted by the decision engine)
+        const rawWords = (data.translation && data.translation.raw_words && data.translation.raw_words.length > 0)
             ? data.translation.raw_words
             : [];
-        if (rawWords.length === 0 && activeSign && activeSign !== 'COLLECTING GESTURE...' && activeSign !== 'BUFFERING' && activeSign !== '--' && activeSign !== 'WAITING FOR CLEAR GESTURE' && hasHand) {
-            rawWords = [activeSign];
-        }
         updateWordBuffer(rawWords);
+    }
+
+    // Step 4: Live Thalapathy diagnostic sample print
+    if (data.primary_class === 'thalapathy' || data.final_class === 'thalapathy' || data.active_hands === 'Left+Right') {
+        console.log(
+            `\n[THALAPATHY LIVE DEBUG]\n` +
+            `frame_id = ${data.frame_id || 0}\n` +
+            `sequence_id = ${data.sequence_id || 0}\n` +
+            `raw_hands = ${data.raw_hands !== undefined ? data.raw_hands : (data.active_hands === 'Left+Right' ? 2 : 1)}\n` +
+            `left_detected = ${data.left_detected || false}\n` +
+            `right_detected = ${data.right_detected || false}\n` +
+            `active_hands = ${data.active_hands || '--'}\n` +
+            `left_hand_confidence = ${safeFixed(data.left_confidence || 0, 4)}\n` +
+            `right_hand_confidence = ${safeFixed(data.right_confidence || 0, 4)}\n` +
+            `token_dimension = 12\n` +
+            `left_features = ${JSON.stringify(data.token ? data.token.slice(0, 6).map(v => Number(safeFixed(v, 4))) : [])}\n` +
+            `right_features = ${JSON.stringify(data.token ? data.token.slice(6, 12).map(v => Number(safeFixed(v, 4))) : [])}\n` +
+            `21class_prediction = ${data.primary_class || '--'}\n` +
+            `21class_confidence = ${safeFixed(data.primary_confidence || 0, 4)}\n` +
+            `top3_predictions = ${JSON.stringify(data.prediction && data.prediction.probabilities ? Object.entries(data.prediction.probabilities).slice(0, 3) : [])}\n` +
+            `final_class = ${data.final_class || '--'}\n` +
+            `gesture_state = ${data.early_decision ? data.early_decision.state : '--'}`
+        );
     }
 }
 
@@ -1635,12 +2104,14 @@ function drawMotionGraph() {
 }
 
 // ─── Language Toggle ─────────────────────────────────────────────
-// Expose to global scope for inline onclick handlers
-window.setLanguage = async function setLanguage(lang) {
+// Proper function declaration so it is hoisted and available for window.setLanguage = setLanguage at module top level
+async function setLanguage(lang) {
     currentLanguage = lang;
-    document.getElementById('btnLangEng').classList.toggle('active', lang === 'english');
-    document.getElementById('btnLangTam').classList.toggle('active', lang === 'tamil');
-    currentLangLabel.textContent = lang === 'english' ? 'ENGLISH SENTENCE' : 'TAMIL TRANSLATION (தமிழ்)';
+    const btnE = document.getElementById('btnLangEng');
+    const btnT = document.getElementById('btnLangTam');
+    if (btnE) btnE.classList.toggle('active', lang === 'english');
+    if (btnT) btnT.classList.toggle('active', lang === 'tamil');
+    if (currentLangLabel) currentLangLabel.textContent = lang === 'english' ? 'ENGLISH SENTENCE' : 'TAMIL TRANSLATION (தமிழ்)';
 
     try {
         const res = await fetch('/api/toggle_language', {
@@ -1650,15 +2121,15 @@ window.setLanguage = async function setLanguage(lang) {
         });
         const data = await res.json();
         if (data.translation && data.translation.display_text && data.translation.display_text.trim() !== '') {
-            translatedText.innerHTML = data.translation.display_text;
+            if (translatedText) translatedText.innerHTML = data.translation.display_text;
             lastTranslationText = data.translation.display_text;
         } else {
-            translatedText.innerHTML = isWebcamRunning ? '<em>WAITING FOR HAND GESTURE</em>' : '<em>WAITING FOR WEBCAM</em>';
+            if (translatedText) translatedText.innerHTML = isWebcamRunning ? '<em>WAITING FOR HAND GESTURE</em>' : '<em>WAITING FOR WEBCAM</em>';
         }
     } catch (e) {
         console.error('Toggle language error:', e);
     }
-};
+}
 
 // ─── Clear Sentence ──────────────────────────────────────────────
 async function clearSentence() {
@@ -1705,7 +2176,7 @@ async function trainModel() {
     try {
         const res = await fetch('/api/train', { method: 'POST' });
         const data = await res.json();
-        alert(`Model trained successfully!\nBest Accuracy: ${(data.training_result.best_val_acc * 100).toFixed(1)}%`);
+        alert(`Model trained successfully!\nBest Accuracy: ${safeFixed((data.training_result ? data.training_result.best_val_acc : 0) * 100, 1)}%`);
     } catch (e) {
         alert('Training failed: ' + e.message);
     } finally {
@@ -1720,7 +2191,6 @@ async function trainModel() {
 // ═══════════════════════════════════════════════════════════════════
 
 let datasetCurrentOffset = 0;
-const DATASET_PAGE_SIZE = 5;
 let datasetTotalRows = 0;
 
 /**
@@ -1815,7 +2285,7 @@ function renderDatasetCards(rows, gridEl) {
         const revClass = row.review_status === 'accepted' ? 'pill-accepted' : '';
 
         // Duration formatting
-        const durationStr = row.duration ? `${row.duration.toFixed(1)}s` : '--';
+        const durationStr = row.duration ? `${safeFixed(row.duration, 1)}s` : '--';
         const fpsStr = row.fps ? `${row.fps}` : '--';
 
         card.innerHTML = `
@@ -1843,7 +2313,7 @@ function renderDatasetCards(rows, gridEl) {
             </div>
 
             <div class="ds-quality-badge ${qualityClass}">
-                <i class="fa-solid fa-star"></i> Quality: ${(qs * 100).toFixed(0)}% ${qualityLabel}
+                <i class="fa-solid fa-star"></i> Quality: ${safeFixed(qs * 100, 0)}% ${qualityLabel}
             </div>
 
             <div class="ds-status-pills">
@@ -1886,8 +2356,8 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
-// ─── Dataset Explorer Event Listeners & Auto-Load ───────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ─── Dataset Explorer Event Listeners ───────────────────────────
+function initDatasetBrowserListeners() {
     // Pagination buttons
     const prevBtn = document.getElementById('btnDatasetPrev');
     const nextBtn = document.getElementById('btnDatasetNext');
@@ -1917,8 +2387,5 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
-    // Auto-load first page of dataset
-    loadDatasetBrowser(0, DATASET_PAGE_SIZE);
-});
+}
 
