@@ -23,12 +23,15 @@ from config import (
     CLASS_NAMES, INDEX_TO_CLASS, CLASS_TO_INDEX
 )
 
+_friend_fix_path = os.path.join(MODEL_DIR, "isl_cnn_gru_22class_friend_fix.pt")
 _father_fix_path = os.path.join(MODEL_DIR, "isl_cnn_gru_father_fix.pt")
 _brother_updated_path = os.path.join(MODEL_DIR, "isl_cnn_gru_22class_brother_updated.pt")
 _best_22_path = os.path.join(MODEL_DIR, "isl_cnn_gru_22class_best.pt")
 _best_21_path = os.path.join(MODEL_DIR, "isl_cnn_gru_21class_best.pt")
 _default_path = os.path.join(MODEL_DIR, "isl_cnn_gru.pt")
-if os.path.exists(_father_fix_path):
+if os.path.exists(_friend_fix_path):
+    CNN_GRU_MODEL_PATH = _friend_fix_path
+elif os.path.exists(_father_fix_path):
     CNN_GRU_MODEL_PATH = _father_fix_path
 elif os.path.exists(_brother_updated_path):
     CNN_GRU_MODEL_PATH = _brother_updated_path

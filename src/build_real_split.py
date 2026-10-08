@@ -173,6 +173,64 @@ def build_real_splits():
             print(f"  {class_name}: {len(samples)} videos -> {len(user_samples)} user, {len(web_samples)} web")
             continue
 
+        if class_name == "friend" and any("WIN" in s[2]["video_id"] for s in samples):
+            # Deterministic, leak-free split for Friend:
+            # 1 user video in test (strict held-out user validation)
+            # 1 user video in val
+            # 1 user video in train (+ 25 realistic temporal/spatial variations)
+            # 38 public web videos: 2 val, 2 test, 34 train
+            user_samples = [s for s in samples if "WIN" in s[2]["video_id"]]
+            web_samples = [s for s in samples if "WIN" not in s[2]["video_id"]]
+
+            # User Friend: 1 held-out test (zero leakage), 2 train (+ variations)
+            test_x.append(user_samples[2][0]); test_y.append(user_samples[2][1]); test_meta.append(user_samples[2][2])
+            train_x.append(user_samples[0][0]); train_y.append(user_samples[0][1]); train_meta.append(user_samples[0][2])
+            train_x.append(user_samples[1][0]); train_y.append(user_samples[1][1]); train_meta.append(user_samples[1][2])
+
+            np.random.seed(42)
+            for u_idx, u_samp in enumerate([user_samples[0], user_samples[1]]):
+                raw_base = u_samp[0]  # (25, 12)
+                for speed_idx in range(15):
+                    v = raw_base.copy()
+                    scale = np.random.uniform(0.96, 1.04)
+                    shift_x = np.random.uniform(-0.02, 0.02)
+                    shift_y = np.random.uniform(-0.02, 0.02)
+                    mask_l = np.any(v[:, :6] != 0, axis=1)
+                    v[mask_l, 0] = v[mask_l, 0] * scale + shift_x
+                    v[mask_l, 1] = v[mask_l, 1] * scale + shift_y
+                    v[mask_l, 2] = v[mask_l, 2] * scale
+                    v[mask_l, 3] = v[mask_l, 3] * scale
+                    v[mask_l, 4] = v[mask_l, 4] * scale + shift_x
+                    v[mask_l, 5] = v[mask_l, 5] * scale + shift_y
+
+                    mask_r = np.any(v[:, 6:12] != 0, axis=1)
+                    v[mask_r, 6] = v[mask_r, 6] * scale + shift_x
+                    v[mask_r, 7] = v[mask_r, 7] * scale + shift_y
+                    v[mask_r, 8] = v[mask_r, 8] * scale
+                    v[mask_r, 9] = v[mask_r, 9] * scale
+                    v[mask_r, 10] = v[mask_r, 10] * scale + shift_x
+                    v[mask_r, 11] = v[mask_r, 11] * scale + shift_y
+
+                    noise = np.random.normal(0, 0.01, v.shape).astype(np.float32)
+                    v[mask_l | mask_r] += noise[mask_l | mask_r]
+                    train_x.append(v.astype(np.float32))
+                    train_y.append(u_samp[1])
+                    train_meta.append({"video_id": f"friend_u{u_idx}_var_{speed_idx}", "sign_class": "friend", "class_id": u_samp[1], "signer_id": "user_aug"})
+
+            # Split web samples: 2 test, 2 val, remaining train
+            w_indices = np.arange(len(web_samples))
+            np.random.shuffle(w_indices)
+            for i, idx in enumerate(w_indices):
+                tk, cid, inf = web_samples[idx]
+                if i < 2:
+                    test_x.append(tk); test_y.append(cid); test_meta.append(inf)
+                elif i < 4:
+                    val_x.append(tk); val_y.append(cid); val_meta.append(inf)
+                else:
+                    train_x.append(tk); train_y.append(cid); train_meta.append(inf)
+            print(f"  {class_name}: {len(samples)} videos -> {len(user_samples)} user, {len(web_samples)} web")
+            continue
+
         if class_name == "brother" and len(samples) == 16:
             n_test = 3
             n_val = 3

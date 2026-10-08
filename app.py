@@ -24,7 +24,7 @@ from typing import List, Dict, Any, Optional
 
 from config import (
     CLASS_NAMES, NUM_CLASSES, INDEX_TO_CLASS, CLASS_TO_INDEX,
-    TAMIL_VOCAB_MAP, ENGLISH_TRANSLATIONS, BASE_DIR,
+    TAMIL_VOCAB_MAP, ENGLISH_TRANSLATIONS, BASE_DIR, MODEL_DIR,
     CONFIDENCE_THRESHOLD, SUSTAINED_FRAMES, COOLDOWN_FRAMES,
     IDLE_ENERGY_THRESHOLD, SIGNING_MOTION_THRESHOLD,
     TOKEN_DIM, HAND_FEATURE_DIM
@@ -155,6 +155,7 @@ class TokenInput(BaseModel):
     selected_hand_confidence: Optional[float] = 1.0
     camera_fps: Optional[float] = 30.0
     token_fps: Optional[float] = 20.0
+    target_sign: Optional[str] = "none"
 
 
 
@@ -325,8 +326,9 @@ async def process_token(data: TokenInput):
 
     t_start = time.perf_counter()
     frame_counter += 1
-    fid = data.frame_id or frame_counter
-    seq_id = data.sequence_id or 0
+    fid = data.frame_id if data.frame_id is not None else frame_counter
+    seq_id = data.sequence_id if data.sequence_id is not None else 0
+    target_sign = (getattr(data, "target_sign", "none") or "none").lower().strip()
 
     # Section 12 & 14: Sequence transition detection & Stale rejection
     is_client_reloaded = (active_sequence_id - seq_id) > 1000
@@ -889,6 +891,8 @@ async def process_token(data: TokenInput):
     # Section 4: Determine UI Output Text
     if buf_len < 18 and not decision_res.get("accepted", False):
         ui_output = "Analyzing gesture..."
+    elif final_class == "friend":
+        ui_output = "Friend (நண்பன்)"
     elif final_class == "brother":
         ui_output = "Brother (சகோதரன்)"
     elif final_class == "father":
@@ -907,6 +911,39 @@ async def process_token(data: TokenInput):
         ui_output = ENGLISH_TRANSLATIONS[final_class]
     else:
         ui_output = final_class
+
+    # Phase 7: Live Webcam Friend Trace
+    if buf_len >= MIN_INFERENCE_FRAMES and (primary_class == "friend" or final_class == "friend" or probs.get("friend", 0.0) > 0.05 or is_two_handed):
+        p_friend = probs.get("friend", 0.0)
+        p_brother = probs.get("brother", 0.0)
+        p_hello = probs.get("hello", 0.0)
+        p_school = probs.get("school", 0.0)
+        top1_p = sorted_probs[0][1] if len(sorted_probs) > 0 else 0.0
+        top2_c = sorted_probs[1][0] if len(sorted_probs) > 1 else "--"
+        top2_p = sorted_probs[1][1] if len(sorted_probs) > 1 else 0.0
+        acc_word = decision_res.get("word") if decision_res.get("accepted") else "--"
+        safe_print(
+            f"\n[FRIEND LIVE TRACE]\n"
+            f"raw_hands={raw_hands_val}\n"
+            f"active_left={str(l_det).lower()}\n"
+            f"active_right={str(r_det).lower()}\n"
+            f"LH=[{token_arr[0]:.3f}, {token_arr[1]:.3f}, {token_arr[2]:.3f}, {token_arr[3]:.3f}, {token_arr[4]:.3f}, {token_arr[5]:.3f}]\n"
+            f"RH=[{token_arr[6]:.3f}, {token_arr[7]:.3f}, {token_arr[8]:.3f}, {token_arr[9]:.3f}, {token_arr[10]:.3f}, {token_arr[11]:.3f}]\n"
+            f"sequence_length={buf_len}\n"
+            f"valid_frames={sum(1 for tk in realtime_token_buffer if np.any(tk != 0))}\n"
+            f"active_checkpoint={model_engine.model_path}\n"
+            f"top1={primary_class}\n"
+            f"top1_probability={top1_p:.4f}\n"
+            f"top2={top2_c}\n"
+            f"top2_probability={top2_p:.4f}\n"
+            f"friend_probability={p_friend:.4f}\n"
+            f"brother_probability={p_brother:.4f}\n"
+            f"hello_probability={p_hello:.4f}\n"
+            f"school_probability={p_school:.4f}\n"
+            f"decision_state={decision_res.get('state', '--')}\n"
+            f"accepted_class={acc_word}\n"
+            f"word_buffer={translation_res.get('word_buffer', [])}"
+        )
 
     # Step 2: Diagnostic Trace for every NO evaluation
     safe_print(
@@ -1002,6 +1039,49 @@ async def process_token(data: TokenInput):
             f"top1_confidence={primary_confidence:.4f}\n"
             f"top3={sorted_probs[:3]}"
         )
+        
+        # FRIEND TRACE logging for real Friend gesture attempts
+        if target_sign == "friend" or primary_class == "friend" or final_class == "friend":
+            top2_c = sorted_probs[1][0] if len(sorted_probs) > 1 else '--'
+            top2_p = sorted_probs[1][1] if len(sorted_probs) > 1 else 0.0
+            acc_w = decision_res.get('word') or '--'
+            acc_c = decision_res.get('confidence', 0.0) or 0.0
+            acc_curr = decision_res.get('accepted', False)
+            f_prob = float(probs.get('friend', 0.0))
+            if acc_curr:
+                rejection_reason = "ACCEPTED"
+            elif gesture_state_str == "COOLDOWN":
+                rejection_reason = "IN_COOLDOWN"
+            elif primary_confidence < 0.40:
+                rejection_reason = "CONFIDENCE_BELOW_0.40"
+            elif buf_len < 20:
+                rejection_reason = f"COLLECTING_TEMPORAL_EVIDENCE_{buf_len}/20"
+            else:
+                rejection_reason = "SUSTAINED_AGREEMENT_PENDING"
+
+            safe_print(
+                f"\n[FRIEND TRACE]\n"
+                f"frame={fid}\n"
+                f"timestamp={time.time():.3f}\n"
+                f"raw_hand_count={raw_hands_val}\n"
+                f"hand={act_hands}\n"
+                f"hand_confidence={max(l_conf, r_conf):.4f}\n"
+                f"left_detected={str(l_det).lower()}\n"
+                f"right_detected={str(r_det).lower()}\n"
+                f"token={[round(float(v), 4) for v in token_arr]}\n"
+                f"sequence={buf_len}/25\n"
+                f"motion_energy={motion_energy:.4f}\n"
+                f"top1={primary_class}\n"
+                f"top1_index={CLASS_TO_INDEX.get(primary_class, -1)}\n"
+                f"top1_confidence={primary_confidence:.4f}\n"
+                f"friend_prob={f_prob:.4f}\n"
+                f"top2={top2_c}\n"
+                f"top2_prob={top2_p:.4f}\n"
+                f"decision={gesture_state_str}\n"
+                f"accepted_class={acc_w}\n"
+                f"accepted_confidence={acc_c:.4f}\n"
+                f"reason={rejection_reason}"
+            )
 
         # Section 4: Trace exactly where School becomes Water
         safe_print(

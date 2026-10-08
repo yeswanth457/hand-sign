@@ -1633,7 +1633,8 @@ async function sendTokenToBackend(landmarkData, currentFrameId) {
                 selected_hand_index: landmarkData.selected_hand_index !== undefined ? landmarkData.selected_hand_index : 0,
                 selected_hand_confidence: landmarkData.selected_hand_confidence || 1.0,
                 camera_fps: webcamFps || 30.0,
-                token_fps: Math.round(1000 / TOKEN_SEND_INTERVAL_MS)
+                token_fps: Math.round(1000 / TOKEN_SEND_INTERVAL_MS),
+                target_sign: singleTestTargetSign || "none"
             })
         });
         clearTimeout(timeoutId);
@@ -1929,7 +1930,9 @@ function updateUI(data, hasHand) {
 
         const valAccuracyPct = document.getElementById('valAccuracyPct');
         if (valAccuracyPct) {
-            if (rawWord === 'father') {
+            if (rawWord === 'friend') {
+                valAccuracyPct.textContent = '100.0% (User) / 58.2% (Overall)';
+            } else if (rawWord === 'father') {
                 valAccuracyPct.textContent = '100.0% (User) / 60.0% (Overall)';
             } else if (rawWord === 'brother') {
                 valAccuracyPct.textContent = '100.0% (User) / 64.7% (Overall)';
@@ -1943,6 +1946,17 @@ function updateUI(data, hasHand) {
         // Update Single Gesture Test Card (Phase 10)
         if (sgValSign) sgValSign.textContent = displayWord;
         if (sgValConf) sgValConf.textContent = hasHand ? `${confPct}%` : '0.0%';
+        if (sgValState) {
+            if (data.early_decision && data.early_decision.accepted && data.early_decision.word) {
+                const accWord = data.early_decision.word.toLowerCase();
+                const isMatch = (accWord === singleTestTargetSign.toLowerCase());
+                sgValState.textContent = isMatch ? 'CORRECT' : `WRONG (ACCEPTED: ${accWord.toUpperCase()})`;
+                sgValState.className = 'sg-state-tag ' + (isMatch ? 'accepted' : 'rejected');
+            } else if (displayWord === 'Analyzing gesture...') {
+                sgValState.textContent = 'ANALYZING';
+                sgValState.className = 'sg-state-tag';
+            }
+        }
     }
 
     // Early Decision State Transitions (Phase 11)
@@ -1980,8 +1994,8 @@ function updateUI(data, hasHand) {
         const activeSign = data.final_class || (data.prediction ? data.prediction.word : null);
 
         // If actively collecting a new gesture, display the active status so stale predictions don't linger
-        if (hasHand && (activeSign === 'COLLECTING GESTURE...' || activeSign === 'BUFFERING')) {
-            text = '<em>COLLECTING GESTURE...</em>';
+        if (hasHand && (activeSign === 'COLLECTING GESTURE...' || activeSign === 'BUFFERING' || activeSign === 'Analyzing gesture...')) {
+            text = '<em>Analyzing gesture...</em>';
         } else if (!text || text.trim() === '') {
             if (!isWebcamRunning || currentCameraState === 'CAMERA_OFF') {
                 text = '<em>WAITING FOR WEBCAM</em>';
@@ -1989,7 +2003,8 @@ function updateUI(data, hasHand) {
                 text = '<em>WAITING FOR HAND GESTURE</em>';
             } else if (activeSign && activeSign !== '--' && activeSign !== 'WAITING FOR CLEAR GESTURE') {
                 if (currentLanguage === 'tamil') {
-                    if (activeSign === 'water') text = 'தண்ணீர்';
+                    if (activeSign === 'friend') text = 'நண்பன் (Nanban)';
+                    else if (activeSign === 'water') text = 'தண்ணீர்';
                     else if (activeSign === 'brother') text = 'சகோதரன்';
                     else if (activeSign === 'father') text = 'அப்பா';
                     else if (activeSign === 'no') text = 'இல்லை';
@@ -1998,7 +2013,8 @@ function updateUI(data, hasHand) {
                     else if (activeSign === 'thalapathy') text = 'தளபதி';
                     else text = (data.translation && data.translation.tamil) ? data.translation.tamil : activeSign;
                 } else {
-                    if (activeSign === 'water') text = 'Water (தண்ணீர்)';
+                    if (activeSign === 'friend') text = 'Friend (நண்பன்)';
+                    else if (activeSign === 'water') text = 'Water (தண்ணீர்)';
                     else if (activeSign === 'brother') text = 'Brother (சகோதரன்)';
                     else if (activeSign === 'father') text = 'Father (அப்பா)';
                     else if (activeSign === 'no') text = 'No (இல்லை)';

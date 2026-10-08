@@ -1,53 +1,27 @@
 {
-  "frame_ids": [
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20,
-    21
-  ],
-  "sequence_id": 604860,
+  "frame_id": 4864,
+  "sequence_id": 1791488668107,
   "token_dimension": 12,
   "left_detected": true,
   "right_detected": true,
-  "active_hands": "Left",
-  "no_probability": 0.0002,
-  "prediction_22class": "thalapathy",
-  "confidence_22class": 0.739,
-  "top3_predictions": [
+  "active_hands": "Left+Right",
+  "raw_hands": 2,
+  "no_probability": 0.0,
+  "prediction_22class": "friend",
+  "confidence_22class": 0.7346,
+  "buffer_length": 21,
+  "top3": [
     [
-      "thalapathy",
-      0.739
+      "friend",
+      0.7346
+    ],
+    [
+      "thank_you",
+      0.1522
     ],
     [
       "sorry",
-      0.2263
-    ],
-    [
-      "school",
-      0.0298
+      0.0535
     ]
-  ],
-  "final_class": "thalapathy",
-  "buffer_length": 21,
-  "model_input_shape": [
-    21,
-    12
   ]
 }

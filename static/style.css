@@ -494,6 +494,12 @@ body {
     border-color: rgba(52, 211, 153, 0.5);
 }
 
+.sg-state-tag.rejected {
+    background: rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.5);
+}
+
 /* Token Panel */
 .token-panel {
     margin-top: 18px;
